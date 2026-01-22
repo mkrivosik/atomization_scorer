@@ -72,7 +72,11 @@ def compute_alignment_score(
     output_directory.mkdir(parents=True, exist_ok=True)
 
     print("Computing gold standard (true) alignment...")
-    true_geese = compute_true_alignment(genomes_file, atomization_file, output_directory)
+    true_geese = compute_true_alignment(
+        genomes_file=genomes_file,
+        atomization_file=atomization_file,
+        output_directory=output_directory
+    )
 
     print(
         f"Computing score with parameters\n"
