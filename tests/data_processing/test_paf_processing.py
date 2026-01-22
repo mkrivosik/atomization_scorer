@@ -2,8 +2,10 @@
 Tests for filter_paf() function.
 """
 
-import pytest
 from pathlib import Path
+
+import pytest
+
 from atomization_scorer import filter_paf
 
 

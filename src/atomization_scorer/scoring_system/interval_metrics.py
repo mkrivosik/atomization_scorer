@@ -13,16 +13,14 @@ _write_interval_status          : Write predicted and true intervals with status
 # ---------------------------------------------------------------------
 # Imports
 # ---------------------------------------------------------------------
+from pathlib import Path
+
 import pandas as pd
 from intervaltree import IntervalTree
-from typing import Dict, List, Set, Tuple
-from pathlib import Path
+
 from atomization_scorer.data_processing import read_geese
-from .helpers import (
-    _compute_and_write_metrics,
-    _write_metrics_tsv,
-    _interval_overlap
-)
+
+from .helpers import _compute_and_write_metrics, _interval_overlap, _write_metrics_tsv
 
 # ---------------------------------------------------------------------
 # Interval-Level Metrics
@@ -34,7 +32,7 @@ def compute_interval_level_metrics(
     output_directory: Path,
     per_class: bool = False,
     min_overlap_ratio: float = 0.8
-) -> float | List[Dict[str, int | float]]:
+) -> float | list[dict[str, int | float]]:
     """
     Compute interval-level True Positives, False Positives, False Negatives,
     Precision, Recall, and F1-score.
@@ -101,10 +99,10 @@ def _scan_intervals_interval_level(
     true_df: pd.DataFrame,
     output_directory: Path,
     min_overlap_ratio: float = 0.8
-) -> Tuple[
-    Dict[int, int],
-    Dict[int, int],
-    Dict[int, int]
+) -> tuple[
+    dict[int, int],
+    dict[int, int],
+    dict[int, int]
 ]:
     """
     Scan predicted and true intervals to compute True Positives (TP), False Positives (FP), and False Negatives (FN)
@@ -192,7 +190,7 @@ def _scan_intervals_interval_level(
 def _write_interval_status(
     predicted_df: pd.DataFrame,
     true_df: pd.DataFrame,
-    tp_indexes: Set[int],
+    tp_indexes: set[int],
     predicted_output_path: Path,
     true_output_path: Path
 ) -> None:

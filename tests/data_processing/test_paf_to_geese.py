@@ -2,8 +2,10 @@
 Tests for paf_to_geese() function.
 """
 
-import pytest
 from pathlib import Path
+
+import pytest
+
 from atomization_scorer import paf_to_geese
 
 

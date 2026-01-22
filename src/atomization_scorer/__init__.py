@@ -15,19 +15,19 @@ scoring_system  : Subpackage providing scoring functions.
 # Data Processing
 # ---------------------------------------------------------------------
 from .data_processing import (
-    read_fasta,
-    write_fasta,
-    read_geese,
     filter_paf,
     paf_to_geese,
+    read_fasta,
+    read_geese,
+    write_fasta,
 )
 
 # ---------------------------------------------------------------------
 # Pipeline
 # ---------------------------------------------------------------------
 from .pipeline import (
-    compute_true_alignment,
     align_with_minimap2,
+    compute_true_alignment,
     extract_representatives,
 )
 
@@ -35,10 +35,10 @@ from .pipeline import (
 # Scoring System
 # ---------------------------------------------------------------------
 from .scoring_system import (
-    compute_base_level_metrics,
-    compute_interval_level_metrics,
     compute_alignment_score,
+    compute_base_level_metrics,
     compute_coverage_score,
+    compute_interval_level_metrics,
     compute_overall_score,
 )
 

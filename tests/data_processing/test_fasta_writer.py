@@ -3,7 +3,9 @@ Tests for write_fasta() function.
 """
 
 from pathlib import Path
+
 from Bio import SeqIO
+
 from atomization_scorer import write_fasta
 
 

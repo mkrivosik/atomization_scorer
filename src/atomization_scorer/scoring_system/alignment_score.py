@@ -12,9 +12,10 @@ compute_alignment_score : Computes the alignment score comparing predicted
 # ---------------------------------------------------------------------
 # Imports
 # ---------------------------------------------------------------------
-from typing import List, Dict
 from pathlib import Path
+
 from atomization_scorer.pipeline import compute_true_alignment
+
 from .base_metrics import compute_base_level_metrics
 from .interval_metrics import compute_interval_level_metrics
 
@@ -29,7 +30,7 @@ def compute_alignment_score(
     level: str = "interval",
     per_class: bool = False,
     min_overlap_ratio: float = 0.8
-) -> float | List[Dict[str, int | float]]:
+) -> float | list[dict[str, int | float]]:
     """
     Compute alignment score (F1-score) at base or interval level, optionally per genome.
 

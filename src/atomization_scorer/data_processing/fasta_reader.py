@@ -12,7 +12,7 @@ read_fasta : Loads a FASTA file into a dictionary.
 # Imports
 # ---------------------------------------------------------------------
 from pathlib import Path
-from typing import Dict
+
 from Bio import SeqIO
 from Bio.Seq import Seq
 
@@ -20,7 +20,7 @@ from Bio.Seq import Seq
 # FASTA Reader
 # ---------------------------------------------------------------------
 
-def read_fasta(fasta_file: Path) -> Dict[str, Seq]:
+def read_fasta(fasta_file: Path) -> dict[str, Seq]:
     """
     Load a FASTA file and return its records as a dictionary.
 

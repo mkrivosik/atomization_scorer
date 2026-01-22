@@ -12,13 +12,12 @@ write_fasta : Writes sequences into a FASTA file.
 # Imports
 # ---------------------------------------------------------------------
 from pathlib import Path
-from typing import Dict
 
 # ---------------------------------------------------------------------
 # FASTA Writer
 # ---------------------------------------------------------------------
 
-def write_fasta(sequences: Dict[str, str], output_path: Path) -> Path:
+def write_fasta(sequences: dict[str, str], output_path: Path) -> Path:
     """
     Write sequences into a FASTA file.
 

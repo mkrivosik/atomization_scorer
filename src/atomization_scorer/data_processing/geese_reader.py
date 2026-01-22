@@ -13,8 +13,10 @@ read_geese : Load GEESE atomization TSV file into a pandas DataFrame
 # ---------------------------------------------------------------------
 # Imports
 # ---------------------------------------------------------------------
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
+
 from .utils import (
     check_required_columns,
     rename_column,

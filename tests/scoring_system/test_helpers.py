@@ -2,14 +2,16 @@
 Tests for the helper.py functions.
 """
 
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
+
 from atomization_scorer.scoring_system.helpers import (
-    _compute_and_write_metrics,     # noqa
-    _compute_metrics,               # noqa
-    _write_metrics_tsv,             # noqa
-    _create_new_row,                # noqa
-    _interval_overlap               # noqa
+    _compute_and_write_metrics,  # noqa
+    _compute_metrics,  # noqa
+    _create_new_row,  # noqa
+    _interval_overlap,  # noqa
+    _write_metrics_tsv,  # noqa
 )
 
 

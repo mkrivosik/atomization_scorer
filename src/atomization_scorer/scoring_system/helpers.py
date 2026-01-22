@@ -16,21 +16,21 @@ _interval_overlap           : Compute fraction of overlap between two intervals 
 # ---------------------------------------------------------------------
 # Imports
 # ---------------------------------------------------------------------
-import pandas as pd
-from typing import Dict, List, Tuple
 from pathlib import Path
+
+import pandas as pd
 
 # ---------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------
 
 def _compute_and_write_metrics(
-    tp: Dict[int, int],
-    fp: Dict[int, int],
-    fn: Dict[int, int],
+    tp: dict[int, int],
+    fp: dict[int, int],
+    fn: dict[int, int],
     output_file: Path,
     per_class: bool = False
-) -> float | List[Dict[str, float]]:
+) -> float | list[dict[str, float]]:
     """
     Compute precision, recall, and F1-score from TP, FP, FN.
 
@@ -95,7 +95,7 @@ def _compute_and_write_metrics(
     return class_f1_metrics
 
 
-def _compute_metrics(tp: int, fp: int, fn: int) -> Tuple[float, float, float]:
+def _compute_metrics(tp: int, fp: int, fn: int) -> tuple[float, float, float]:
     """
     Compute precision, recall, and F1-score from True Positives, False Positives, and False Negatives.
 
@@ -148,7 +148,7 @@ def _create_new_row(
     start: int,
     end: int,
     status: str
-) -> Dict[str, str | int]:
+) -> dict[str, str | int]:
     """
     Construct a dictionary representing an interval with assigned status.
 

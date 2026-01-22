@@ -11,9 +11,11 @@ compute_coverage_score  : Computes fraction of the genomes covered by atoms.
 # ---------------------------------------------------------------------
 # Imports
 # ---------------------------------------------------------------------
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
 from Bio import SeqIO
+
 from atomization_scorer.data_processing import read_geese
 
 # ---------------------------------------------------------------------

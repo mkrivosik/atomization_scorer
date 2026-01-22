@@ -2,8 +2,10 @@
 Tests for the compute_coverage_score() function.
 """
 
-import pytest
 from pathlib import Path
+
+import pytest
+
 from atomization_scorer import compute_coverage_score
 
 

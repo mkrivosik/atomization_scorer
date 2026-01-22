@@ -2,8 +2,9 @@
 Tests for the utils.py functions: check_required_columns and rename_column.
 """
 
-import pytest
 import pandas as pd
+import pytest
+
 from atomization_scorer.data_processing import check_required_columns, rename_column
 
 

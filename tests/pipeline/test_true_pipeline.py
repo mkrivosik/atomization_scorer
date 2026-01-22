@@ -2,9 +2,11 @@
 Tests for the compute_true_alignment() function.
 """
 
-import pytest
 from pathlib import Path
 from unittest.mock import patch
+
+import pytest
+
 from atomization_scorer import compute_true_alignment
 
 

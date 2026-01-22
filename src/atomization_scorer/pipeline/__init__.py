@@ -11,11 +11,6 @@ representatives_selector    : Extracts representative sequences.
 """
 
 # ---------------------------------------------------------------------
-# True Pipeline
-# ---------------------------------------------------------------------
-from .true_pipeline import compute_true_alignment
-
-# ---------------------------------------------------------------------
 # Minimap2 Aligner
 # ---------------------------------------------------------------------
 from .minimap2_aligner import align_with_minimap2
@@ -24,6 +19,11 @@ from .minimap2_aligner import align_with_minimap2
 # Representatives Selector
 # ---------------------------------------------------------------------
 from .representatives_selector import extract_representatives
+
+# ---------------------------------------------------------------------
+# True Pipeline
+# ---------------------------------------------------------------------
+from .true_pipeline import compute_true_alignment
 
 # ---------------------------------------------------------------------
 # Package API

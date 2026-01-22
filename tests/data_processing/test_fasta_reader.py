@@ -2,9 +2,11 @@
 Tests for the read_fasta() function.
 """
 
-import pytest
 from pathlib import Path
+
+import pytest
 from Bio.Seq import Seq
+
 from atomization_scorer import read_fasta
 
 

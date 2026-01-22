@@ -20,15 +20,15 @@ main                : CLI entry point, parses arguments, validates inputs, calls
 # ---------------------------------------------------------------------
 import argparse
 import sys
-from typing import Tuple
 from pathlib import Path
+
 from atomization_scorer import compute_overall_score
 
 # ---------------------------------------------------------------------
 # Validation Functions
 # ---------------------------------------------------------------------
 
-def validate_file(path: Path, description: str, extension: str | Tuple[str, ...]) -> None:
+def validate_file(path: Path, description: str, extension: str | tuple[str, ...]) -> None:
     """
     Validates that the input file exists and optionally has the required extension.
 

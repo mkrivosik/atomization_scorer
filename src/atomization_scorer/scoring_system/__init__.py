@@ -13,24 +13,24 @@ overall_score                   : Function for computing overall atomization sco
 """
 
 # ---------------------------------------------------------------------
-# Base Metrics
-# ---------------------------------------------------------------------
-from .base_metrics import compute_base_level_metrics
-
-# ---------------------------------------------------------------------
-# Interval Metrics
-# ---------------------------------------------------------------------
-from .interval_metrics import compute_interval_level_metrics
-
-# ---------------------------------------------------------------------
 # Alignment Score
 # ---------------------------------------------------------------------
 from .alignment_score import compute_alignment_score
 
 # ---------------------------------------------------------------------
+# Base Metrics
+# ---------------------------------------------------------------------
+from .base_metrics import compute_base_level_metrics
+
+# ---------------------------------------------------------------------
 # Coverage Score
 # ---------------------------------------------------------------------
 from .coverage_score import compute_coverage_score
+
+# ---------------------------------------------------------------------
+# Interval Metrics
+# ---------------------------------------------------------------------
+from .interval_metrics import compute_interval_level_metrics
 
 # ---------------------------------------------------------------------
 # Overall Score

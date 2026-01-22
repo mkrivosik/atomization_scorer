@@ -2,10 +2,12 @@
 Tests for the extract_representatives() function.
 """
 
-import pytest
 import subprocess
 from pathlib import Path
+
+import pytest
 from Bio import SeqIO
+
 from atomization_scorer import extract_representatives
 
 
@@ -67,7 +69,7 @@ def test_extract_representatives_mash(tmp_path: Path, monkeypatch):
     def fake_mash(cmd, **_kwargs):
         temporary_fasta_path = cmd[-1]
         headers = []
-        with open(temporary_fasta_path, "r") as file:
+        with open(temporary_fasta_path) as file:
             for line in file:
                 if line.startswith(">"):
                     headers.append(line[1:].strip().split()[0])

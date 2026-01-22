@@ -2,8 +2,10 @@
 Tests for the read_geese() function.
 """
 
-import pytest
 from pathlib import Path
+
+import pytest
+
 from atomization_scorer import read_geese
 
 

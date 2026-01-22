@@ -2,8 +2,10 @@
 Tests for the interval_metrics.py functions.
 """
 
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
+
 from atomization_scorer.scoring_system import compute_base_level_metrics
 
 

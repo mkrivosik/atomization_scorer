@@ -3,8 +3,10 @@ Tests for align_with_minimap2() function.
 """
 
 import subprocess
-import pytest
 from pathlib import Path
+
+import pytest
+
 from atomization_scorer import align_with_minimap2
 
 

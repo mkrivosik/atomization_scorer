@@ -12,15 +12,13 @@ _scan_intervals_base_level  : Scan predicted and true intervals to count TP, FP,
 # ---------------------------------------------------------------------
 # Imports
 # ---------------------------------------------------------------------
-import pandas as pd
-from typing import Dict, List, Tuple
 from pathlib import Path
+
+import pandas as pd
+
 from atomization_scorer.data_processing import read_geese
-from .helpers import (
-    _compute_and_write_metrics,
-    _write_metrics_tsv,
-    _create_new_row
-)
+
+from .helpers import _compute_and_write_metrics, _create_new_row, _write_metrics_tsv
 
 # ---------------------------------------------------------------------
 # Base-Level Metrics
@@ -31,7 +29,7 @@ def compute_base_level_metrics(
     true_geese: Path,
     output_directory: Path,
     per_class: bool = False
-) -> float | List[Dict[str, int | float]]:
+) -> float | list[dict[str, int | float]]:
     """
     Compute base-level True Positives, False Positives, False Negatives,
     Precision, Recall, and F1-score.
@@ -91,10 +89,10 @@ def _scan_intervals_base_level(
         predicted_df: pd.DataFrame,
         true_df: pd.DataFrame,
         output_directory: Path
-) -> Tuple[
-    Dict[int, int],
-    Dict[int, int],
-    Dict[int, int]
+) -> tuple[
+    dict[int, int],
+    dict[int, int],
+    dict[int, int]
 ]:
     """
     Scan predicted and true intervals to compute True Positives (TP), False Positives (FP), and False Negatives (FN)

@@ -12,8 +12,8 @@ compute_overall_score : Computes overall atomization score.
 # Imports
 # ---------------------------------------------------------------------
 from pathlib import Path
-from atomization_scorer.scoring_system import compute_alignment_score
-from atomization_scorer.scoring_system import compute_coverage_score
+
+from atomization_scorer.scoring_system import compute_alignment_score, compute_coverage_score
 
 # ---------------------------------------------------------------------
 # Overall Score Function

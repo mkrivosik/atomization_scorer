@@ -13,10 +13,11 @@ compute_true_alignment : Computes true (gold standard) alignment and returns a P
 # Imports
 # ---------------------------------------------------------------------
 from pathlib import Path
+
+from atomization_scorer.data_processing import filter_paf, paf_to_geese
+
 from .minimap2_aligner import align_with_minimap2
 from .representatives_selector import extract_representatives
-from atomization_scorer.data_processing import filter_paf
-from atomization_scorer.data_processing import paf_to_geese
 
 # ---------------------------------------------------------------------
 # True (Gold Standard) Alignment Pipeline Entry Point

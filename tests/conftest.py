@@ -2,8 +2,9 @@
 Fixtures Atomization Scorer tests.
 """
 
-import pytest
 from pathlib import Path
+
+import pytest
 
 
 # ---------------------------------------------------------------------

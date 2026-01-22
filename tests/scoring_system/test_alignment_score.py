@@ -2,8 +2,10 @@
 Tests for compute_alignment_score() function.
 """
 
-import pytest
 from pathlib import Path
+
+import pytest
+
 from atomization_scorer.scoring_system import compute_alignment_score
 
 

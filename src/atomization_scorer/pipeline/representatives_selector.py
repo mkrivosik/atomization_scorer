@@ -14,9 +14,8 @@ extract_representatives : Select class representatives using different strategie
 import subprocess
 import tempfile
 from pathlib import Path
-from atomization_scorer.data_processing import read_fasta
-from atomization_scorer.data_processing import write_fasta
-from atomization_scorer.data_processing import read_geese
+
+from atomization_scorer.data_processing import read_fasta, read_geese, write_fasta
 
 # ---------------------------------------------------------------------
 # Representative Extraction
