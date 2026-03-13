@@ -57,16 +57,18 @@ def filter_paf(
     with paf_file.open("r") as file:
         for line in file:
             fields = line.strip().split("\t")
+            if len(fields) < 11:
+                raise ValueError(f"Malformed PAF line: {line.strip()}")
 
             alignment_length = int(fields[10])
+            matches = int(fields[9])
+            # Prefer minimap2's dv tag; fall back to the identity proxy from mandatory PAF columns.
+            similarity = matches / alignment_length if alignment_length > 0 else 0.0
 
-            # Divergence: find optional field starting with "de:f:"
             for field in fields[12:]:
-                if field.startswith("de:f:"):
-                    divergence = float(field.split(":")[2])
+                if field.startswith("dv:f:"):
+                    similarity = 1.0 - float(field.split(":")[2])
                     break
-
-            similarity = 1.0 - divergence
 
             if similarity >= minimum_similarity and alignment_length >= minimum_alignment_length:
                 filtered_lines.append(line)

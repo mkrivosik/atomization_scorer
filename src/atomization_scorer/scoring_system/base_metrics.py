@@ -139,12 +139,12 @@ def _scan_intervals_base_level(
         for _, row in predicted_sequence.iterrows():
             start, end, class_id = int(row["start"]), int(row["end"]), int(row["class"])
             interval_events.append((start, "predicted_start", class_id, row.to_dict()))
-            interval_events.append((end + 1, "predicted_end", class_id, row.to_dict()))
+            interval_events.append((end, "predicted_end", class_id, row.to_dict()))
 
         for _, row in true_sequence.iterrows():
             start, end, class_id = int(row["start"]), int(row["end"]), int(row["class"])
             interval_events.append((start, "true_start", class_id, row.to_dict()))
-            interval_events.append((end + 1, "true_end", class_id, row.to_dict()))
+            interval_events.append((end, "true_end", class_id, row.to_dict()))
 
         interval_events.sort(key=lambda x: x[0])
 
@@ -163,7 +163,7 @@ def _scan_intervals_base_level(
                         _create_new_row(
                             row=active_predicted_classes[atom_class],
                             start=previous_position,
-                            end=current_position - 1,
+                            end=current_position,
                             status="TP"
                         )
                     )
@@ -171,7 +171,7 @@ def _scan_intervals_base_level(
                         _create_new_row(
                             row=active_true_classes[atom_class],
                             start=previous_position,
-                            end=current_position - 1,
+                            end=current_position,
                             status="TP"
                         )
                     )
@@ -182,7 +182,7 @@ def _scan_intervals_base_level(
                         _create_new_row(
                             row=active_predicted_classes[atom_class],
                             start=previous_position,
-                            end=current_position - 1,
+                            end=current_position,
                             status="FP"
                         )
                     )
@@ -193,7 +193,7 @@ def _scan_intervals_base_level(
                         _create_new_row(
                             row=active_true_classes[atom_class],
                             start=previous_position,
-                            end=current_position - 1,
+                            end=current_position,
                             status="FN"
                         )
                     )

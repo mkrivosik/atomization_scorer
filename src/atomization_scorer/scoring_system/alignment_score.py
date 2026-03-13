@@ -87,14 +87,14 @@ def compute_alignment_score(
     if level == "base":
         score = compute_base_level_metrics(
             predicted_geese=atomization_file,
-            true_geese=true_geese,
+            true_geese=Path(true_geese),
             output_directory=output_directory,
             per_class=per_class
         )
     elif level == "interval":
         score = compute_interval_level_metrics(
             predicted_geese=atomization_file,
-            true_geese=true_geese,
+            true_geese=Path(true_geese),
             output_directory=output_directory,
             per_class=per_class,
             min_overlap_ratio=min_overlap_ratio

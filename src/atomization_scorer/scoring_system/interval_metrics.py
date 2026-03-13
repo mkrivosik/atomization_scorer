@@ -142,12 +142,12 @@ def _scan_intervals_interval_level(
 
         tree = IntervalTree()
         for index, row in true_sequence.iterrows():
-            tree[row["start"]:row["end"] + 1] = (index, int(row["class"]))
+            tree[row["start"]:row["end"]] = (index, int(row["class"]))
 
         true_used = [False] * len(true_sequence)
 
         for predicted_index, predicted in predicted_sequence.iterrows():
-            overlaps = tree[predicted["start"]:predicted["end"] + 1]
+            overlaps = tree[predicted["start"]:predicted["end"]]
             matched = False
 
             for interval in overlaps:

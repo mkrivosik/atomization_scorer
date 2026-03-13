@@ -52,9 +52,9 @@ def test_extract_representatives_first(tmp_path: Path):
     records = list(SeqIO.parse(out_path, "fasta"))
     assert len(records) == 2
     assert records[0].id == "sequence1|class_1"
-    assert str(records[0].seq) == "ATGCGTACGTA"
+    assert str(records[0].seq) == "ATGCGTACGT"
     assert records[1].id == "sequence2|class_2"
-    assert str(records[1].seq) == "GCTAGCTAGCT"
+    assert str(records[1].seq) == "GCTAGCTAGC"
 
 
 # ---------------------------------------------------------------------
@@ -94,8 +94,8 @@ def test_extract_representatives_mash(tmp_path: Path, monkeypatch):
     assert len(records) == 2
 
     expected = {
-        "sequence1|class_1": "ATGCGTACGTA",
-        "sequence2|class_2": "GCTAGCTAGCT"
+        "sequence1|class_1": "ATGCGTACGT",
+        "sequence2|class_2": "GCTAGCTAGC"
     }
 
     for record in records:
@@ -148,3 +148,19 @@ def test_extract_representatives_invalid_mode(tmp_path: Path):
             output_path=tmp_path / "out.fa",
             mode="invalid"
         )
+
+
+def test_extract_representatives_uses_half_open_coordinates(tmp_path: Path):
+    """extract_representatives should slice genomes using half-open intervals."""
+    fasta_file, geese_file = create_minimal_files(tmp_path)
+    output_fasta = tmp_path / "representatives_half_open.fa"
+
+    out_path = extract_representatives(
+        genomes_file=fasta_file,
+        atomization_file=geese_file,
+        output_path=output_fasta,
+        mode="first"
+    )
+
+    records = {record.id: str(record.seq) for record in SeqIO.parse(out_path, "fasta")}
+    assert records["sequence1|class_1"] == "ATGCGTACGT"

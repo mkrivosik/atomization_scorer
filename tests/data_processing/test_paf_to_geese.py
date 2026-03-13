@@ -41,14 +41,14 @@ def test_paf_to_geese_basic(tmp_path: Path):
 
     # Check first data line
     first_fields = lines[1].split("\t")
-    assert first_fields[0] == "target1"
+    assert first_fields[0] == "query1"
     assert first_fields[1] == "1"
     assert first_fields[2] == "0"
     assert first_fields[3] == "1000"
 
     # Check second data line
     second_fields = lines[2].split("\t")
-    assert second_fields[0] == "target2"
+    assert second_fields[0] == "query2"
     assert second_fields[1] == "2"
     assert second_fields[2] == "0"
     assert second_fields[3] == "2000"

@@ -81,7 +81,7 @@ def extract_representatives(
                     start = int(r["start"])
                     end = int(r["end"])
 
-                    subsequence = genomes[sequence_name][start:end+1]
+                    subsequence = genomes[sequence_name][start:end]
                     header = f"{sequence_name}_{atom_nr}"
                     temporary_file.write(f">{header}\n{subsequence}\n")
                     distances[header] = 0.0
@@ -118,7 +118,7 @@ def extract_representatives(
         start = int(row["start"])
         end = int(row["end"])
 
-        subsequence = genomes[sequence_name][start:end+1]
+        subsequence = genomes[sequence_name][start:end]
         representatives[f"{sequence_name}|class_{class_id}"] = str(subsequence)
 
     output_fasta = write_fasta(sequences=representatives, output_path=output_path)

@@ -202,8 +202,8 @@ def _interval_overlap(start1: int, end1: int, start2: int, end2: int) -> float:
     """
     overlap_start = max(start1, start2)
     overlap_end = min(end1, end2)
-    if overlap_end < overlap_start:
+    if overlap_end <= overlap_start:
         return 0.0
-    overlap = overlap_end - overlap_start + 1
-    union = max(end1, end2) - min(start1, start2) + 1
+    overlap = overlap_end - overlap_start
+    union = max(end1, end2) - min(start1, start2)
     return overlap / union

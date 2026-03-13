@@ -64,7 +64,7 @@ def compute_coverage_score(
     atoms_df["end"] = pd.to_numeric(atoms_df["end"], errors="coerce")
     atoms_df = atoms_df.dropna(subset=["start", "end"])
 
-    atoms_df["length"] = atoms_df["end"] - atoms_df["start"] + 1
+    atoms_df["length"] = atoms_df["end"] - atoms_df["start"]
     atoms_covered_length = atoms_df["length"].sum()
 
     return atoms_covered_length / total_genomes_length

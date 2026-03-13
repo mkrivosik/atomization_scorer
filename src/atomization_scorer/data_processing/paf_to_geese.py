@@ -47,17 +47,15 @@ def paf_to_geese(paf_file: Path, output_file: Path) -> Path:
         for line in paf:
             fields = line.strip().split("\t")
 
+            query_name = fields[0]
             target_name = fields[5]
             query_start = int(fields[2])
             query_end = int(fields[3])
 
-            # Split target_name into name and class
+            # The genome name comes from the query; the class is encoded in the representative header.
             if "|class_" in target_name:
-                name, class_id = target_name.split("|class_")
-            else:
-                name = target_name
-                class_id = "0"
+                _, class_id = target_name.split("|class_")
 
-            geese.write(f"{name}\t{class_id}\t{query_start}\t{query_end}\n")
+            geese.write(f"{query_name}\t{class_id}\t{query_start}\t{query_end}\n")
 
     return output_file

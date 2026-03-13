@@ -17,15 +17,15 @@ def create_minimal_geese(tmp_path: Path):
     predicted_geese = tmp_path / "predicted.geese"
     predicted_geese.write_text(
         "#name\tatom_nr\tclass\tstrand\tstart\tend\n"
-        "sequence1\t1\t1\t+\t0\t9\n"    # class = 1: TP = 1, FP = 2, FN = 1
+        "sequence1\t1\t1\t+\t0\t10\n"   # class = 1: TP = 1, FP = 2, FN = 1
         "sequence1\t2\t1\t+\t20\t30\n"  
-        "sequence2\t3\t1\t+\t0\t9\n"
+        "sequence2\t3\t1\t+\t0\t10\n"
     )
 
     true_geese = tmp_path / "true.geese"
     true_geese.write_text(
         "#name\tatom_nr\tclass\tstrand\tstart\tend\n"
-        "sequence1\t1\t1\t+\t1\t10\n"
+        "sequence1\t1\t1\t+\t1\t11\n"
         "sequence2\t2\t2\t+\t0\t20\n"   # class = 2: TP = 0, FP = 0, FN = 1
         "sequence2\t3\t1\t+\t8\t20\n"
         ""

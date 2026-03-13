@@ -256,55 +256,35 @@ def test_create_new_row_basic():
 # ---------------------------------------------------------------------
 def test_interval_overlap_no_overlap():
     """_interval_overlap should return 0.0 if intervals do not overlap."""
-    # overlap = 0...10 => 11 bp
-    # union = 20...30 => 11 bp
     overlap = _interval_overlap(start1=0, end1=10, start2=20, end2=30)
     assert overlap == 0.0
 
 
 def test_interval_overlap_identical_intervals():
     """_interval_overlap should return 1.0 for identical intervals."""
-    # overlap = 5...15 => 11 bp
-    # union = 5...15 => 11 bp
     overlap = _interval_overlap(start1=5, end1=15, start2=5, end2=15)
     assert overlap == 1.0
 
 
 def test_interval_overlap_partial_overlap():
     """_interval_overlap should correctly compute partial overlap."""
-    # overlap = 6...10 => 5 bp
-    # union = 0...15 => 16 bp
     overlap = _interval_overlap(start1=0, end1=10, start2=6, end2=15)
-    assert overlap == 5 / 16
+    assert overlap == 4 / 15
 
 
 def test_interval_overlap_interval_inside_another():
     """_interval_overlap should handle one interval fully inside another."""
-    # overlap = 5...10 => 6 bp
-    # union = 0...20 => 21 bp
     overlap = _interval_overlap(start1=0, end1=20, start2=5, end2=10)
-    assert overlap == 6 / 21
+    assert overlap == 5 / 20
 
 
 def test_interval_overlap_single_base_overlap():
-    """_interval_overlap should handle single-base overlap."""
-    # overlap at position 10
-    # union = 0...20 => 21 bp
+    """_interval_overlap should return 0.0 for half-open intervals touching at one boundary."""
     overlap = _interval_overlap(start1=0, end1=10, start2=10, end2=20)
-    assert overlap == 1 / 21
-
-
-def test_interval_overlap_single_base_intervals():
-    """_interval_overlap should handle single-base intervals."""
-    # overlap at position 5
-    # union at position 5
-    overlap = _interval_overlap(start1=5, end1=5, start2=5, end2=5)
-    assert overlap == 1.0
+    assert overlap == 0.0
 
 
 def test_interval_overlap_adjacent_intervals():
     """_interval_overlap should return 0.0 for adjacent but non-overlapping intervals."""
-    overlap = _interval_overlap(start1=0, end1=9, start2=10, end2=20)
-    # overlap = 0...9 => 10 bp
-    # union = 10...20 => 11 bp
+    overlap = _interval_overlap(start1=0, end1=10, start2=10, end2=20)
     assert overlap == 0.0

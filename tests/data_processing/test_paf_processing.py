@@ -16,9 +16,9 @@ def create_minimal_paf(tmp_path: Path):
     """Create a minimal PAF file for testing."""
     paf_file = tmp_path / "example.paf"
     paf_file.write_text(
-        "genome1\t1000\t0\t1000\t+\trepresentative1\t1000\t0\t1000\t1000\t1000\t60\tde:f:0.02\n"
-        "genome1\t1000\t0\t1000\t+\trepresentative2\t1000\t0\t1000\t800\t800\t50\tde:f:0.10\n"
-        "genome1\t1000\t0\t1000\t+\trepresentative3\t1000\t0\t1000\t400\t400\t40\tde:f:0.01\n"
+        "genome1\t1000\t0\t1000\t+\trepresentative1\t1000\t0\t1000\t1000\t1000\t60\tdv:f:0.02\n"
+        "genome1\t1000\t0\t1000\t+\trepresentative2\t1000\t0\t1000\t800\t800\t50\tdv:f:0.10\n"
+        "genome1\t1000\t0\t1000\t+\trepresentative3\t1000\t0\t1000\t400\t400\t40\tdv:f:0.01\n"
     )
     return paf_file
 
@@ -99,3 +99,36 @@ def test_filter_paf_missing_file(tmp_path: Path):
 
     with pytest.raises(FileNotFoundError):
         filter_paf(paf_file=missing_file, output_file=output_file)
+
+
+def test_filter_paf_falls_back_without_dv(tmp_path: Path):
+    """filter_paf should use matches over aligned block length if dv is missing."""
+    paf_file = tmp_path / "fallback.paf"
+    paf_file.write_text(
+        "genome1\t1000\t0\t600\t+\trepresentative1\t1000\t0\t600\t570\t600\t60\n"
+        "genome1\t1000\t0\t600\t+\trepresentative2\t1000\t0\t600\t540\t600\t60\n"
+    )
+    output_file = tmp_path / "filtered_fallback.paf"
+
+    filter_paf(
+        paf_file=paf_file,
+        output_file=output_file,
+        minimum_similarity=0.95,
+        minimum_alignment_length=500
+    )
+
+    lines = output_file.read_text().splitlines()
+    assert len(lines) == 1
+    assert "representative1" in lines[0]
+
+
+def test_filter_paf_malformed_line(tmp_path: Path):
+    """filter_paf should fail clearly on malformed PAF lines."""
+    paf_file = tmp_path / "broken.paf"
+    paf_file.write_text("genome1\t1000\t0\n")
+
+    with pytest.raises(ValueError, match="Malformed PAF line"):
+        filter_paf(
+            paf_file=paf_file,
+            output_file=tmp_path / "filtered.paf"
+        )

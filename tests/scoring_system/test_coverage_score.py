@@ -50,3 +50,19 @@ def test_compute_coverage_missing_atomization_file(mini_fasta: Path, tmp_path: P
 
     with pytest.raises(FileNotFoundError):
         compute_coverage_score(genomes_file=mini_fasta, atomization_file=missing_geese)
+
+
+def test_compute_coverage_score_half_open_lengths(tmp_path: Path):
+    """compute_coverage_score should use half-open interval lengths."""
+    genomes_file = tmp_path / "genomes.fa"
+    genomes_file.write_text(">sequence1\nAAAAAAAAAA\n>sequence2\nCCCCCCCCCC\n")
+
+    atomization_file = tmp_path / "atoms.geese"
+    atomization_file.write_text(
+        "#name\tatom_nr\tclass\tstrand\tstart\tend\n"
+        "sequence1\t1\t1\t+\t0\t4\n"
+        "sequence2\t2\t2\t+\t5\t10\n"
+    )
+
+    score = compute_coverage_score(genomes_file=genomes_file, atomization_file=atomization_file)
+    assert score == 9 / 20

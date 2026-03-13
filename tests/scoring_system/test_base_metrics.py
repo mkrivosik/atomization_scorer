@@ -17,15 +17,15 @@ def create_minimal_geese(tmp_path: Path):
     predicted_geese = tmp_path / "predicted.geese"
     predicted_geese.write_text(
         "#name\tatom_nr\tclass\tstrand\tstart\tend\n"
-        "sequence1\t1\t1\t+\t0\t19\n"   # class = 1: TP = 10, FP = 10, FN = 30
-        "sequence2\t2\t2\t+\t10\t29\n"  # class = 2: TP = 0, FP = 20, FN = 0
+        "sequence1\t1\t1\t+\t0\t20\n"   # class = 1: TP = 10, FP = 10, FN = 30
+        "sequence2\t2\t2\t+\t10\t30\n"  # class = 2: TP = 0, FP = 20, FN = 0
     )
 
     true_geese = tmp_path / "true.geese"
     true_geese.write_text(
         "#name\tatom_nr\tclass\tstrand\tstart\tend\n"
-        "sequence1\t1\t1\t+\t10\t29\n"
-        "sequence2\t2\t1\t+\t0\t19\n"
+        "sequence1\t1\t1\t+\t10\t30\n"
+        "sequence2\t2\t1\t+\t0\t20\n"
     )
 
     return predicted_geese, true_geese
@@ -120,13 +120,13 @@ def test_partial_class_overlap_same_classes(tmp_path: Path, output_dir: Path):
     predicted_geese = tmp_path / "predicted_partial_overlap.geese"
     predicted_geese.write_text(
         "#name\tatom_nr\tclass\tstrand\tstart\tend\n"
-        "sequence1\t1\t1\t+\t0\t19\n"   # TP = 10, FP = 10, FN = 10
+        "sequence1\t1\t1\t+\t0\t20\n"   # TP = 10, FP = 10, FN = 10
     )
 
     true_geese = tmp_path / "true_partial_overlap.geese"
     true_geese.write_text(
         "#name\tatom_nr\tclass\tstrand\tstart\tend\n"
-        "sequence1\t1\t1\t+\t10\t29\n"
+        "sequence1\t1\t1\t+\t10\t30\n"
     )
 
     metrics = compute_base_level_metrics(
@@ -149,13 +149,13 @@ def test_partial_class_overlap_different_classes(tmp_path: Path, output_dir: Pat
     predicted_geese = tmp_path / "predicted_partial_overlap.geese"
     predicted_geese.write_text(
         "#name\tatom_nr\tclass\tstrand\tstart\tend\n"
-        "sequence1\t1\t1\t+\t0\t19\n"   # TP = 0, FP = 20, FN = 20
+        "sequence1\t1\t1\t+\t0\t20\n"   # TP = 0, FP = 20, FN = 20
     )
 
     true_geese = tmp_path / "true_partial_overlap.geese"
     true_geese.write_text(
         "#name\tatom_nr\tclass\tstrand\tstart\tend\n"
-        "sequence1\t1\t2\t+\t10\t29\n"
+        "sequence1\t1\t2\t+\t10\t30\n"
     )
 
     metrics = compute_base_level_metrics(
@@ -176,15 +176,15 @@ def test_full_class_overlap(tmp_path: Path, output_dir: Path):
     predicted_geese = tmp_path / "predicted_full_overlap.geese"
     predicted_geese.write_text(
         "#name\tatom_nr\tclass\tstrand\tstart\tend\n"
-        "sequence1\t1\t1\t+\t0\t9\n"
-        "sequence1\t2\t1\t+\t10\t19\n"
+        "sequence1\t1\t1\t+\t0\t10\n"
+        "sequence1\t2\t1\t+\t10\t20\n"
     )
 
     true_geese = tmp_path / "true_full_overlap.geese"
     true_geese.write_text(
         "#name\tatom_nr\tclass\tstrand\tstart\tend\n"
-        "sequence1\t1\t1\t+\t0\t9\n"
-        "sequence1\t2\t1\t+\t10\t19\n"
+        "sequence1\t1\t1\t+\t0\t10\n"
+        "sequence1\t2\t1\t+\t10\t20\n"
     )
 
     metrics = compute_base_level_metrics(
