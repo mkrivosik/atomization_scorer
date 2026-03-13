@@ -13,15 +13,17 @@ from atomization_scorer import compute_true_alignment
 # -----------------------------------------------------------------------------
 # Test: calls all pipeline steps and returns GEESE file
 # -----------------------------------------------------------------------------
-@patch("atomization_scorer.pipeline.true_pipeline.extract_representatives")
-@patch("atomization_scorer.pipeline.true_pipeline.align_with_minimap2")
-@patch("atomization_scorer.pipeline.true_pipeline.filter_paf")
+@patch("atomization_scorer.pipeline.true_pipeline.plot_genome_atomization")
 @patch("atomization_scorer.pipeline.true_pipeline.paf_to_geese")
+@patch("atomization_scorer.pipeline.true_pipeline.filter_paf")
+@patch("atomization_scorer.pipeline.true_pipeline.align_with_minimap2")
+@patch("atomization_scorer.pipeline.true_pipeline.extract_representatives")
 def test_compute_true_alignment_pipeline(
-    mock_paf_to_geese,
-    mock_filter_paf,
-    mock_minimap2,
     mock_extract,
+    mock_minimap2,
+    mock_filter_paf,
+    mock_paf_to_geese,
+    mock_visualization,
     mini_fasta: Path,
     mini_geese: Path,
     output_dir: Path
@@ -42,6 +44,7 @@ def test_compute_true_alignment_pipeline(
     paf_file = output_dir / "minimap2_alignments.paf"
     filtered_paf = output_dir / "minimap2_alignment_filtered.paf"
     true_geese = output_dir / "true_atomization.geese"
+    visualization_directory = output_dir / "atomization_visualization"
 
     assert geese_path == true_geese
 
@@ -71,19 +74,28 @@ def test_compute_true_alignment_pipeline(
         output_file=true_geese
     )
 
+    mock_visualization.assert_called_once_with(
+        genomes_file=mini_fasta,
+        true_atoms_file=true_geese,
+        predicted_atoms_file=mini_geese,
+        output_directory=visualization_directory
+    )
+
 
 # -----------------------------------------------------------------------------
 # Test: works with "first" mode instead of "mash"
 # -----------------------------------------------------------------------------
-@patch("atomization_scorer.pipeline.true_pipeline.extract_representatives")
-@patch("atomization_scorer.pipeline.true_pipeline.align_with_minimap2")
-@patch("atomization_scorer.pipeline.true_pipeline.filter_paf")
+@patch("atomization_scorer.pipeline.true_pipeline.plot_genome_atomization")
 @patch("atomization_scorer.pipeline.true_pipeline.paf_to_geese")
+@patch("atomization_scorer.pipeline.true_pipeline.filter_paf")
+@patch("atomization_scorer.pipeline.true_pipeline.align_with_minimap2")
+@patch("atomization_scorer.pipeline.true_pipeline.extract_representatives")
 def test_compute_true_alignment_first_mode(
-    mock_paf_to_geese,
-    mock_filter_paf,
-    mock_minimap2,
     mock_extract,
+    mock_minimap2,
+    mock_filter_paf,
+    mock_paf_to_geese,
+    mock_visualization,
     mini_fasta: Path,
     mini_geese: Path,
     output_dir: Path
@@ -114,6 +126,7 @@ def test_compute_true_alignment_first_mode(
     mock_minimap2.assert_called_once()
     mock_filter_paf.assert_called_once()
     mock_paf_to_geese.assert_called_once()
+    mock_visualization.assert_called_once()
 
 
 # -----------------------------------------------------------------------------

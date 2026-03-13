@@ -1,4 +1,3 @@
-
 """
 true_pipeline.py
 
@@ -15,6 +14,7 @@ compute_true_alignment : Computes true (gold standard) alignment and returns a P
 from pathlib import Path
 
 from atomization_scorer.data_processing import filter_paf, paf_to_geese
+from atomization_scorer.visualization import plot_genome_atomization
 
 from .minimap2_aligner import align_with_minimap2
 from .representatives_selector import extract_representatives
@@ -98,6 +98,14 @@ def compute_true_alignment(
     paf_to_geese(
         paf_file=filtered_paf,
         output_file=geese_file
+    )
+
+    visualization_directory = output_directory / "atomization_visualization"
+    plot_genome_atomization(
+        genomes_file=genomes_file,
+        true_atoms_file=geese_file,
+        predicted_atoms_file=atomization_file,
+        output_directory=visualization_directory
     )
 
     return geese_file

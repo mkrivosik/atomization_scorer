@@ -9,6 +9,7 @@ Modules
 data_processing : Subpackage providing data readers and writers for PSL and GEESE files.
 pipeline        : Subpackage providing predicted and true alignment pipelines.
 scoring_system  : Subpackage providing scoring functions.
+visualization   : Subpackage providing genome atomization plotting functions.
 """
 
 # ---------------------------------------------------------------------
@@ -43,6 +44,13 @@ from .scoring_system import (
 )
 
 # ---------------------------------------------------------------------
+# Visualization
+# ---------------------------------------------------------------------
+from .visualization import (
+    plot_genome_atomization,
+)
+
+# ---------------------------------------------------------------------
 # Package API
 # ---------------------------------------------------------------------
 __all__ = [
@@ -64,4 +72,7 @@ __all__ = [
     'compute_alignment_score',
     'compute_coverage_score',
     'compute_overall_score',
+
+    # Visualization
+    'plot_genome_atomization',
 ]

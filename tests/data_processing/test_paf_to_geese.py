@@ -50,8 +50,8 @@ def test_paf_to_geese_basic(tmp_path: Path):
     second_fields = lines[2].split("\t")
     assert second_fields[0] == "target2"
     assert second_fields[1] == "2"
-    assert second_fields[2] == "100"
-    assert second_fields[3] == "600"
+    assert second_fields[2] == "0"
+    assert second_fields[3] == "2000"
 
 
 # ------------------------------------------------------------------------------

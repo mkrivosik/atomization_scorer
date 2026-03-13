@@ -48,8 +48,8 @@ def paf_to_geese(paf_file: Path, output_file: Path) -> Path:
             fields = line.strip().split("\t")
 
             target_name = fields[5]
-            target_start = int(fields[7])
-            target_end = int(fields[8])
+            query_start = int(fields[2])
+            query_end = int(fields[3])
 
             # Split target_name into name and class
             if "|class_" in target_name:
@@ -58,6 +58,6 @@ def paf_to_geese(paf_file: Path, output_file: Path) -> Path:
                 name = target_name
                 class_id = "0"
 
-            geese.write(f"{name}\t{class_id}\t{target_start}\t{target_end}\n")
+            geese.write(f"{name}\t{class_id}\t{query_start}\t{query_end}\n")
 
     return output_file
