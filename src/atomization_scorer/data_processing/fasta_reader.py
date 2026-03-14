@@ -13,7 +13,6 @@ read_fasta : Loads a FASTA file into a dictionary.
 # ---------------------------------------------------------------------
 from pathlib import Path
 
-from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqIO.FastaIO import SimpleFastaParser
 
@@ -45,21 +44,23 @@ def read_fasta(fasta_file: Path) -> dict[str, Seq]:
     if not fasta_file.is_file():
         raise FileNotFoundError(f"FASTA file not found: {fasta_file}")
 
+    records = {}
     try:
         with fasta_file.open() as file:
-            parsed_headers = [title for title, _ in SimpleFastaParser(file)]
+            for title, sequence in SimpleFastaParser(file):
+                if not title:
+                    raise ValueError(f"Malformed FASTA file: {fasta_file}")
+
+                record_id = title.split(None, 1)[0]
+                if record_id in records:
+                    raise ValueError(f"Duplicate FASTA ID found: {record_id}")
+
+                records[record_id] = Seq(sequence)
     except ValueError as error:
+        if str(error).startswith("Duplicate FASTA ID found:"):
+            raise
+        if str(error).startswith("Malformed FASTA file:"):
+            raise
         raise ValueError(f"Malformed FASTA file: {fasta_file}") from error
-
-    if any(not header for header in parsed_headers):
-        raise ValueError(f"Malformed FASTA file: {fasta_file}")
-
-    records = {}
-    seen_ids = set()
-    for record in SeqIO.parse(fasta_file, "fasta"):
-        if record.id in seen_ids:
-            raise ValueError(f"Duplicate FASTA ID found: {record.id}")
-        seen_ids.add(record.id)
-        records[record.id] = record.seq
 
     return records
