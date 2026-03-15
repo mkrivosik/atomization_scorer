@@ -33,19 +33,19 @@ def align_with_minimap2(
     query : Path
          Path to the query FASTA file.
     output_path : Path
-        Path where resulting PAF alignment file should be saved.
+        Path where the resulting PAF alignment file should be saved.
 
     Raises
     ------
     FileNotFoundError
-        Raised if target or query file do not exist.
+        Raised if the target or query FASTA file does not exist.
     subprocess.CalledProcessError
         Raised if minimap2 fails during execution.
 
     Returns
     -------
     Path
-        Path to generated PAF file.
+        Generated PAF file path.
     """
     if not target.is_file():
         raise FileNotFoundError(f"Target FASTA file not found: {target}")

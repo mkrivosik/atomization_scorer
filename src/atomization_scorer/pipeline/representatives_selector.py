@@ -1,7 +1,7 @@
 """
 representatives_selector.py
 
-Utility function for extracting representative sequences for true (gold standard) genome atomization pipeline.
+Utility function for extracting representative sequences for a true (gold standard) genome atomization pipeline.
 
 Functions
 ---------
@@ -37,7 +37,7 @@ def extract_representatives(
     atomization_file : Path
         Input GEESE file containing the predicted atomization.
     output_path : Path
-        Path to the output directory where resulting FASTA file is stored.
+        Path to the output FASTA file.
     mode : str, optional, default: "mash"
         Selection mode: "first" or "mash".
 
@@ -46,7 +46,7 @@ def extract_representatives(
     FileNotFoundError
         Raised if genomes_file or atomization_file do not exist.
     ValueError
-        Raised if mode is not one of: "first" or "mash" or if a genome
+        Raised if the mode is not one of: "first" or "mash" or if a genome
         sequence referenced in atomization is missing.
     subprocess.CalledProcessError
         Raised if the "mash" command fails during execution.
@@ -54,7 +54,7 @@ def extract_representatives(
     Returns
     -------
     Path
-        Path to generated representative FASTA file.
+        Generated representative FASTA file path.
     """
     if not genomes_file.is_file():
         raise FileNotFoundError(f"Genomes FASTA file not found: {genomes_file}")

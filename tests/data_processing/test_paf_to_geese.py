@@ -1,5 +1,5 @@
 """
-Tests for paf_to_geese() function.
+Tests for the paf_to_geese () function.
 """
 
 from pathlib import Path
@@ -39,14 +39,14 @@ def test_paf_to_geese_basic(tmp_path: Path):
     assert len(lines) == 3
     assert lines[0] == "#name\tclass\tstart\tend"
 
-    # Check first data line
+    # Check the first data line
     first_fields = lines[1].split("\t")
     assert first_fields[0] == "query1"
     assert first_fields[1] == "1"
     assert first_fields[2] == "0"
     assert first_fields[3] == "1000"
 
-    # Check second data line
+    # Check the second data line
     second_fields = lines[2].split("\t")
     assert second_fields[0] == "query2"
     assert second_fields[1] == "2"
@@ -55,10 +55,10 @@ def test_paf_to_geese_basic(tmp_path: Path):
 
 
 # ------------------------------------------------------------------------------
-# Test: handles empty PAF file
+# Test: empty PAF file is converted to a header-only GEESE file
 # ------------------------------------------------------------------------------
 def test_paf_to_geese_empty_file(tmp_path: Path):
-    """paf_to_geese should create a GEESE file with only header if PAF is empty."""
+    """paf_to_geese should create a GEESE file with only a header if PAF is empty."""
     paf_file = tmp_path / "empty.paf"
     paf_file.write_text("")
 
@@ -75,10 +75,10 @@ def test_paf_to_geese_empty_file(tmp_path: Path):
 
 
 # ------------------------------------------------------------------------------
-# Test: raises FileNotFoundError for missing PAF file
+# Test: missing PAF file is rejected
 # ------------------------------------------------------------------------------
 def test_paf_to_geese_missing_file(tmp_path: Path):
-    """paf_to_geese should raise FileNotFoundError if input PAF file does not exist."""
+    """paf_to_geese should raise FileNotFoundError if the input PAF file does not exist."""
     missing_file = tmp_path / "missing.paf"
     output_file = tmp_path / "output.geese"
 

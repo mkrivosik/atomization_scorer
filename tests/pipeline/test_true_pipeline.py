@@ -100,7 +100,7 @@ def test_compute_true_alignment_first_mode(
     mini_geese: Path,
     output_dir: Path
 ):
-    """Test that compute_true_alignment works when mode is set to 'first'."""
+    """Test that compute_true_alignment works when the mode is set to 'first'."""
     # Run pipeline
     geese_path = compute_true_alignment(
         genomes_file=mini_fasta,

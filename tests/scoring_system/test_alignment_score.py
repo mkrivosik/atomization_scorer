@@ -1,5 +1,5 @@
 """
-Tests for compute_alignment_score() function.
+Tests for the compute_alignment_score () function.
 """
 
 from pathlib import Path
@@ -13,7 +13,7 @@ from atomization_scorer.scoring_system import compute_alignment_score
 # Test: basic base-level score computation
 # -----------------------------------------------------------------------------
 def test_compute_alignment_score_base(mini_fasta: Path, mini_geese: Path, output_dir: Path, monkeypatch):
-    """compute_alignment_score should return correct base-level score."""
+    """compute_alignment_score should return the correct base-level score."""
 
     monkeypatch.setattr(
         "atomization_scorer.scoring_system.alignment_score.compute_true_alignment",
@@ -42,7 +42,7 @@ def test_compute_alignment_score_base(mini_fasta: Path, mini_geese: Path, output
 # Test: interval-level score computation
 # -----------------------------------------------------------------------------
 def test_compute_alignment_score_interval(mini_fasta: Path, mini_geese: Path, output_dir: Path, monkeypatch):
-    """compute_alignment_score should return correct interval-level score."""
+    """compute_alignment_score should return the correct interval-level score."""
 
     monkeypatch.setattr(
         "atomization_scorer.scoring_system.alignment_score.compute_true_alignment",

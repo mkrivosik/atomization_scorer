@@ -9,8 +9,8 @@ _compute_and_write_metrics  : Compute precision, recall, and F1-score from TP, F
                               and save them to file.
 _compute_metrics            : Compute precision, recall, and F1-score from TP, FP, and FN.
 _write_metrics_tsv          : Save a DataFrame to a TSV file.
-_create_new_row             : Construct a dictionary representing an interval with assigned status.
-_interval_overlap           : Compute fraction of overlap between two intervals relative to their union.
+_create_new_row             : Construct a dictionary representing an interval with an assigned status.
+_interval_overlap           : Compute a fraction of overlap between two intervals relative to their union.
 """
 
 # ---------------------------------------------------------------------
@@ -126,12 +126,12 @@ def _compute_metrics(tp: int, fp: int, fn: int) -> tuple[float, float, float]:
 
 def _write_metrics_tsv(df: pd.DataFrame, output_path: Path) -> None:
     """
-    Write metrics DataFrame to TSV file.
+    Write metrics DataFrame to a TSV file.
 
     Parameters
     ----------
     df : pd.DataFrame
-        DataFrame containing metrics to be written.
+        Table containing metrics to be written.
     output_path : Path
         Path to the output TSV file.
 
@@ -150,7 +150,7 @@ def _create_new_row(
     status: str
 ) -> dict[str, str | int]:
     """
-    Construct a dictionary representing an interval with assigned status.
+    Construct a dictionary representing an interval with an assigned status.
 
     Parameters
     ----------
@@ -181,19 +181,19 @@ def _create_new_row(
 
 def _interval_overlap(start1: int, end1: int, start2: int, end2: int) -> float:
     """
-    Compute fraction of overlap between two intervals relative to their union.
+    Compute a fraction of overlap between two intervals relative to their union.
     Returns 0.0 if intervals do not overlap.
 
     Parameters
     ----------
     start1 : int
-        Start position of first interval.
+        Start position of the first interval.
     end1 : int
-        End position of first interval.
+        End position of the first interval.
     start2 : int
-        Start position of second interval.
+        Start position of the second interval.
     end2 : int
-        End position of second interval.
+        End position of the second interval.
 
     Returns
     -------

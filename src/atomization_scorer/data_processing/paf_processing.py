@@ -29,9 +29,9 @@ def filter_paf(
     Parameters
     ----------
     paf_file : Path
-        Path to input the PAF file from minimap2.
+        Path to the input PAF file from minimap2.
     output_file : Path
-        Path to the output directory where a filtered PAF file is stored.
+        Path to the filtered PAF file.
     minimum_similarity : float, optional, default=0.95
         Minimum fraction of matching bases (0.0 to 1.0).
     minimum_alignment_length : int, optional, default=500
@@ -47,7 +47,7 @@ def filter_paf(
     Returns
     -------
     Path
-        The Path to a filtered PAF file.
+        Filtered PAF file path.
     """
     if not paf_file.is_file():
         raise FileNotFoundError(f"PAF file not found: {paf_file}")

@@ -32,7 +32,7 @@ def create_minimal_files(tmp_path: Path):
 # Test: basic run, PAF path returned
 # ------------------------------------------------------------------------------
 def test_align_with_minimap2_basic(tmp_path: Path, monkeypatch):
-    """align_with_minimap2 should call minimap2 and return PAF path."""
+    """align_with_minimap2 should call minimap2 and return a PAF path."""
     genomes, representatives = create_minimal_files(tmp_path)
     output_paf = tmp_path / "alignment.paf"
 
@@ -90,7 +90,7 @@ def test_align_with_minimap2_creates_output_dir(tmp_path: Path, output_dir: Path
 # Test: raises FileNotFoundError if target is missing
 # ------------------------------------------------------------------------------
 def test_align_with_minimap2_missing_target(tmp_path: Path):
-    """align_with_minimap2 should raise FileNotFoundError if target file is missing."""
+    """align_with_minimap2 should raise FileNotFoundError if a target file is missing."""
     missing_target = tmp_path / "missing_target.fa"
     query = tmp_path / "query.fa"
     query.write_text(">sequence1\nATGC\n")
@@ -104,7 +104,7 @@ def test_align_with_minimap2_missing_target(tmp_path: Path):
 # Test: raises FileNotFoundError if query is missing
 # ------------------------------------------------------------------------------
 def test_align_with_minimap2_missing_query(tmp_path: Path):
-    """align_with_minimap2 should raise FileNotFoundError if query file is missing."""
+    """align_with_minimap2 should raise FileNotFoundError if a query file is missing."""
     target = tmp_path / "target.fa"
     target.write_text(">sequence1\nATGC\n")
     missing_query = tmp_path / "missing_query.fa"

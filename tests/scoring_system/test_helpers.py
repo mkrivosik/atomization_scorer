@@ -134,7 +134,7 @@ def test_compute_metrics_mixed_values():
 
 
 def test_compute_metrics_perfect_prediction():
-    """_compute_metrics should return 1.0 for perfect prediction."""
+    """_compute_metrics should return 1.0 for a perfect prediction."""
     precision, recall, f1 = _compute_metrics(tp=10, fp=0, fn=0)
 
     assert precision == 1.0
@@ -207,7 +207,7 @@ def test_write_metrics_tsv_empty_dataframe(output_dir: Path):
 
 
 def test_write_metrics_tsv_overwrites_existing_file(output_dir: Path):
-    """_write_metrics_tsv should overwrite existing file."""
+    """_write_metrics_tsv should overwrite an existing file."""
     output_file = output_dir / "overwrite.tsv"
 
     df1 = pd.DataFrame([[1]], columns=["A"])

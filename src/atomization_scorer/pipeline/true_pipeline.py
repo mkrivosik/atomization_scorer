@@ -1,11 +1,11 @@
 """
 true_pipeline.py
 
-Provides the pipeline used to compute true (gold standard) genome atomization alignment.
+Provides the pipeline used to compute true (gold standard) genome atomization.
 
 Functions
 ---------
-compute_true_alignment : Computes true (gold standard) alignment and returns a PSL file path.
+compute_true_alignment : Compute true (gold standard) atomization and return a GEESE file path.
 """
 
 # ---------------------------------------------------------------------
@@ -32,7 +32,7 @@ def compute_true_alignment(
     minimum_alignment_length: int = 500
 ) -> Path:
     """
-    Run full true (gold standard) genome atomization pipeline: extract representatives, align genome
+    Run a full true (gold standard) genome atomization pipeline: extract representatives, align genome
     sequences on them with minimap2, filter PAF, and convert to GEESE format.
 
     Parameters
@@ -57,8 +57,8 @@ def compute_true_alignment(
 
     Returns
     -------
-    str
-        Path to the generated true (gold standard) PSL alignment file.
+    Path
+        Generated true (gold standard) GEESE file path.
     """
     if not genomes_file.is_file():
         raise FileNotFoundError(f"Genomes FASTA file not found: {genomes_file}")

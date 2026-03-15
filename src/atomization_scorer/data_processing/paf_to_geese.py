@@ -5,7 +5,7 @@ Utility function for converting PAF files to GEESE files.
 
 Functions
 ---------
-paf_to_geese : Converts PAF files to GEESE files.
+paf_to_geese : Convert a PAF file to a GEESE file.
 """
 
 # ---------------------------------------------------------------------
@@ -19,24 +19,26 @@ from pathlib import Path
 
 def paf_to_geese(paf_file: Path, output_file: Path) -> Path:
     """
-    Converts PAF files to GEESE files.
+    Convert a PAF file to a GEESE file.
 
     Parameters
     ----------
     paf_file : Path
-        Path to input a PAF file from minimap2.
+        Path to the input PAF file from minimap2.
     output_file : Path
-        File where the GEESE file should be written.
+        Path to the output GEESE file.
 
     Raises
     ------
     FileNotFoundError
         Raised if the input PAF file does not exist.
+    ValueError
+        Raised if the PAF file contains malformed lines or invalid numeric fields.
 
     Returns
     -------
     Path
-        The Path to the GEESE file.
+        Written GEESE file path.
     """
     if not paf_file.is_file():
         raise FileNotFoundError(f"PAF file {paf_file} not found.")

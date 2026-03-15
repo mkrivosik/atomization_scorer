@@ -8,7 +8,7 @@ Modules
 -------
 fasta_reader    : Function for reading FASTA genome sequences.
 fasta_writer    : Function for writing FASTA sequence files.
-geese_reader    : Function for reading GEESE atomization TSV files.
+geese_reader    : Function for reading GEESE atomization tabular files.
 paf_processing  : Function for processing Minimap2 PAF files.
 paf_to_geese    : Function for converting PAF files to GEESE files.
 utils           : Shared utility functions (column checks, renaming, etc.)

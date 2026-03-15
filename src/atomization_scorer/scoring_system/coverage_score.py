@@ -5,7 +5,7 @@ Computes the coverage-based atomization score.
 
 Modules
 -------
-compute_coverage_score  : Computes fraction of the genomes covered by atoms.
+compute_coverage_score  : Computes a fraction of the genomes covered by atoms.
 """
 
 # ---------------------------------------------------------------------
@@ -27,7 +27,7 @@ def compute_coverage_score(
     atomization_file: Path
 ) -> float:
     """
-    Computes fraction of the genomes covered by atoms.
+    Computes a fraction of the genomes covered by atoms.
 
     Parameters
     ----------

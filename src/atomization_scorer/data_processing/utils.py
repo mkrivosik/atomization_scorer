@@ -25,7 +25,7 @@ def check_required_columns(df: pd.DataFrame, required_columns: list[str]) -> Non
     Parameters
     ----------
     df : pd.DataFrame
-        DataFrame to check.
+        Table to check.
     required_columns : list of str
         Columns that must exist.
 
@@ -50,7 +50,7 @@ def rename_column(df: pd.DataFrame, old_name: str, new_name: str) -> pd.DataFram
     Parameters
     ----------
     df : pd.DataFrame
-        DataFrame to modify.
+        Table to modify.
     old_name : str
         Column name to rename.
     new_name : str

@@ -5,7 +5,7 @@ cli.py
 Command-line interface (CLI) for Atomization Scorer.
 
 Validates input genomes FASTA and GEESE atomization files.
-Automatically creates output directory if missing.
+Automatically creates an output directory if missing.
 Computes overall atomization score using core scoring functions.
 
 Functions
@@ -44,7 +44,7 @@ def validate_file(path: Path, description: str, extension: str | tuple[str, ...]
     Raises
     ------
     SystemExit
-        Exits program with sys.exit(1) if file does not exist or extension is incorrect.
+        Exits program with sys.exit(1) if a file does not exist or the extension is incorrect.
     """
     if not path.is_file():
         print(f"Error: {description} file not found: {path}", file=sys.stderr)
@@ -72,7 +72,7 @@ def validate_directory(path: Path) -> None:
 
     Notes
     -----
-    Prints a warning if directory does not exist and creates it automatically.
+    Prints a warning if the directory does not exist and creates it automatically.
     """
     if not path.is_dir():
         print(f"Warning: Output directory '{path}' does not exist. Creating directory...", file=sys.stderr)

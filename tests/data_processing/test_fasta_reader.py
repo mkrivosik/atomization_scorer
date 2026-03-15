@@ -11,7 +11,7 @@ from atomization_scorer import read_fasta
 
 
 # ---------------------------------------------------------------------
-# Test: proper reading of a FASTA file
+# Test: basic FASTA reading
 # ---------------------------------------------------------------------
 def test_read_fasta_basic(tmp_path: Path):
     """read_fasta should correctly load sequences from a FASTA file."""
@@ -90,7 +90,7 @@ def test_read_fasta_preserves_sequence_content(tmp_path: Path):
 # Test: missing FASTA file
 # ---------------------------------------------------------------------
 def test_read_fasta_missing_file(tmp_path: Path):
-    """read_fasta should raise FileNotFoundError if the file does not exist."""
+    """read_fasta should raise FileNotFoundError if the FASTA file does not exist."""
     missing = tmp_path / "missing.fa"
 
     with pytest.raises(FileNotFoundError):

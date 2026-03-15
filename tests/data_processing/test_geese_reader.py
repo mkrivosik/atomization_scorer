@@ -11,10 +11,10 @@ from atomization_scorer import read_geese
 
 
 # ---------------------------------------------------------------------
-# Test: loads a valid GEESE TSV and contains all required columns
+# Test: loads a valid GEESE tabular file and contains all required columns
 # ---------------------------------------------------------------------
 def test_read_geese_valid(tmp_path: Path):
-    """read_geese should load a valid GEESE TSV and contain all required columns."""
+    """read_geese should load a valid GEESE tabular file and contain all required columns."""
     geese_file = tmp_path / "example.geese"
     geese_file.write_text(
         "#name\tatom_nr\tclass\tstrand\tstart\tend\n"
@@ -146,7 +146,7 @@ def test_read_geese_malformed_file(tmp_path: Path, monkeypatch: pytest.MonkeyPat
 # Test: missing GEESE file is rejected
 # ---------------------------------------------------------------------
 def test_read_geese_missing_file(tmp_path: Path):
-    """read_geese should raise FileNotFoundError if the file does not exist."""
+    """read_geese should raise FileNotFoundError if the GEESE file does not exist."""
     missing_file = tmp_path / "missing.geese"
 
     with pytest.raises(FileNotFoundError):

@@ -54,7 +54,7 @@ def compute_alignment_score(
     FileNotFoundError
         Raised if genomes_file or atomization_file do not exist.
     ValueError
-        If level is not "base" or "interval".
+        If the level is not "base" or "interval".
 
     Returns
     -------

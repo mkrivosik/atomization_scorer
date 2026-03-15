@@ -137,7 +137,7 @@ def test_filter_paf_creates_nested_output_directory(tmp_path: Path):
 
 
 # ------------------------------------------------------------------------------
-# Test: handles empty PAF file
+# Test: empty PAF file is handled
 # ------------------------------------------------------------------------------
 def test_filter_paf_empty_file(tmp_path: Path):
     """filter_paf should create an empty filtered file if PAF is empty."""
@@ -161,7 +161,7 @@ def test_filter_paf_empty_file(tmp_path: Path):
 
 
 # ------------------------------------------------------------------------------
-# Test: raises FileNotFoundError for missing PAF file
+# Test: missing PAF file is rejected
 # ------------------------------------------------------------------------------
 def test_filter_paf_missing_file(tmp_path: Path):
     """filter_paf should raise FileNotFoundError if the PAF file does not exist."""

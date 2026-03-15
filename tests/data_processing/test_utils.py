@@ -69,7 +69,7 @@ def test_rename_column_empty_dataframe():
 
 
 # ---------------------------------------------------------------------
-# Test: rename_column does nothing if column does not exist
+# Test: rename_column does nothing if the column does not exist
 # ---------------------------------------------------------------------
 def test_rename_column_nonexistent():
     """rename_column should not modify DataFrame if old_name does not exist."""

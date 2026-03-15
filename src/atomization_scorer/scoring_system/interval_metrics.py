@@ -7,7 +7,7 @@ Functions
 ---------
 compute_interval_level_metrics  : Computes per-interval alignment metrics and F1-score.
 _scan_intervals_interval_level  : Scan predicted and true intervals to count TP, FP, and FN at interval-level.
-_write_interval_status          : Write predicted and true intervals with status (TP/FP/FN) to TSV file.
+_write_interval_status          : Write predicted and true intervals with status (TP/FP/FN) to a TSV file.
 """
 
 # ---------------------------------------------------------------------
@@ -111,9 +111,9 @@ def _scan_intervals_interval_level(
     Parameters
     ----------
     predicted_df : pd.DataFrame
-        DataFrame containing predicted intervals.
+        Table containing predicted intervals.
     true_df : pd.DataFrame
-        DataFrame containing true intervals.
+        table containing true intervals.
     output_directory : Path
         Path to the output directory where results are stored.
     min_overlap_ratio : float, optional, default=0.8
@@ -201,9 +201,9 @@ def _write_interval_status(
     Parameters
     ----------
     predicted_df : pd.DataFrame
-        DataFrame containing the predicted intervals.
+        Table containing the predicted intervals.
     true_df : pd.DataFrame
-        DataFrame containing the true intervals.
+        Table containing the true intervals.
     tp_indexes : Set[int]
         Set of indexes of predicted intervals that were classified as True Positives;
         same indexes are used to mark True Positives in the true intervals as well.
