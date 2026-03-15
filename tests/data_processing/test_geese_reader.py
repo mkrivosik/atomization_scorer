@@ -37,7 +37,7 @@ def test_read_geese_valid(tmp_path: Path):
 # Test: '#name' column is renamed to 'name'
 # ---------------------------------------------------------------------
 def test_read_geese_renames_hash_name_column(tmp_path: Path):
-    """read_geese should rename '#name' column to 'name'."""
+    """read_geese should rename a '#name' column to 'name'."""
     geese_file = tmp_path / "rename.geese"
     geese_file.write_text(
         "#name\tclass\tstart\tend\n"
@@ -114,6 +114,18 @@ def test_read_geese_missing_columns(tmp_path: Path, file_content: str, error_mes
 
 
 # ---------------------------------------------------------------------
+# Test: empty GEESE file is rejected
+# ---------------------------------------------------------------------
+def test_read_geese_empty_file(tmp_path: Path):
+    """read_geese should raise ValueError if the GEESE file is empty."""
+    empty_file = tmp_path / "empty.geese"
+    empty_file.write_text("")
+
+    with pytest.raises(ValueError, match=f"Malformed GEESE file: {empty_file}"):
+        read_geese(geese_file=empty_file)
+
+
+# ---------------------------------------------------------------------
 # Test: malformed GEESE file is rejected
 # ---------------------------------------------------------------------
 def test_read_geese_malformed_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
@@ -128,18 +140,6 @@ def test_read_geese_malformed_file(tmp_path: Path, monkeypatch: pytest.MonkeyPat
 
     with pytest.raises(ValueError, match=f"Malformed GEESE file: {geese_file}"):
         read_geese(geese_file=geese_file)
-
-
-# ---------------------------------------------------------------------
-# Test: empty GEESE file is rejected
-# ---------------------------------------------------------------------
-def test_read_geese_empty_file(tmp_path: Path):
-    """read_geese should raise ValueError if the GEESE file is empty."""
-    empty_file = tmp_path / "empty.geese"
-    empty_file.write_text("")
-
-    with pytest.raises(ValueError, match=f"Malformed GEESE file: {empty_file}"):
-        read_geese(geese_file=empty_file)
 
 
 # ---------------------------------------------------------------------

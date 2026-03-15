@@ -24,7 +24,7 @@ def paf_to_geese(paf_file: Path, output_file: Path) -> Path:
     Parameters
     ----------
     paf_file : Path
-        Path to input PAF file from minimap2.
+        Path to input a PAF file from minimap2.
     output_file : Path
         File where the GEESE file should be written.
 
@@ -36,7 +36,7 @@ def paf_to_geese(paf_file: Path, output_file: Path) -> Path:
     Returns
     -------
     Path
-        Path to the GEESE file.
+        The Path to the GEESE file.
     """
     if not paf_file.is_file():
         raise FileNotFoundError(f"PAF file {paf_file} not found.")

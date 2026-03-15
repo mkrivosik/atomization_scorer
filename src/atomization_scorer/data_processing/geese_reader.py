@@ -6,7 +6,7 @@ into a pandas DataFrame, with validation of required columns.
 
 Functions
 ---------
-read_geese : Load GEESE atomization tabular file into a pandas DataFrame
+read_geese : Load the GEESE atomization tabular file into a pandas DataFrame
              with column renaming and required column check.
 """
 

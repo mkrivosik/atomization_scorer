@@ -43,32 +43,6 @@ def test_read_fasta_empty_file(tmp_path: Path):
 
 
 # ---------------------------------------------------------------------
-# Test: missing FASTA file
-# ---------------------------------------------------------------------
-def test_read_fasta_missing_file(tmp_path: Path):
-    """read_fasta should raise FileNotFoundError if the file does not exist."""
-    missing = tmp_path / "missing.fa"
-
-    with pytest.raises(FileNotFoundError):
-        read_fasta(fasta_file=missing)
-
-
-# ---------------------------------------------------------------------
-# Test: duplicate FASTA IDs are rejected
-# ---------------------------------------------------------------------
-def test_read_fasta_duplicate_ids(tmp_path: Path):
-    """read_fasta should raise ValueError if the FASTA file contains duplicate IDs."""
-    fasta = tmp_path / "duplicate.fa"
-    fasta.write_text(
-        ">sequence1\nATGC\n"
-        ">sequence1\nGGTT\n"
-    )
-
-    with pytest.raises(ValueError, match="Duplicate FASTA ID found: sequence1"):
-        read_fasta(fasta_file=fasta)
-
-
-# ---------------------------------------------------------------------
 # Test: FASTA headers are normalized to the Biopython record ID
 # ---------------------------------------------------------------------
 def test_read_fasta_header_normalization(tmp_path: Path):
@@ -110,3 +84,29 @@ def test_read_fasta_preserves_sequence_content(tmp_path: Path):
     result = read_fasta(fasta_file=fasta)
 
     assert result["sequence1"] == Seq("aTgCNn-")
+
+
+# ---------------------------------------------------------------------
+# Test: missing FASTA file
+# ---------------------------------------------------------------------
+def test_read_fasta_missing_file(tmp_path: Path):
+    """read_fasta should raise FileNotFoundError if the file does not exist."""
+    missing = tmp_path / "missing.fa"
+
+    with pytest.raises(FileNotFoundError):
+        read_fasta(fasta_file=missing)
+
+
+# ---------------------------------------------------------------------
+# Test: duplicate FASTA IDs are rejected
+# ---------------------------------------------------------------------
+def test_read_fasta_duplicate_ids(tmp_path: Path):
+    """read_fasta should raise ValueError if the FASTA file contains duplicate IDs."""
+    fasta = tmp_path / "duplicate.fa"
+    fasta.write_text(
+        ">sequence1\nATGC\n"
+        ">sequence1\nGGTT\n"
+    )
+
+    with pytest.raises(ValueError, match="Duplicate FASTA ID found: sequence1"):
+        read_fasta(fasta_file=fasta)

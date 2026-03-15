@@ -29,9 +29,9 @@ def filter_paf(
     Parameters
     ----------
     paf_file : Path
-        Path to input PAF file from minimap2.
+        Path to input the PAF file from minimap2.
     output_file : Path
-        Path to the output directory where filtered PAF file is stored.
+        Path to the output directory where a filtered PAF file is stored.
     minimum_similarity : float, optional, default=0.95
         Minimum fraction of matching bases (0.0 to 1.0).
     minimum_alignment_length : int, optional, default=500
@@ -41,11 +41,13 @@ def filter_paf(
     ------
     FileNotFoundError
         Raised if the input PAF file does not exist.
+    ValueError
+        Raised if the PAF file contains malformed lines or invalid numeric fields.
 
     Returns
     -------
     Path
-        Path to filtered PAF file.
+        The Path to a filtered PAF file.
     """
     if not paf_file.is_file():
         raise FileNotFoundError(f"PAF file not found: {paf_file}")
@@ -60,9 +62,13 @@ def filter_paf(
             if len(fields) < 11:
                 raise ValueError(f"Malformed PAF line: {line.strip()}")
 
-            alignment_length = int(fields[10])
-            matches = int(fields[9])
-            # Prefer minimap2's dv tag; fall back to the identity proxy from mandatory PAF columns.
+            try:
+                alignment_length = int(fields[10])
+                matches = int(fields[9])
+            except ValueError as error:
+                raise ValueError(f"Malformed PAF line: {line.strip()}") from error
+
+            # Prefer minimap2's dv tag; fall back to the identity estimate from mandatory PAF columns.
             similarity = matches / alignment_length if alignment_length > 0 else 0.0
 
             for field in fields[12:]:

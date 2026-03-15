@@ -38,7 +38,7 @@ def write_fasta(sequences: dict[str, Seq], output_path: Path) -> Path:
     Returns
     -------
     Path
-        Path to the written FASTA file.
+        The Path to the written FASTA file.
     """
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
