@@ -15,9 +15,9 @@ from atomization_scorer.scoring_system.helpers import (
 )
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Tests for _compute_and_write_metrics
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_compute_and_write_metrics_overall_basic(output_dir: Path):
     """_compute_and_write_metrics should be computed and written correctly."""
     tp = {1: 10, 2: 5}
@@ -121,9 +121,9 @@ def test_compute_and_write_metrics_return_format(output_dir: Path):
     assert result == [{"Class": 1, "F1-score": 1.0}]
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Tests for _compute_metrics
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_compute_metrics_mixed_values():
     """_compute_metrics should compute correct values for mixed TP, FP, FN."""
     precision, recall, f1 = _compute_metrics(tp=5, fp=5, fn=5)
@@ -160,9 +160,9 @@ def test_compute_metrics_only_false_positives():
     assert f1 == 0.0
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Tests for _write_metrics_tsv
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_write_metrics_tsv_creates_file(output_dir: Path):
     """_write_metrics_tsv should create a TSV file."""
     df = pd.DataFrame(
@@ -220,9 +220,9 @@ def test_write_metrics_tsv_overwrites_existing_file(output_dir: Path):
     assert read_df.iloc[0]["A"] == 2
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Tests for _create_new_row
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_create_new_row_basic():
     """_create_new_row should correctly construct a new interval row."""
     row = pd.Series({
@@ -251,9 +251,9 @@ def test_create_new_row_basic():
     assert new_row["status"] == "TP"
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Tests for _interval_overlap
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_interval_overlap_no_overlap():
     """_interval_overlap should return 0.0 if intervals do not overlap."""
     overlap = _interval_overlap(start1=0, end1=10, start2=20, end2=30)

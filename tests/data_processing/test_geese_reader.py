@@ -10,9 +10,9 @@ import pytest
 from atomization_scorer import read_geese
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: loads a valid GEESE tabular file and contains all required columns
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_read_geese_valid(tmp_path: Path):
     """read_geese should load a valid GEESE tabular file and contain all required columns."""
     geese_file = tmp_path / "example.geese"
@@ -33,9 +33,9 @@ def test_read_geese_valid(tmp_path: Path):
     assert df_atoms.loc[1, 'atom_nr'] == 2
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: '#name' column is renamed to 'name'
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_read_geese_renames_hash_name_column(tmp_path: Path):
     """read_geese should rename a '#name' column to 'name'."""
     geese_file = tmp_path / "rename.geese"
@@ -51,9 +51,9 @@ def test_read_geese_renames_hash_name_column(tmp_path: Path):
     assert df_atoms.loc[0, "name"] == "gene1"
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: extra columns are preserved
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_read_geese_preserves_extra_columns(tmp_path: Path):
     """read_geese should preserve columns beyond the required GEESE fields."""
     geese_file = tmp_path / "extra_columns.geese"
@@ -71,9 +71,9 @@ def test_read_geese_preserves_extra_columns(tmp_path: Path):
     assert df_atoms.loc[0, "note"] == "first"
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: specific missing required columns are reported
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 @pytest.mark.parametrize(
     ("file_content", "error_message"),
     [
@@ -113,9 +113,9 @@ def test_read_geese_missing_columns(tmp_path: Path, file_content: str, error_mes
         read_geese(geese_file=broken_file)
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: empty GEESE file is rejected
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_read_geese_empty_file(tmp_path: Path):
     """read_geese should raise ValueError if the GEESE file is empty."""
     empty_file = tmp_path / "empty.geese"
@@ -125,9 +125,9 @@ def test_read_geese_empty_file(tmp_path: Path):
         read_geese(geese_file=empty_file)
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: malformed GEESE file is rejected
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_read_geese_malformed_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     """read_geese should raise ValueError if pandas cannot parse the GEESE file."""
     geese_file = tmp_path / "malformed.geese"
@@ -142,9 +142,9 @@ def test_read_geese_malformed_file(tmp_path: Path, monkeypatch: pytest.MonkeyPat
         read_geese(geese_file=geese_file)
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: missing GEESE file is rejected
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_read_geese_missing_file(tmp_path: Path):
     """read_geese should raise FileNotFoundError if the GEESE file does not exist."""
     missing_file = tmp_path / "missing.geese"

@@ -10,9 +10,9 @@ _scan_intervals_interval_level  : Scan predicted and true intervals to count TP,
 _write_interval_status          : Write predicted and true intervals with status (TP/FP/FN) to a TSV file.
 """
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Imports
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 from pathlib import Path
 
 import pandas as pd
@@ -22,9 +22,9 @@ from atomization_scorer.data_processing import read_geese
 
 from .helpers import _compute_and_write_metrics, _interval_overlap, _write_metrics_tsv
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Interval-Level Metrics
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 
 def compute_interval_level_metrics(
     predicted_geese: Path,

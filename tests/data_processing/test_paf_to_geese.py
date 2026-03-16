@@ -9,9 +9,9 @@ import pytest
 from atomization_scorer import paf_to_geese
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Helper: create minimal PAF file
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def create_minimal_paf(tmp_path: Path):
     """Create a minimal PAF file for testing."""
     paf_file = tmp_path / "example.paf"
@@ -22,9 +22,9 @@ def create_minimal_paf(tmp_path: Path):
     return paf_file
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Helper: create custom PAF file
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def create_custom_paf(tmp_path: Path, contents: str, filename: str = "example.paf"):
     """Create a custom PAF file for testing."""
     paf_file = tmp_path / filename
@@ -32,9 +32,9 @@ def create_custom_paf(tmp_path: Path, contents: str, filename: str = "example.pa
     return paf_file
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: generates a valid GEESE file
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_paf_to_geese_basic(tmp_path: Path):
     """paf_to_geese should convert a minimal PAF file to a valid GEESE TSV."""
     paf_file = create_minimal_paf(tmp_path)
@@ -64,9 +64,9 @@ def test_paf_to_geese_basic(tmp_path: Path):
     assert second_fields[3] == "2000"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: empty PAF file is converted to a header-only GEESE file
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_paf_to_geese_empty_file(tmp_path: Path):
     """paf_to_geese should create a GEESE file with only a header if PAF is empty."""
     paf_file = tmp_path / "empty.paf"
@@ -84,9 +84,9 @@ def test_paf_to_geese_empty_file(tmp_path: Path):
     assert lines[0] == "#name\tclass\tstart\tend"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: missing PAF file is rejected
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_paf_to_geese_missing_file(tmp_path: Path):
     """paf_to_geese should raise FileNotFoundError if the input PAF file does not exist."""
     missing_file = tmp_path / "missing.paf"
@@ -96,9 +96,9 @@ def test_paf_to_geese_missing_file(tmp_path: Path):
         paf_to_geese(paf_file=missing_file, output_file=output_file)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: malformed row with fewer than 6 fields is rejected
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_paf_to_geese_malformed_row_raises_value_error(tmp_path: Path):
     """paf_to_geese should raise ValueError for a PAF row with fewer than 6 fields."""
     paf_file = create_custom_paf(
@@ -112,9 +112,9 @@ def test_paf_to_geese_malformed_row_raises_value_error(tmp_path: Path):
         paf_to_geese(paf_file=paf_file, output_file=output_file)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: missing class tag in the target header is rejected
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_paf_to_geese_missing_class_tag_raises_value_error(tmp_path: Path):
     """paf_to_geese should raise ValueError if the target header lacks |class_."""
     paf_file = create_custom_paf(
@@ -128,9 +128,9 @@ def test_paf_to_geese_missing_class_tag_raises_value_error(tmp_path: Path):
         paf_to_geese(paf_file=paf_file, output_file=output_file)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: non-integer query start or end is rejected
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_paf_to_geese_non_integer_start_or_end_raises_value_error(tmp_path: Path):
     """paf_to_geese should raise ValueError if the query start or end is not an integer."""
     invalid_rows = [

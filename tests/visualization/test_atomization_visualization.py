@@ -11,9 +11,9 @@ from PIL import Image
 
 from atomization_scorer import plot_genome_atomization
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Helper: create minimal genomes and atomization files
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def create_minimal_genomes_and_atoms(tmp_path: Path):
     """Create minimal genomes FASTA and predicted/true atomization TSV files."""
     genomes_file = tmp_path / "genomes.fasta"
@@ -44,9 +44,9 @@ def create_minimal_genomes_and_atoms(tmp_path: Path):
 
     return genomes_file, true_atoms_file, predicted_atoms_file
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: basic visualization generation
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_plot_genome_atomization(tmp_path: Path, output_dir: Path):
     """plot_genome_atomization should create one PNG file per genome in the output directory."""
     genomes_file, true_atoms_file, predicted_atoms_file = create_minimal_genomes_and_atoms(tmp_path)

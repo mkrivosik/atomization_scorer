@@ -11,9 +11,9 @@ from Bio import SeqIO
 from atomization_scorer import extract_representatives
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Helper: create minimal genome FASTA and GEESE
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def create_minimal_files(tmp_path: Path):
     """Create minimal genome FASTA and GEESE files for testing."""
     fasta_file = tmp_path / "genome.fa"
@@ -33,9 +33,9 @@ def create_minimal_files(tmp_path: Path):
     return fasta_file, geese_file
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: extract representatives with "first" mode
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_extract_representatives_first(tmp_path: Path):
     """extract_representatives should correctly select the first atom as a representative."""
     fasta_file, geese_file = create_minimal_files(tmp_path)
@@ -57,9 +57,9 @@ def test_extract_representatives_first(tmp_path: Path):
     assert str(records[1].seq) == "GCTAGCTAGC"
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: extract representatives with "mash" mode
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_extract_representatives_mash(tmp_path: Path, monkeypatch):
     """extract_representatives should correctly select a representative using mash distances."""
     fasta_file, geese_file = create_minimal_files(tmp_path)
@@ -103,9 +103,9 @@ def test_extract_representatives_mash(tmp_path: Path, monkeypatch):
         assert str(record.seq) == expected[record.id]
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: raises FileNotFoundError
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_extract_representatives_missing_files(tmp_path: Path):
     """extract_representatives should raise FileNotFoundError if a genome or atomization file is missing."""
     missing_fasta = tmp_path / "missing.fa"
@@ -134,9 +134,9 @@ def test_extract_representatives_missing_files(tmp_path: Path):
         )
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: raises ValueError for invalid mode
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_extract_representatives_invalid_mode(tmp_path: Path):
     """extract_representatives should raise ValueError if the mode is not 'first' or 'mash'."""
     fasta_file, geese_file = create_minimal_files(tmp_path)

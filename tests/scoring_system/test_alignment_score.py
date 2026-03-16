@@ -9,9 +9,9 @@ import pytest
 from atomization_scorer.scoring_system import compute_alignment_score
 
 
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: basic base-level score computation
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_compute_alignment_score_base(mini_fasta: Path, mini_geese: Path, output_dir: Path, monkeypatch):
     """compute_alignment_score should return the correct base-level score."""
 
@@ -38,9 +38,9 @@ def test_compute_alignment_score_base(mini_fasta: Path, mini_geese: Path, output
     assert score == 0.85
 
 
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: interval-level score computation
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_compute_alignment_score_interval(mini_fasta: Path, mini_geese: Path, output_dir: Path, monkeypatch):
     """compute_alignment_score should return the correct interval-level score."""
 
@@ -68,9 +68,9 @@ def test_compute_alignment_score_interval(mini_fasta: Path, mini_geese: Path, ou
     assert score == 0.75
 
 
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: raises FileNotFoundError if genomes_file is missing
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_compute_alignment_score_missing_genomes(mini_geese: Path, tmp_path: Path, output_dir: Path):
     """compute_alignment_score should raise FileNotFoundError if genomes_file is missing."""
     missing_genomes = tmp_path / "missing_genomes.fa"
@@ -83,9 +83,9 @@ def test_compute_alignment_score_missing_genomes(mini_geese: Path, tmp_path: Pat
         )
 
 
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: raises FileNotFoundError if atomization_file is missing
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_compute_alignment_score_missing_atomization(mini_fasta: Path, tmp_path: Path, output_dir: Path):
     """compute_alignment_score should raise FileNotFoundError if atomization_file is missing."""
     missing_atomization = tmp_path / "missing_atomization.geese"
@@ -98,9 +98,9 @@ def test_compute_alignment_score_missing_atomization(mini_fasta: Path, tmp_path:
         )
 
 
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: raises ValueError for invalid level
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_compute_alignment_score_invalid_level(mini_fasta: Path, mini_geese: Path, output_dir: Path, monkeypatch):
     """compute_alignment_score should raise ValueError for an invalid level."""
 

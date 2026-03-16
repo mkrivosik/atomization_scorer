@@ -10,9 +10,9 @@ from Bio.Seq import Seq
 from atomization_scorer import read_fasta
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: basic FASTA reading
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_read_fasta_basic(tmp_path: Path):
     """read_fasta should correctly load sequences from a FASTA file."""
     fasta = tmp_path / "test.fa"
@@ -29,9 +29,9 @@ def test_read_fasta_basic(tmp_path: Path):
     assert result["sequence2"] == Seq("GCTAGC")
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: empty FASTA file
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_read_fasta_empty_file(tmp_path: Path):
     """read_fasta should return an empty dictionary for an empty FASTA file."""
     fasta = tmp_path / "empty.fa"
@@ -42,9 +42,9 @@ def test_read_fasta_empty_file(tmp_path: Path):
     assert result == {}
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: FASTA headers are normalized to the Biopython record ID
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_read_fasta_header_normalization(tmp_path: Path):
     """read_fasta should use the normalized FASTA record ID as the dictionary key."""
     fasta = tmp_path / "headers.fa"
@@ -61,9 +61,9 @@ def test_read_fasta_header_normalization(tmp_path: Path):
     assert result["sequence2"] == Seq("GGTT")
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: malformed FASTA input is rejected
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_read_fasta_malformed_file(tmp_path: Path):
     """read_fasta should raise ValueError if the FASTA content is malformed."""
     fasta = tmp_path / "malformed.fa"
@@ -73,9 +73,9 @@ def test_read_fasta_malformed_file(tmp_path: Path):
         read_fasta(fasta_file=fasta)
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: sequence content is preserved exactly
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_read_fasta_preserves_sequence_content(tmp_path: Path):
     """read_fasta should preserve lowercase bases and ambiguous symbols exactly."""
     fasta = tmp_path / "preserve.fa"
@@ -86,9 +86,9 @@ def test_read_fasta_preserves_sequence_content(tmp_path: Path):
     assert result["sequence1"] == Seq("aTgCNn-")
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: missing FASTA file
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_read_fasta_missing_file(tmp_path: Path):
     """read_fasta should raise FileNotFoundError if the FASTA file does not exist."""
     missing = tmp_path / "missing.fa"
@@ -97,9 +97,9 @@ def test_read_fasta_missing_file(tmp_path: Path):
         read_fasta(fasta_file=missing)
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: duplicate FASTA IDs are rejected
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_read_fasta_duplicate_ids(tmp_path: Path):
     """read_fasta should raise ValueError if the FASTA file contains duplicate IDs."""
     fasta = tmp_path / "duplicate.fa"

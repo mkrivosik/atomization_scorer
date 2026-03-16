@@ -9,9 +9,9 @@ compute_alignment_score : Computes the alignment score comparing predicted
                           atomization to gold-standard (true) atomization.
 """
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Imports
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 from pathlib import Path
 
 from atomization_scorer.pipeline import compute_true_alignment
@@ -19,9 +19,9 @@ from atomization_scorer.pipeline import compute_true_alignment
 from .base_metrics import compute_base_level_metrics
 from .interval_metrics import compute_interval_level_metrics
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Alignment Score Function
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 
 def compute_alignment_score(
     genomes_file: Path,

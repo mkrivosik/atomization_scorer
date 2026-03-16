@@ -9,9 +9,9 @@ import pytest
 from atomization_scorer import filter_paf
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Helper: create minimal PAF file
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def create_minimal_paf(tmp_path: Path):
     """Create a minimal PAF file for testing."""
     paf_file = tmp_path / "example.paf"
@@ -23,9 +23,9 @@ def create_minimal_paf(tmp_path: Path):
     return paf_file
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: filtering by similarity and alignment length
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_filter_paf_basic(tmp_path: Path):
     """filter_paf should keep only alignments meeting similarity and length thresholds."""
     paf_file = create_minimal_paf(tmp_path)
@@ -46,9 +46,9 @@ def test_filter_paf_basic(tmp_path: Path):
     assert lines[0].startswith("genome1") and "representative1" in lines[0]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: falls back to manual similarity if dv tag is missing
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_filter_paf_falls_back_without_dv(tmp_path: Path):
     """filter_paf should use matches over aligned block length if dv is missing."""
     paf_file = tmp_path / "fallback.paf"
@@ -70,9 +70,9 @@ def test_filter_paf_falls_back_without_dv(tmp_path: Path):
     assert "representative1" in lines[0]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: dv tag takes precedence over manual similarity fallback
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_filter_paf_prefers_dv_over_manual_similarity(tmp_path: Path):
     """filter_paf should use dv-based similarity when both dv and manual values are present."""
     paf_file = tmp_path / "prefer_dv.paf"
@@ -94,9 +94,9 @@ def test_filter_paf_prefers_dv_over_manual_similarity(tmp_path: Path):
     assert "representative2" in lines[0]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: no lines pass filters
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_filter_paf_no_lines(tmp_path: Path):
     """filter_paf should return an empty file if no alignments meet thresholds."""
     paf_file = create_minimal_paf(tmp_path)
@@ -113,9 +113,9 @@ def test_filter_paf_no_lines(tmp_path: Path):
     assert len(lines) == 0
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: creates nested output directory if it does not exist
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_filter_paf_creates_nested_output_directory(tmp_path: Path):
     """filter_paf should create nested parent directories for the output file."""
     paf_file = create_minimal_paf(tmp_path)
@@ -136,9 +136,9 @@ def test_filter_paf_creates_nested_output_directory(tmp_path: Path):
     assert "representative1" in lines[0]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: empty PAF file is handled
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_filter_paf_empty_file(tmp_path: Path):
     """filter_paf should create an empty filtered file if PAF is empty."""
     paf_file = tmp_path / "empty.paf"
@@ -160,9 +160,9 @@ def test_filter_paf_empty_file(tmp_path: Path):
     assert len(lines) == 0
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: missing PAF file is rejected
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_filter_paf_missing_file(tmp_path: Path):
     """filter_paf should raise FileNotFoundError if the PAF file does not exist."""
     missing_file = tmp_path / "missing.paf"
@@ -172,9 +172,9 @@ def test_filter_paf_missing_file(tmp_path: Path):
         filter_paf(paf_file=missing_file, output_file=output_file)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: malformed PAF lines are rejected
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_filter_paf_malformed_line(tmp_path: Path):
     """filter_paf should fail clearly on malformed PAF lines."""
     paf_file = tmp_path / "broken.paf"
@@ -187,9 +187,9 @@ def test_filter_paf_malformed_line(tmp_path: Path):
         )
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: malformed PAF lines with invalid numeric fields are rejected
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_filter_paf_malformed_numeric_fields(tmp_path: Path):
     """filter_paf should fail clearly if numeric PAF fields cannot be parsed."""
     paf_file = tmp_path / "broken_numeric.paf"

@@ -8,9 +8,9 @@ Functions
 compute_true_alignment : Compute true (gold standard) atomization and return a GEESE file path.
 """
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Imports
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 from pathlib import Path
 
 from atomization_scorer.data_processing import filter_paf, paf_to_geese
@@ -19,9 +19,9 @@ from atomization_scorer.visualization import plot_genome_atomization
 from .minimap2_aligner import align_with_minimap2
 from .representatives_selector import extract_representatives
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # True (Gold Standard) Alignment Pipeline Entry Point
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 
 def compute_true_alignment(
     genomes_file: Path,

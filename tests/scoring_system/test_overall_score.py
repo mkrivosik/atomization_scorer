@@ -9,9 +9,9 @@ import pytest
 from atomization_scorer.scoring_system import compute_overall_score
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: returns a float between 0.0 and 1.0
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_compute_overall_score_basic(mini_fasta: Path, mini_geese: Path, output_dir: Path, monkeypatch):
     """compute_overall_score should return a float between 0.0 and 1.0 for valid inputs."""
     monkeypatch.setattr(
@@ -32,9 +32,9 @@ def test_compute_overall_score_basic(mini_fasta: Path, mini_geese: Path, output_
     assert overall_score == (0.8 ** 0.7) * (0.9 ** 0.3)
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: returns 0.0 if scores are zero
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_compute_overall_score_zero(mini_fasta: Path, mini_geese: Path, output_dir: Path, monkeypatch):
     """compute_overall_score should return 0.0 if both alignment and coverage scores are zero."""
     monkeypatch.setattr(
@@ -54,9 +54,9 @@ def test_compute_overall_score_zero(mini_fasta: Path, mini_geese: Path, output_d
     assert overall == 0.0
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: returns 1.0 if scores are one
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_compute_overall_score_one(mini_fasta: Path, mini_geese: Path, output_dir: Path, monkeypatch):
     """compute_overall_score should return 1.0 if both alignment and coverage scores are one."""
     monkeypatch.setattr(
@@ -76,9 +76,9 @@ def test_compute_overall_score_one(mini_fasta: Path, mini_geese: Path, output_di
     assert overall == 1.0
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: output_directory is created if it does not exist
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_compute_overall_score_creates_output_dir(mini_fasta: Path, mini_geese: Path, tmp_path: Path, monkeypatch):
     """compute_overall_score should create the output_directory if it does not exist."""
     non_existent_dir = tmp_path / "new_output_dir"
@@ -104,9 +104,9 @@ def test_compute_overall_score_creates_output_dir(mini_fasta: Path, mini_geese: 
     assert non_existent_dir.is_dir()
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: raises FileNotFoundError if genomes_file does not exist
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_compute_overall_score_file_not_found(mini_geese: Path, output_dir: Path):
     """compute_overall_score should raise FileNotFoundError if genomes_file does not exist."""
     fake_fasta = output_dir / "not_exist.fa"
@@ -119,9 +119,9 @@ def test_compute_overall_score_file_not_found(mini_geese: Path, output_dir: Path
         )
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: raises FileNotFoundError if atomization_file does not exist
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_compute_overall_score_atomization_file_not_found(mini_fasta: Path, output_dir: Path):
     """compute_overall_score should raise FileNotFoundError if atomization_file does not exist."""
     fake_geese = output_dir / "not_exist.geese"

@@ -11,9 +11,9 @@ import pytest
 from atomization_scorer import read_fasta, write_fasta
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: basic FASTA writing
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_write_fasta_basic(tmp_path: Path):
     """write_fasta should write sequences with correct FASTA formatting."""
     output = tmp_path / "out.fa"
@@ -35,9 +35,9 @@ def test_write_fasta_basic(tmp_path: Path):
     assert str(records[1].seq) == "GCTAGC"
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: parent directory creation
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_write_fasta_creates_parent_dir(output_dir):
     """write_fasta should create an output directory if it does not exist."""
     nested_directory = output_dir / "nested" / "folder"
@@ -50,9 +50,9 @@ def test_write_fasta_creates_parent_dir(output_dir):
     assert path == output
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: writing an empty FASTA
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_write_fasta_empty_dict(tmp_path: Path):
     """write_fasta should produce an empty file when sequences are empty."""
     output = tmp_path / "empty.fa"
@@ -63,9 +63,9 @@ def test_write_fasta_empty_dict(tmp_path: Path):
     assert output.read_text() == ""
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: sequence content is preserved for unusual characters
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_write_fasta_preserves_unusual_characters(tmp_path: Path):
     """write_fasta should preserve lowercase bases and unusual sequence symbols exactly."""
     output = tmp_path / "unusual.fa"
@@ -78,9 +78,9 @@ def test_write_fasta_preserves_unusual_characters(tmp_path: Path):
     assert result["sequence1"] == Seq("aTgCNn-")
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: write_fasta output can be read back with read_fasta
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_write_fasta_round_trip_with_read_fasta(tmp_path: Path):
     """write_fasta should produce FASTA that round-trips correctly through read_fasta."""
     output = tmp_path / "round_trip.fa"
@@ -111,9 +111,9 @@ def test_write_fasta_wraps_sequences_at_80_characters(tmp_path: Path):
     assert records[0].seq == sequence
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: FASTA headers may include spaces
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_write_fasta_allows_spaces_in_header(tmp_path: Path):
     """write_fasta should preserve headers containing spaces."""
     output = tmp_path / "header_with_spaces.fa"
@@ -127,9 +127,9 @@ def test_write_fasta_allows_spaces_in_header(tmp_path: Path):
     assert str(records[0].seq) == "ATGC"
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: empty FASTA sequences are rejected
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_write_fasta_empty_sequence(tmp_path: Path):
     """write_fasta should raise ValueError if any FASTA sequence is empty."""
     output = tmp_path / "empty_sequence.fa"
@@ -139,9 +139,9 @@ def test_write_fasta_empty_sequence(tmp_path: Path):
         write_fasta(sequences=sequences, output_path=output)
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: unsafe FASTA headers are rejected
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 @pytest.mark.parametrize(
     ("header", "error_message"),
     [
@@ -160,6 +160,6 @@ def test_write_fasta_header_safety(tmp_path: Path, header: str, error_message: s
         write_fasta(sequences=sequences, output_path=output)
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: sequence output is wrapped to 80 characters per line
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------

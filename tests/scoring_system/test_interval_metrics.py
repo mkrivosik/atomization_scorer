@@ -9,9 +9,9 @@ import pandas as pd
 from atomization_scorer.scoring_system import compute_interval_level_metrics
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Helper: create minimal predicted and true GEESE files
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def create_minimal_geese(tmp_path: Path):
     """Create minimal predicted and true GEESE files for interval-level testing."""
     predicted_geese = tmp_path / "predicted.geese"
@@ -34,9 +34,9 @@ def create_minimal_geese(tmp_path: Path):
     return predicted_geese, true_geese
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: basic interval-level scoring (overall)
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_compute_interval_level_metrics_overall(tmp_path: Path, output_dir: Path):
     """compute_interval_level_metrics should compute overall interval-level metrics."""
     predicted_geese, true_geese = create_minimal_geese(tmp_path)
@@ -60,9 +60,9 @@ def test_compute_interval_level_metrics_overall(tmp_path: Path, output_dir: Path
     assert out_file.is_file()
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: per-class interval-level scoring
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_compute_interval_level_metrics_per_class(tmp_path: Path, output_dir: Path):
     """compute_interval_level_metrics should compute interval-level metrics per class."""
     predicted_geese, true_geese = create_minimal_geese(tmp_path)
@@ -92,9 +92,9 @@ def test_compute_interval_level_metrics_per_class(tmp_path: Path, output_dir: Pa
     assert out_file.is_file()
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: interval status files are written
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_interval_level_status_files_created(tmp_path: Path, output_dir: Path):
     """compute_interval_level_metrics should create predicted and true status TSV files."""
     predicted_geese, true_geese = create_minimal_geese(tmp_path)
@@ -120,9 +120,9 @@ def test_interval_level_status_files_created(tmp_path: Path, output_dir: Path):
     assert set(true_df["status"]).issubset({"TP", "FN"})
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: min_overlap_ratio filters matches
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_interval_level_min_overlap_ratio_effect(tmp_path: Path, output_dir: Path):
     """compute_interval_level_metrics should reduce True Positives with higher min_overlap_ratio."""
     predicted_geese, true_geese = create_minimal_geese(tmp_path)

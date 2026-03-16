@@ -9,9 +9,9 @@ compute_base_level_metrics  : Computes per-base alignment metrics and F1-score.
 _scan_intervals_base_level  : Scan predicted and true intervals to count TP, FP, and FN at base-level.
 """
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Imports
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 from pathlib import Path
 
 import pandas as pd
@@ -20,9 +20,9 @@ from atomization_scorer.data_processing import read_geese
 
 from .helpers import _compute_and_write_metrics, _create_new_row, _write_metrics_tsv
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Base-Level Metrics
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 
 def compute_base_level_metrics(
     predicted_geese: Path,

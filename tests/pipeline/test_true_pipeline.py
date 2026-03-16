@@ -10,9 +10,9 @@ import pytest
 from atomization_scorer import compute_true_alignment
 
 
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: calls all pipeline steps and returns GEESE file
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 @patch("atomization_scorer.pipeline.true_pipeline.plot_genome_atomization")
 @patch("atomization_scorer.pipeline.true_pipeline.paf_to_geese")
 @patch("atomization_scorer.pipeline.true_pipeline.filter_paf")
@@ -82,9 +82,9 @@ def test_compute_true_alignment_pipeline(
     )
 
 
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: works with "first" mode instead of "mash"
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 @patch("atomization_scorer.pipeline.true_pipeline.plot_genome_atomization")
 @patch("atomization_scorer.pipeline.true_pipeline.paf_to_geese")
 @patch("atomization_scorer.pipeline.true_pipeline.filter_paf")
@@ -129,9 +129,9 @@ def test_compute_true_alignment_first_mode(
     mock_visualization.assert_called_once()
 
 
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: raises FileNotFoundError if genomes file is missing
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_compute_true_alignment_missing_genomes(mini_geese: Path, tmp_path: Path, output_dir: Path):
     """compute_true_alignment should raise FileNotFoundError if the genomes FASTA file does not exist."""
     missing_genomes = tmp_path / "missing_genomes.fa"
@@ -144,9 +144,9 @@ def test_compute_true_alignment_missing_genomes(mini_geese: Path, tmp_path: Path
         )
 
 
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: raises FileNotFoundError if atomization file is missing
-# -----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_compute_true_alignment_missing_atomization(mini_fasta: Path, tmp_path: Path, output_dir: Path):
     """compute_true_alignment should raise FileNotFoundError if the atomization file does not exist."""
     missing_atomization = tmp_path / "missing_atomization.geese"

@@ -9,9 +9,9 @@ import pandas as pd
 from atomization_scorer.scoring_system import compute_base_level_metrics
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Helper: create minimal predicted and true GEESE files
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def create_minimal_geese(tmp_path: Path):
     """Create minimal predicted and true GEESE files for base-level testing."""
     predicted_geese = tmp_path / "predicted.geese"
@@ -31,9 +31,9 @@ def create_minimal_geese(tmp_path: Path):
     return predicted_geese, true_geese
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: basic base-level scoring (overall)
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_compute_base_level_metrics(tmp_path: Path, output_dir: Path):
     """compute_base_level_metrics should compute overall base-level metrics."""
     predicted_geese, true_geese = create_minimal_geese(tmp_path)
@@ -56,9 +56,9 @@ def test_compute_base_level_metrics(tmp_path: Path, output_dir: Path):
     assert out_file.is_file()
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: basic base-level scoring (overall)
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_compute_per_class_level_metrics(tmp_path: Path, output_dir: Path):
     """compute_base_level_metrics should compute base-level metrics per class."""
     predicted_geese, true_geese = create_minimal_geese(tmp_path)
@@ -87,9 +87,9 @@ def test_compute_per_class_level_metrics(tmp_path: Path, output_dir: Path):
     assert out_file.is_file()
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: empty GEESE files
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_empty_geese(tmp_path: Path, output_dir: Path):
     """compute_base_level_metrics should correctly calculate 0.0 TP, FP, FN."""
     empty_df = pd.DataFrame(columns=["name", "atom_nr", "class","strand", "start", "end"])
@@ -110,9 +110,9 @@ def test_empty_geese(tmp_path: Path, output_dir: Path):
     assert metrics == 0.0
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: partial class overlap with same classes
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_partial_class_overlap_same_classes(tmp_path: Path, output_dir: Path):
     """
     compute_base_level_metrics should compute metrics when prediction and true values overlap within the same class.
@@ -139,9 +139,9 @@ def test_partial_class_overlap_same_classes(tmp_path: Path, output_dir: Path):
     assert metrics == 0.5
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: partial class overlap
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_partial_class_overlap_different_classes(tmp_path: Path, output_dir: Path):
     """
     compute_base_level_metrics should compute metrics when prediction and true values overlap across different classes.
@@ -168,9 +168,9 @@ def test_partial_class_overlap_different_classes(tmp_path: Path, output_dir: Pat
     assert metrics == 0.0
 
 
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 # Test: full class overlap
-# ---------------------------------------------------------------------
+# --------------------------------------------------------------------------------------
 def test_full_class_overlap(tmp_path: Path, output_dir: Path):
     """compute_base_level_metrics should return 1.0 when prediction and true values are identical."""
     predicted_geese = tmp_path / "predicted_full_overlap.geese"
