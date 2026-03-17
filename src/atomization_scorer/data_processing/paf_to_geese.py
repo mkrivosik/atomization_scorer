@@ -11,7 +11,13 @@ paf_to_geese : Convert a PAF file to a GEESE file.
 # --------------------------------------------------------------------------------------
 # Imports
 # --------------------------------------------------------------------------------------
+import logging
 from pathlib import Path
+
+# --------------------------------------------------------------------------------------
+# Logging
+# --------------------------------------------------------------------------------------
+logger = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------------------
 # Converting PAF To GEESE
@@ -42,6 +48,10 @@ def paf_to_geese(paf_file: Path, output_file: Path) -> Path:
     """
     if not paf_file.is_file():
         raise FileNotFoundError(f"PAF file {paf_file} not found.")
+
+    logger.info("Converting PAF file %s to GEESE file %s", paf_file, output_file)
+
+    converted_rows = 0
 
     with paf_file.open("r") as paf, output_file.open("w") as geese:
         geese.write("#name\tclass\tstart\tend\n")
@@ -84,5 +94,8 @@ def paf_to_geese(paf_file: Path, output_file: Path) -> Path:
             _, class_id = target_name.split("|class_")
 
             geese.write(f"{query_name}\t{class_id}\t{query_start}\t{query_end}\n")
+            converted_rows += 1
+
+    logger.info("GEESE file saved to %s with %s converted rows", output_file, converted_rows)
 
     return output_file

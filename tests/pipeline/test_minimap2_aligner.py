@@ -29,19 +29,52 @@ def create_minimal_files(tmp_path: Path):
 
 
 # --------------------------------------------------------------------------------------
-# Test: basic run, PAF path returned
+# Test: basic run uses the expected Minimap2 command
 # --------------------------------------------------------------------------------------
 def test_align_with_minimap2_basic(tmp_path: Path, monkeypatch):
-    """align_with_minimap2 should call minimap2 and return a PAF path."""
+    """align_with_minimap2 should call Minimap2 with the expected default command."""
     genomes, representatives = create_minimal_files(tmp_path)
     output_paf = tmp_path / "alignment.paf"
 
     calls = []
 
     # Fake minimap2 run
-    def fake_run(*args, **_kwargs):
+    def fake_run(*args, **kwargs):
         calls.append(args[0])
-        output_paf.write_text("PAF-DATA")
+        kwargs["stdout"].write("PAF-DATA\n")
+        return subprocess.CompletedProcess(args[0], 0)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    out_path = align_with_minimap2(target=genomes, query=representatives, output_path=output_paf)
+
+    expected_command = [
+        "minimap2",
+        "-x", "asm20",
+        "-c",
+        "-p", "0.1",
+        str(genomes),
+        str(representatives),
+    ]
+
+    assert out_path == output_paf
+    assert out_path.is_file()
+    assert calls == [expected_command]
+
+
+# --------------------------------------------------------------------------------------
+# Test: output directory is created if a nested path is missing
+# --------------------------------------------------------------------------------------
+def test_align_with_minimap2_creates_output_dir(tmp_path: Path, monkeypatch):
+    """align_with_minimap2 should create a missing nested output directory."""
+    genomes, representatives = create_minimal_files(tmp_path)
+    output_paf = tmp_path / "missing" / "nested" / "alignment.paf"
+
+    assert not output_paf.parent.exists()
+
+    # Fake minimap2 run
+    def fake_run(*args, **kwargs):
+        kwargs["stdout"].write("PAF-DATA\n")
         return subprocess.CompletedProcess(args[0], 0)
 
     monkeypatch.setattr(subprocess, "run", fake_run)
@@ -49,15 +82,63 @@ def test_align_with_minimap2_basic(tmp_path: Path, monkeypatch):
     out_path = align_with_minimap2(target=genomes, query=representatives, output_path=output_paf)
 
     assert out_path.is_file()
-    assert calls
-    assert "minimap2" in calls[0][0]
+    assert output_paf.parent.exists()
 
 
 # --------------------------------------------------------------------------------------
-# Test: subprocess error if minimap2 fails
+# Test: raises FileNotFoundError if the target or query is missing
+# --------------------------------------------------------------------------------------
+@pytest.mark.parametrize("missing_side", ["target", "query"])
+def test_align_with_minimap2_missing_input(tmp_path: Path, monkeypatch, missing_side: str):
+    """align_with_minimap2 should raise FileNotFoundError if an input file is missing."""
+    target = tmp_path / "target.fa"
+    query = tmp_path / "query.fa"
+
+    if missing_side == "target":
+        query.write_text(">sequence1\nATGC\n")
+    else:
+        target.write_text(">sequence1\nATGC\n")
+
+    output_paf = tmp_path / "alignment.paf"
+    was_called = False
+
+    # Fake minimap2 run
+    def fake_run(*args, **_kwargs):
+        nonlocal was_called
+        was_called = True
+        return subprocess.CompletedProcess(args[0], 0)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    with pytest.raises(FileNotFoundError):
+        align_with_minimap2(target=target, query=query, output_path=output_paf)
+
+    assert was_called is False
+
+
+# --------------------------------------------------------------------------------------
+# Test: raises FileNotFoundError if Minimap2 is missing from PATH
+# --------------------------------------------------------------------------------------
+def test_align_with_minimap2_missing_minimap2_executable(tmp_path: Path, monkeypatch):
+    """align_with_minimap2 should raise FileNotFoundError if Minimap2 is not on PATH."""
+    genomes, representatives = create_minimal_files(tmp_path)
+    output_paf = tmp_path / "alignment.paf"
+
+    # Fake minimap2 run
+    def fake_run(*_args, **_kwargs):
+        raise FileNotFoundError("minimap2")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    with pytest.raises(FileNotFoundError, match="minimap2 executable not found on PATH"):
+        align_with_minimap2(target=genomes, query=representatives, output_path=output_paf)
+
+
+# --------------------------------------------------------------------------------------
+# Test: subprocess error if Minimap2 fails
 # --------------------------------------------------------------------------------------
 def test_align_with_minimap2_failure(tmp_path: Path, monkeypatch):
-    """align_with_minimap2 should raise an exception if minimap2 fails."""
+    """align_with_minimap2 should raise an exception if Minimap2 fails."""
     genomes, representatives = create_minimal_files(tmp_path)
     output_paf = tmp_path / "alignment.paf"
 
@@ -72,43 +153,18 @@ def test_align_with_minimap2_failure(tmp_path: Path, monkeypatch):
 
 
 # --------------------------------------------------------------------------------------
-# Test: output directory is created if missing
+# Test: missing or empty PAF output is rejected
 # --------------------------------------------------------------------------------------
-def test_align_with_minimap2_creates_output_dir(tmp_path: Path, output_dir: Path, monkeypatch):
-    """align_with_minimap2 should create the output directory if it doesn't exist."""
+def test_align_with_minimap2_empty_output_raises_value_error(tmp_path: Path, monkeypatch):
+    """align_with_minimap2 should raise ValueError if Minimap2 writes no PAF output."""
     genomes, representatives = create_minimal_files(tmp_path)
-    output_paf = output_dir / "alignment.paf"
-
-    monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: subprocess.CompletedProcess(args[0], 0))
-
-    out_path = align_with_minimap2(target=genomes, query=representatives, output_path=output_paf)
-    assert out_path.is_file()
-    assert output_paf.parent.exists()
-
-
-# --------------------------------------------------------------------------------------
-# Test: raises FileNotFoundError if target is missing
-# --------------------------------------------------------------------------------------
-def test_align_with_minimap2_missing_target(tmp_path: Path):
-    """align_with_minimap2 should raise FileNotFoundError if a target file is missing."""
-    missing_target = tmp_path / "missing_target.fa"
-    query = tmp_path / "query.fa"
-    query.write_text(">sequence1\nATGC\n")
     output_paf = tmp_path / "alignment.paf"
 
-    with pytest.raises(FileNotFoundError):
-        align_with_minimap2(target=missing_target, query=query, output_path=output_paf)
+    # Fake minimap2 run
+    def fake_run(*args, **_kwargs):
+        return subprocess.CompletedProcess(args[0], 0)
 
+    monkeypatch.setattr(subprocess, "run", fake_run)
 
-# --------------------------------------------------------------------------------------
-# Test: raises FileNotFoundError if query is missing
-# --------------------------------------------------------------------------------------
-def test_align_with_minimap2_missing_query(tmp_path: Path):
-    """align_with_minimap2 should raise FileNotFoundError if a query file is missing."""
-    target = tmp_path / "target.fa"
-    target.write_text(">sequence1\nATGC\n")
-    missing_query = tmp_path / "missing_query.fa"
-    output_paf = tmp_path / "alignment.paf"
-
-    with pytest.raises(FileNotFoundError):
-        align_with_minimap2(target=target, query=missing_query, output_path=output_paf)
+    with pytest.raises(ValueError, match="non-empty PAF output file"):
+        align_with_minimap2(target=genomes, query=representatives, output_path=output_paf)

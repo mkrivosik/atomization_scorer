@@ -11,7 +11,13 @@ filter_paf : Filter PAF alignments by minimum similarity and minimum alignment l
 # --------------------------------------------------------------------------------------
 # Imports
 # --------------------------------------------------------------------------------------
+import logging
 from pathlib import Path
+
+# --------------------------------------------------------------------------------------
+# Logging
+# --------------------------------------------------------------------------------------
+logger = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------------------
 # PAF Processing
@@ -55,9 +61,19 @@ def filter_paf(
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
     filtered_lines = []
+    total_lines = 0
+
+    logger.info(
+        "Filtering PAF file %s into %s with minimum_similarity=%s and minimum_alignment_length=%s",
+        paf_file,
+        output_file,
+        minimum_similarity,
+        minimum_alignment_length,
+    )
 
     with paf_file.open("r") as file:
         for line in file:
+            total_lines += 1
             fields = line.strip().split("\t")
             if len(fields) < 11:
                 raise ValueError(f"Malformed PAF line: {line.strip()}")
@@ -81,5 +97,12 @@ def filter_paf(
 
     with output_file.open("w") as out:
         out.writelines(filtered_lines)
+
+    logger.info(
+        "Filtered PAF saved to %s with %s kept alignments out of %s total alignments",
+        output_file,
+        len(filtered_lines),
+        total_lines,
+    )
 
     return output_file
