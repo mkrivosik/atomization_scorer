@@ -130,8 +130,84 @@ def test_compute_true_alignment_first_mode(
 
 
 # --------------------------------------------------------------------------------------
-# Test: raises FileNotFoundError if genomes file is missing
+# Test: forwards non-default filter parameters
 # --------------------------------------------------------------------------------------
+@patch("atomization_scorer.pipeline.true_pipeline.plot_genome_atomization")
+@patch("atomization_scorer.pipeline.true_pipeline.paf_to_geese")
+@patch("atomization_scorer.pipeline.true_pipeline.filter_paf")
+@patch("atomization_scorer.pipeline.true_pipeline.align_with_minimap2")
+@patch("atomization_scorer.pipeline.true_pipeline.extract_representatives")
+def test_compute_true_alignment_forwards_custom_filter_parameters(
+    mock_extract,
+    mock_minimap2,
+    mock_filter_paf,
+    mock_paf_to_geese,
+    mock_visualization,
+    mini_fasta: Path,
+    mini_geese: Path,
+    output_dir: Path
+):
+    """compute_true_alignment should forward non-default filter parameters to PAF filtering."""
+    compute_true_alignment(
+        genomes_file=mini_fasta,
+        atomization_file=mini_geese,
+        output_directory=output_dir,
+        minimum_similarity=0.8,
+        minimum_alignment_length=1234
+    )
+
+    filtered_paf = output_dir / "minimap2_alignment_filtered.paf"
+    paf_file = output_dir / "minimap2_alignments.paf"
+
+    mock_extract.assert_called_once()
+    mock_minimap2.assert_called_once()
+    mock_filter_paf.assert_called_once_with(
+        paf_file=paf_file,
+        output_file=filtered_paf,
+        minimum_similarity=0.8,
+        minimum_alignment_length=1234
+    )
+    mock_paf_to_geese.assert_called_once()
+    mock_visualization.assert_called_once()
+
+
+# --------------------------------------------------------------------------------------
+# Test: creates output directory if missing
+# --------------------------------------------------------------------------------------
+@patch("atomization_scorer.pipeline.true_pipeline.plot_genome_atomization")
+@patch("atomization_scorer.pipeline.true_pipeline.paf_to_geese")
+@patch("atomization_scorer.pipeline.true_pipeline.filter_paf")
+@patch("atomization_scorer.pipeline.true_pipeline.align_with_minimap2")
+@patch("atomization_scorer.pipeline.true_pipeline.extract_representatives")
+def test_compute_true_alignment_creates_output_directory(
+    mock_extract,
+    mock_minimap2,
+    mock_filter_paf,
+    mock_paf_to_geese,
+    mock_visualization,
+    mini_fasta: Path,
+    mini_geese: Path,
+    tmp_path: Path
+):
+    """compute_true_alignment should create a missing output directory before running the pipeline."""
+    output_dir = tmp_path / "nested" / "true_pipeline_output"
+
+    assert not output_dir.exists()
+
+    compute_true_alignment(
+        genomes_file=mini_fasta,
+        atomization_file=mini_geese,
+        output_directory=output_dir
+    )
+
+    assert output_dir.is_dir()
+    mock_extract.assert_called_once()
+    mock_minimap2.assert_called_once()
+    mock_filter_paf.assert_called_once()
+    mock_paf_to_geese.assert_called_once()
+    mock_visualization.assert_called_once()
+
+
 def test_compute_true_alignment_missing_genomes(mini_geese: Path, tmp_path: Path, output_dir: Path):
     """compute_true_alignment should raise FileNotFoundError if the genomes FASTA file does not exist."""
     missing_genomes = tmp_path / "missing_genomes.fa"
@@ -157,3 +233,108 @@ def test_compute_true_alignment_missing_atomization(mini_fasta: Path, tmp_path: 
             atomization_file=missing_atomization,
             output_directory=output_dir
         )
+
+
+# --------------------------------------------------------------------------------------
+# Test: propagates minimap2 alignment failure
+# --------------------------------------------------------------------------------------
+@patch("atomization_scorer.pipeline.true_pipeline.plot_genome_atomization")
+@patch("atomization_scorer.pipeline.true_pipeline.paf_to_geese")
+@patch("atomization_scorer.pipeline.true_pipeline.filter_paf")
+@patch("atomization_scorer.pipeline.true_pipeline.align_with_minimap2")
+@patch("atomization_scorer.pipeline.true_pipeline.extract_representatives")
+def test_compute_true_alignment_propagates_alignment_failure(
+    mock_extract,
+    mock_minimap2,
+    mock_filter_paf,
+    mock_paf_to_geese,
+    mock_visualization,
+    mini_fasta: Path,
+    mini_geese: Path,
+    output_dir: Path
+):
+    """compute_true_alignment should propagate minimap2 failures and stop later stages."""
+    mock_minimap2.side_effect = RuntimeError("alignment failed")
+
+    with pytest.raises(RuntimeError, match="alignment failed"):
+        compute_true_alignment(
+            genomes_file=mini_fasta,
+            atomization_file=mini_geese,
+            output_directory=output_dir
+        )
+
+    mock_extract.assert_called_once()
+    mock_minimap2.assert_called_once()
+    mock_filter_paf.assert_not_called()
+    mock_paf_to_geese.assert_not_called()
+    mock_visualization.assert_not_called()
+
+
+# --------------------------------------------------------------------------------------
+# Test: propagates PAF filtering failure
+# --------------------------------------------------------------------------------------
+@patch("atomization_scorer.pipeline.true_pipeline.plot_genome_atomization")
+@patch("atomization_scorer.pipeline.true_pipeline.paf_to_geese")
+@patch("atomization_scorer.pipeline.true_pipeline.filter_paf")
+@patch("atomization_scorer.pipeline.true_pipeline.align_with_minimap2")
+@patch("atomization_scorer.pipeline.true_pipeline.extract_representatives")
+def test_compute_true_alignment_propagates_filter_failure(
+    mock_extract,
+    mock_minimap2,
+    mock_filter_paf,
+    mock_paf_to_geese,
+    mock_visualization,
+    mini_fasta: Path,
+    mini_geese: Path,
+    output_dir: Path
+):
+    """compute_true_alignment should propagate PAF filtering failures and stop later stages."""
+    mock_filter_paf.side_effect = RuntimeError("filter failed")
+
+    with pytest.raises(RuntimeError, match="filter failed"):
+        compute_true_alignment(
+            genomes_file=mini_fasta,
+            atomization_file=mini_geese,
+            output_directory=output_dir
+        )
+
+    mock_extract.assert_called_once()
+    mock_minimap2.assert_called_once()
+    mock_filter_paf.assert_called_once()
+    mock_paf_to_geese.assert_not_called()
+    mock_visualization.assert_not_called()
+
+
+# --------------------------------------------------------------------------------------
+# Test: propagates visualization failure
+# --------------------------------------------------------------------------------------
+@patch("atomization_scorer.pipeline.true_pipeline.plot_genome_atomization")
+@patch("atomization_scorer.pipeline.true_pipeline.paf_to_geese")
+@patch("atomization_scorer.pipeline.true_pipeline.filter_paf")
+@patch("atomization_scorer.pipeline.true_pipeline.align_with_minimap2")
+@patch("atomization_scorer.pipeline.true_pipeline.extract_representatives")
+def test_compute_true_alignment_propagates_visualization_failure(
+    mock_extract,
+    mock_minimap2,
+    mock_filter_paf,
+    mock_paf_to_geese,
+    mock_visualization,
+    mini_fasta: Path,
+    mini_geese: Path,
+    output_dir: Path
+):
+    """compute_true_alignment should propagate visualization failures after earlier steps succeed."""
+    mock_visualization.side_effect = RuntimeError("visualization failed")
+
+    with pytest.raises(RuntimeError, match="visualization failed"):
+        compute_true_alignment(
+            genomes_file=mini_fasta,
+            atomization_file=mini_geese,
+            output_directory=output_dir
+        )
+
+    mock_extract.assert_called_once()
+    mock_minimap2.assert_called_once()
+    mock_filter_paf.assert_called_once()
+    mock_paf_to_geese.assert_called_once()
+    mock_visualization.assert_called_once()

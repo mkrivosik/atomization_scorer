@@ -11,6 +11,7 @@ compute_true_alignment : Compute true (gold standard) atomization and return a G
 # --------------------------------------------------------------------------------------
 # Imports
 # --------------------------------------------------------------------------------------
+import logging
 from pathlib import Path
 
 from atomization_scorer.data_processing import filter_paf, paf_to_geese
@@ -18,6 +19,11 @@ from atomization_scorer.visualization import plot_genome_atomization
 
 from .minimap2_aligner import align_with_minimap2
 from .representatives_selector import extract_representatives
+
+# --------------------------------------------------------------------------------------
+# Logging
+# --------------------------------------------------------------------------------------
+logger = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------------------
 # True (Gold Standard) Alignment Pipeline Entry Point
@@ -66,9 +72,17 @@ def compute_true_alignment(
         raise FileNotFoundError(f"Atomization file not found: {atomization_file}")
 
     output_directory.mkdir(parents=True, exist_ok=True)
+    logger.info(
+        "Computing true alignment with mode=%s for genomes=%s atomization=%s into output=%s",
+        mode,
+        genomes_file,
+        atomization_file,
+        output_directory,
+    )
 
     # Extract representatives
     representatives_fasta = output_directory / f"{mode}_representatives.fa"
+    logger.info("Extracting representatives to %s", representatives_fasta)
     extract_representatives(
         genomes_file=genomes_file,
         atomization_file=atomization_file,
@@ -78,6 +92,7 @@ def compute_true_alignment(
 
     # Minimap2 alignment
     paf_file = output_directory / "minimap2_alignments.paf"
+    logger.info("Running minimap2 alignment to %s", paf_file)
     align_with_minimap2(
         query=genomes_file,
         target=representatives_fasta,
@@ -86,6 +101,12 @@ def compute_true_alignment(
 
     # Filter PAF
     filtered_paf = output_directory / "minimap2_alignment_filtered.paf"
+    logger.info(
+        "Filtering PAF into %s with minimum_similarity=%s and minimum_alignment_length=%s",
+        filtered_paf,
+        minimum_similarity,
+        minimum_alignment_length,
+    )
     filter_paf(
         paf_file=paf_file,
         output_file=filtered_paf,
@@ -95,12 +116,14 @@ def compute_true_alignment(
 
     # Convert PAF to GEESE
     geese_file = output_directory / "true_atomization.geese"
+    logger.info("Converting filtered PAF to GEESE at %s", geese_file)
     paf_to_geese(
         paf_file=filtered_paf,
         output_file=geese_file
     )
 
     visualization_directory = output_directory / "atomization_visualization"
+    logger.info("Generating visualization into %s", visualization_directory)
     plot_genome_atomization(
         genomes_file=genomes_file,
         true_atoms_file=geese_file,
@@ -108,4 +131,5 @@ def compute_true_alignment(
         output_directory=visualization_directory
     )
 
+    logger.info("True alignment pipeline finished with output %s", geese_file)
     return geese_file
