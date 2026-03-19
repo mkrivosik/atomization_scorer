@@ -12,12 +12,18 @@ compute_alignment_score : Computes the alignment score comparing predicted
 # --------------------------------------------------------------------------------------
 # Imports
 # --------------------------------------------------------------------------------------
+import logging
 from pathlib import Path
 
 from atomization_scorer.pipeline import compute_true_alignment
 
 from .base_metrics import compute_base_level_metrics
 from .interval_metrics import compute_interval_level_metrics
+
+# --------------------------------------------------------------------------------------
+# Logging
+# --------------------------------------------------------------------------------------
+logger = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------------------
 # Alignment Score Function
@@ -69,29 +75,34 @@ def compute_alignment_score(
     if not atomization_file.is_file():
         raise FileNotFoundError(f"Atomization file not found: {atomization_file}")
 
-    output_directory.mkdir(parents=True, exist_ok=True)
+    if level not in ("base", "interval"):
+        raise ValueError("Level must be 'base' or 'interval'.")
 
-    print("Computing gold standard (true) alignment...")
+    output_directory.mkdir(parents=True, exist_ok=True)
+    logger.info(
+        "Computing alignment score with level=%s per_class=%s min_overlap_ratio=%s",
+        level,
+        per_class,
+        min_overlap_ratio,
+    )
+
+    logger.info("Computing gold standard (true) alignment")
     true_geese = compute_true_alignment(
         genomes_file=genomes_file,
         atomization_file=atomization_file,
         output_directory=output_directory
     )
 
-    print(
-        f"Computing score with parameters\n"
-        f"  level: {level}\n"
-        f"  per_class: {per_class}\n"
-        f"  min_overlap_ratio: {min_overlap_ratio}\n"
-    )
     if level == "base":
+        logger.info("Computing base-level metrics")
         score = compute_base_level_metrics(
             predicted_geese=atomization_file,
             true_geese=Path(true_geese),
             output_directory=output_directory,
             per_class=per_class
         )
-    elif level == "interval":
+    else:
+        logger.info("Computing interval-level metrics")
         score = compute_interval_level_metrics(
             predicted_geese=atomization_file,
             true_geese=Path(true_geese),
@@ -99,7 +110,6 @@ def compute_alignment_score(
             per_class=per_class,
             min_overlap_ratio=min_overlap_ratio
         )
-    else:
-        raise ValueError("Level must be 'base' or 'interval'.")
 
+    logger.info("Alignment score result: %s", score)
     return score
