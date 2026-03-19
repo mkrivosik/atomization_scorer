@@ -208,29 +208,37 @@ def test_compute_true_alignment_creates_output_directory(
     mock_visualization.assert_called_once()
 
 
-def test_compute_true_alignment_missing_genomes(mini_geese: Path, tmp_path: Path, output_dir: Path):
-    """compute_true_alignment should raise FileNotFoundError if the genomes FASTA file does not exist."""
-    missing_genomes = tmp_path / "missing_genomes.fa"
-
-    with pytest.raises(FileNotFoundError, match="Genomes FASTA file not found"):
-        compute_true_alignment(
-            genomes_file=missing_genomes,
-            atomization_file=mini_geese,
-            output_directory=output_dir
-        )
-
-
 # --------------------------------------------------------------------------------------
-# Test: raises FileNotFoundError if atomization file is missing
+# Test: raises FileNotFoundError if an input file is missing
 # --------------------------------------------------------------------------------------
-def test_compute_true_alignment_missing_atomization(mini_fasta: Path, tmp_path: Path, output_dir: Path):
-    """compute_true_alignment should raise FileNotFoundError if the atomization file does not exist."""
-    missing_atomization = tmp_path / "missing_atomization.geese"
+@pytest.mark.parametrize(
+    ("missing_side", "expected_message"),
+    [
+        ("genomes", "Genomes FASTA file not found"),
+        ("atomization", "Atomization file not found"),
+    ],
+)
+def test_compute_true_alignment_missing_input_file(
+    mini_fasta: Path,
+    mini_geese: Path,
+    tmp_path: Path,
+    output_dir: Path,
+    missing_side: str,
+    expected_message: str,
+):
+    """compute_true_alignment should raise FileNotFoundError if an input file does not exist."""
+    genomes_file = mini_fasta
+    atomization_file = mini_geese
 
-    with pytest.raises(FileNotFoundError, match="Atomization file not found"):
+    if missing_side == "genomes":
+        genomes_file = tmp_path / "missing_genomes.fa"
+    else:
+        atomization_file = tmp_path / "missing_atomization.geese"
+
+    with pytest.raises(FileNotFoundError, match=expected_message):
         compute_true_alignment(
-            genomes_file=mini_fasta,
-            atomization_file=missing_atomization,
+            genomes_file=genomes_file,
+            atomization_file=atomization_file,
             output_directory=output_dir
         )
 
