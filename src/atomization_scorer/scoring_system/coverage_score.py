@@ -64,6 +64,7 @@ def compute_coverage_score(
     atoms_df["end"] = pd.to_numeric(atoms_df["end"], errors="coerce")
     atoms_df = atoms_df.dropna(subset=["start", "end"])
 
+    # Based on the IMP atom definition, atoms are assumed not to overlap.
     atoms_df["length"] = atoms_df["end"] - atoms_df["start"]
     atoms_covered_length = atoms_df["length"].sum()
 

@@ -10,12 +10,12 @@ from atomization_scorer import compute_coverage_score
 
 
 # --------------------------------------------------------------------------------------
-# Test: returns a fraction between 0.0 and 1.0
+# Test: computes the expected coverage score for valid inputs
 # --------------------------------------------------------------------------------------
-def test_compute_coverage_score_valid(mini_fasta: Path, mini_geese: Path):
-    """compute_coverage_score should return a fraction between 0.0 and 1.0 for valid inputs."""
+def test_compute_coverage_score(mini_fasta: Path, mini_geese: Path):
+    """compute_coverage_score should return the expected coverage score for valid inputs."""
     score = compute_coverage_score(genomes_file=mini_fasta, atomization_file=mini_geese)
-    assert 0.0 <= score <= 1.0
+    assert score == 4981779 / 5004626
 
 
 # --------------------------------------------------------------------------------------
@@ -31,38 +31,30 @@ def test_compute_coverage_score_zero_genome(mini_geese: Path, tmp_path: Path):
 
 
 # --------------------------------------------------------------------------------------
-# Test: raises FileNotFoundError if genomes_file is missing
+# Test: raises FileNotFoundError if an input file is missing
 # --------------------------------------------------------------------------------------
-def test_compute_coverage_missing_genomes_file(mini_geese: Path, tmp_path: Path):
-    """compute_coverage_score should raise FileNotFoundError if genomes_file is missing."""
-    missing_genomes = tmp_path / "missing.fasta"
+@pytest.mark.parametrize(
+    ("missing_side", "expected_message"),
+    [
+        ("genomes", "Genomes file not found"),
+        ("atomization", "Atomization file not found"),
+    ],
+)
+def test_compute_coverage_score_missing_input_file(
+    mini_fasta: Path,
+    mini_geese: Path,
+    tmp_path: Path,
+    missing_side: str,
+    expected_message: str,
+):
+    """compute_coverage_score should raise FileNotFoundError if an input file is missing."""
+    genomes_file = mini_fasta
+    atomization_file = mini_geese
 
-    with pytest.raises(FileNotFoundError):
-        compute_coverage_score(genomes_file=missing_genomes, atomization_file=mini_geese)
+    if missing_side == "genomes":
+        genomes_file = tmp_path / "missing.fasta"
+    else:
+        atomization_file = tmp_path / "missing.geese"
 
-
-# --------------------------------------------------------------------------------------
-# Test: raises FileNotFoundError if atomization_file is missing
-# --------------------------------------------------------------------------------------
-def test_compute_coverage_missing_atomization_file(mini_fasta: Path, tmp_path: Path):
-    """compute_coverage_score should raise FileNotFoundError if atomization_file is missing."""
-    missing_geese = tmp_path / "missing.geese"
-
-    with pytest.raises(FileNotFoundError):
-        compute_coverage_score(genomes_file=mini_fasta, atomization_file=missing_geese)
-
-
-def test_compute_coverage_score_half_open_lengths(tmp_path: Path):
-    """compute_coverage_score should use half-open interval lengths."""
-    genomes_file = tmp_path / "genomes.fa"
-    genomes_file.write_text(">sequence1\nAAAAAAAAAA\n>sequence2\nCCCCCCCCCC\n")
-
-    atomization_file = tmp_path / "atoms.geese"
-    atomization_file.write_text(
-        "#name\tatom_nr\tclass\tstrand\tstart\tend\n"
-        "sequence1\t1\t1\t+\t0\t4\n"
-        "sequence2\t2\t2\t+\t5\t10\n"
-    )
-
-    score = compute_coverage_score(genomes_file=genomes_file, atomization_file=atomization_file)
-    assert score == 9 / 20
+    with pytest.raises(FileNotFoundError, match=expected_message):
+        compute_coverage_score(genomes_file=genomes_file, atomization_file=atomization_file)
