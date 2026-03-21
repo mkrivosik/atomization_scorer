@@ -182,8 +182,8 @@ def _scan_intervals_interval_level(
                 atom_class = int(true_df.loc[true_index, "class"])
                 fn[atom_class] = fn.get(atom_class, 0) + 1
 
-    predicted_file = output_directory / "interval_predicted_status.tsv"
-    true_file = output_directory / "interval_true_status.tsv"
+    predicted_file = output_directory / "interval_predicted_statuses.tsv"
+    true_file = output_directory / "interval_true_statuses.tsv"
     _write_interval_status(
         predicted_df=predicted_df,
         true_df=true_df,

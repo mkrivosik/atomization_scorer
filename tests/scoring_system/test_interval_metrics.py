@@ -112,8 +112,8 @@ def test_compute_interval_level_metrics_overall(tmp_path: Path, output_dir: Path
 
     assert score == 1/3
 
-    predicted_file = output_dir / "interval_predicted_status.tsv"
-    true_file = output_dir / "interval_true_status.tsv"
+    predicted_file = output_dir / "interval_predicted_statuses.tsv"
+    true_file = output_dir / "interval_true_statuses.tsv"
     out_file = output_dir / "interval_metrics_overall.tsv"
 
     assert predicted_file.exists()
@@ -144,8 +144,8 @@ def test_compute_interval_level_metrics_per_class(tmp_path: Path, output_dir: Pa
     assert metrics[1]["Class"] == 2
     assert metrics[1]["F1-score"] == 0.0    # Based on TP = 0, FP = 0, FN = 1
 
-    predicted_file = output_dir / "interval_predicted_status.tsv"
-    true_file = output_dir / "interval_true_status.tsv"
+    predicted_file = output_dir / "interval_predicted_statuses.tsv"
+    true_file = output_dir / "interval_true_statuses.tsv"
     out_file = output_dir / "interval_metrics_per_class.tsv"
 
     assert predicted_file.exists()
@@ -166,8 +166,8 @@ def test_interval_level_status_files_created(tmp_path: Path, output_dir: Path):
         output_directory=output_dir
     )
 
-    predicted_status = output_dir / "interval_predicted_status.tsv"
-    true_status = output_dir / "interval_true_status.tsv"
+    predicted_status = output_dir / "interval_predicted_statuses.tsv"
+    true_status = output_dir / "interval_true_statuses.tsv"
 
     assert predicted_status.is_file()
     assert true_status.is_file()
@@ -228,8 +228,8 @@ def test_interval_level_class_mismatch(tmp_path: Path, output_dir: Path):
         min_overlap_ratio=0.8
     )
 
-    predicted_status = pd.read_csv(output_dir / "interval_predicted_status.tsv", sep="\t")
-    true_status = pd.read_csv(output_dir / "interval_true_status.tsv", sep="\t")
+    predicted_status = pd.read_csv(output_dir / "interval_predicted_statuses.tsv", sep="\t")
+    true_status = pd.read_csv(output_dir / "interval_true_statuses.tsv", sep="\t")
 
     assert score == 0.0
     assert predicted_status["status"].tolist() == ["FP"]
@@ -250,8 +250,8 @@ def test_interval_level_true_interval_matched_only_once(tmp_path: Path, output_d
         min_overlap_ratio=0.8
     )
 
-    predicted_status = pd.read_csv(output_dir / "interval_predicted_status.tsv", sep="\t")
-    true_status = pd.read_csv(output_dir / "interval_true_status.tsv", sep="\t")
+    predicted_status = pd.read_csv(output_dir / "interval_predicted_statuses.tsv", sep="\t")
+    true_status = pd.read_csv(output_dir / "interval_true_statuses.tsv", sep="\t")
 
     assert score == 2 / 3
     assert predicted_status["status"].tolist() == ["TP", "FP"]

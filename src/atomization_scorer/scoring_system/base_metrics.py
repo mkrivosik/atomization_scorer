@@ -23,6 +23,13 @@ from .helpers import _compute_and_write_metrics, _create_new_row, _write_metrics
 # --------------------------------------------------------------------------------------
 # Base-Level Metrics
 # --------------------------------------------------------------------------------------
+EVENT_PRIORITY = {
+    "predicted_end": 0,
+    "true_end": 1,
+    "predicted_start": 2,
+    "true_start": 3,
+}
+
 
 def compute_base_level_metrics(
     predicted_geese: Path,
@@ -114,7 +121,7 @@ def _scan_intervals_base_level(
 
     Returns
     -------
-    List[Dict[int, int], Dict[int, int], Dict[int, int]]
+    Tuple[Dict[int, int], Dict[int, int], Dict[int, int]]
         tp : Dict[int, int]
             Number of True Positive bases per Atomization class.
         fp : Dict[int, int]
@@ -127,27 +134,39 @@ def _scan_intervals_base_level(
     fn = {}  # False Negatives
     predicted_intervals = []
     true_intervals = []
-
-    all_sequences = set(predicted_df["name"]).union(set(true_df["name"]))
+    predicted_groups = {name: group for name, group in predicted_df.groupby("name", sort=False)}
+    true_groups = {name: group for name, group in true_df.groupby("name", sort=False)}
+    all_sequences = set(predicted_groups).union(set(true_groups))
 
     for sequence in all_sequences:
-        predicted_sequence = predicted_df[predicted_df["name"] == sequence]
-        true_sequence = true_df[true_df["name"] == sequence]
+        predicted_sequence = predicted_groups.get(sequence, predicted_df.iloc[0:0])
+        true_sequence = true_groups.get(sequence, true_df.iloc[0:0])
 
         interval_events = []
 
         for _, row in predicted_sequence.iterrows():
             start, end, class_id = int(row["start"]), int(row["end"]), int(row["class"])
+            if start >= end:
+                raise ValueError(
+                    "Invalid predicted interval for "
+                    f"sequence '{row['name']}', class {class_id}: start={start}, end={end}"
+                )
             interval_events.append((start, "predicted_start", class_id, row.to_dict()))
             interval_events.append((end, "predicted_end", class_id, row.to_dict()))
 
         for _, row in true_sequence.iterrows():
             start, end, class_id = int(row["start"]), int(row["end"]), int(row["class"])
+            if start >= end:
+                raise ValueError(
+                    "Invalid true interval for "
+                    f"sequence '{row['name']}', class {class_id}: start={start}, end={end}"
+                )
             interval_events.append((start, "true_start", class_id, row.to_dict()))
             interval_events.append((end, "true_end", class_id, row.to_dict()))
 
-        interval_events.sort(key=lambda x: x[0])
+        interval_events.sort(key=lambda x: (x[0], EVENT_PRIORITY[x[1]]))
 
+        # Atom intervals are assumed not to overlap within a sequence, so one active row per class is sufficient.
         active_predicted_classes = {}
         active_true_classes = {}
         previous_position = None
@@ -209,8 +228,8 @@ def _scan_intervals_base_level(
 
             previous_position = current_position
 
-    predicted_file = output_directory / "base_predicted_status.tsv"
-    true_file = output_directory / "base_true_status.tsv"
+    predicted_file = output_directory / "base_predicted_statuses.tsv"
+    true_file = output_directory / "base_true_statuses.tsv"
 
     # -------- predicted intervals --------
     predicted_out = pd.DataFrame(predicted_intervals)
