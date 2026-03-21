@@ -132,46 +132,54 @@ def _scan_intervals_interval_level(
     tp = {}  # True Positives
     fp = {}  # False Positives
     fn = {}  # False Negatives
-    tp_indexes = set()
-
-    all_sequences = set(predicted_df["name"]).union(set(true_df["name"]))
+    matched_predicted_indexes = set()
+    matched_true_indexes = set()
+    predicted_groups = {name: group for name, group in predicted_df.groupby("name", sort=False)}
+    true_groups = {name: group for name, group in true_df.groupby("name", sort=False)}
+    all_sequences = set(predicted_groups).union(set(true_groups))
 
     for sequence in all_sequences:
-        predicted_sequence = predicted_df[predicted_df["name"] == sequence].reset_index(drop=True)
-        true_sequence = true_df[true_df["name"] == sequence].reset_index(drop=True)
+        predicted_sequence = predicted_groups.get(sequence, predicted_df.iloc[0:0])
+        true_sequence = true_groups.get(sequence, true_df.iloc[0:0])
 
         tree = IntervalTree()
-        for index, row in true_sequence.iterrows():
-            tree[row["start"]:row["end"]] = (index, int(row["class"]))
+        for true_index, row in true_sequence.iterrows():
+            tree[row["start"]:row["end"]] = (
+                true_index,
+                int(row["class"]),
+                row["start"],
+                row["end"]
+            )
 
-        true_used = [False] * len(true_sequence)
+        true_used = {true_index: False for true_index in true_sequence.index}
 
         for predicted_index, predicted in predicted_sequence.iterrows():
             overlaps = tree[predicted["start"]:predicted["end"]]
             matched = False
 
             for interval in overlaps:
-                true_index, true_class = interval.data
+                true_index, true_class, true_start, true_end = interval.data
                 if not true_used[true_index] and int(predicted["class"]) == true_class:
                     overlap_ratio = _interval_overlap(
                         predicted["start"], predicted["end"],
-                        true_sequence.iloc[true_index]["start"], true_sequence.iloc[true_index]["end"]
+                        true_start, true_end
                     )
                     if overlap_ratio >= min_overlap_ratio:
                         atom_class = int(predicted["class"])
                         tp[atom_class] = tp.get(atom_class, 0) + 1
                         true_used[true_index] = True
                         matched = True
-                        tp_indexes.add(predicted_index)
+                        matched_predicted_indexes.add(predicted_index)
+                        matched_true_indexes.add(true_index)
                         break
 
             if not matched:
                 atom_class = int(predicted["class"])
                 fp[atom_class] = fp.get(atom_class, 0) + 1
 
-        for index, used in enumerate(true_used):
+        for true_index, used in true_used.items():
             if not used:
-                atom_class = int(true_sequence.iloc[index]["class"])
+                atom_class = int(true_df.loc[true_index, "class"])
                 fn[atom_class] = fn.get(atom_class, 0) + 1
 
     predicted_file = output_directory / "interval_predicted_status.tsv"
@@ -179,7 +187,8 @@ def _scan_intervals_interval_level(
     _write_interval_status(
         predicted_df=predicted_df,
         true_df=true_df,
-        tp_indexes=tp_indexes,
+        matched_predicted_indexes=matched_predicted_indexes,
+        matched_true_indexes=matched_true_indexes,
         predicted_output_path=predicted_file,
         true_output_path=true_file
     )
@@ -190,7 +199,8 @@ def _scan_intervals_interval_level(
 def _write_interval_status(
     predicted_df: pd.DataFrame,
     true_df: pd.DataFrame,
-    tp_indexes: set[int],
+    matched_predicted_indexes: set[int],
+    matched_true_indexes: set[int],
     predicted_output_path: Path,
     true_output_path: Path
 ) -> None:
@@ -204,9 +214,10 @@ def _write_interval_status(
         Table containing the predicted intervals.
     true_df : pd.DataFrame
         Table containing the true intervals.
-    tp_indexes : Set[int]
-        Set of indexes of predicted intervals that were classified as True Positives;
-        same indexes are used to mark True Positives in the true intervals as well.
+    matched_predicted_indexes : Set[int]
+        Set of predicted row indexes that were classified as True Positives.
+    matched_true_indexes : Set[int]
+        Set of true row indexes that were matched by predicted intervals.
     predicted_output_path : Path
         Path where the predicted intervals TSV file will be saved.
     true_output_path : Path
@@ -220,8 +231,8 @@ def _write_interval_status(
     predicted_out = predicted_df.copy()
     predicted_status = []
 
-    for i in range(len(predicted_df)):
-        if i in tp_indexes:
+    for i in predicted_df.index:
+        if i in matched_predicted_indexes:
             predicted_status.append("TP")
         else:
             predicted_status.append("FP")
@@ -233,8 +244,8 @@ def _write_interval_status(
     true_out = true_df.copy()
     true_status = []
 
-    for i in range(len(true_df)):
-        if i in tp_indexes:
+    for i in true_df.index:
+        if i in matched_true_indexes:
             true_status.append("TP")
         else:
             true_status.append("FN")

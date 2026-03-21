@@ -35,6 +35,67 @@ def create_minimal_geese(tmp_path: Path):
 
 
 # --------------------------------------------------------------------------------------
+# Helper: create GEESE files for class-mismatch testing
+# --------------------------------------------------------------------------------------
+def create_class_mismatch_geese(tmp_path: Path):
+    """Create predicted and true GEESE files where overlap exists but classes differ."""
+    predicted_geese = tmp_path / "predicted_class_mismatch.geese"
+    predicted_geese.write_text(
+        "#name\tatom_nr\tclass\tstrand\tstart\tend\n"
+        "sequence1\t1\t1\t+\t0\t10\n"
+    )
+
+    true_geese = tmp_path / "true_class_mismatch.geese"
+    true_geese.write_text(
+        "#name\tatom_nr\tclass\tstrand\tstart\tend\n"
+        "sequence1\t1\t2\t+\t0\t10\n"
+    )
+
+    return predicted_geese, true_geese
+
+
+# --------------------------------------------------------------------------------------
+# Helper: create GEESE files where one true interval can only be matched once
+# --------------------------------------------------------------------------------------
+def create_single_true_match_geese(tmp_path: Path):
+    """Create predicted and true GEESE files where two predictions compete for one true interval."""
+    predicted_geese = tmp_path / "predicted_single_true_match.geese"
+    predicted_geese.write_text(
+        "#name\tatom_nr\tclass\tstrand\tstart\tend\n"
+        "sequence1\t1\t1\t+\t0\t10\n"
+        "sequence1\t2\t1\t+\t0\t10\n"
+    )
+
+    true_geese = tmp_path / "true_single_true_match.geese"
+    true_geese.write_text(
+        "#name\tatom_nr\tclass\tstrand\tstart\tend\n"
+        "sequence1\t1\t1\t+\t0\t10\n"
+    )
+
+    return predicted_geese, true_geese
+
+
+# --------------------------------------------------------------------------------------
+# Helper: create GEESE files for exact min_overlap_ratio testing
+# --------------------------------------------------------------------------------------
+def create_min_overlap_ratio_geese(tmp_path: Path):
+    """Create predicted and true GEESE files where one match depends on the overlap threshold."""
+    predicted_geese = tmp_path / "predicted_min_overlap.geese"
+    predicted_geese.write_text(
+        "#name\tatom_nr\tclass\tstrand\tstart\tend\n"
+        "sequence1\t1\t1\t+\t0\t10\n"
+    )
+
+    true_geese = tmp_path / "true_min_overlap.geese"
+    true_geese.write_text(
+        "#name\tatom_nr\tclass\tstrand\tstart\tend\n"
+        "sequence1\t1\t1\t+\t2\t10\n"
+    )
+
+    return predicted_geese, true_geese
+
+
+# --------------------------------------------------------------------------------------
 # Test: basic interval-level scoring (overall)
 # --------------------------------------------------------------------------------------
 def test_compute_interval_level_metrics_overall(tmp_path: Path, output_dir: Path):
@@ -116,16 +177,24 @@ def test_interval_level_status_files_created(tmp_path: Path, output_dir: Path):
 
     assert "status" in pred_df.columns
     assert "status" in true_df.columns
-    assert set(pred_df["status"]).issubset({"TP", "FP"})
-    assert set(true_df["status"]).issubset({"TP", "FN"})
+    assert list(zip(pred_df["name"], pred_df["start"], pred_df["end"], pred_df["status"])) == [
+        ("sequence1", 0, 10, "TP"),
+        ("sequence2", 0, 10, "FP"),
+        ("sequence1", 20, 30, "FP"),
+    ]
+    assert list(zip(true_df["name"], true_df["start"], true_df["end"], true_df["status"])) == [
+        ("sequence2", 0, 20, "FN"),
+        ("sequence1", 1, 11, "TP"),
+        ("sequence2", 8, 20, "FN"),
+    ]
 
 
 # --------------------------------------------------------------------------------------
 # Test: min_overlap_ratio filters matches
 # --------------------------------------------------------------------------------------
 def test_interval_level_min_overlap_ratio_effect(tmp_path: Path, output_dir: Path):
-    """compute_interval_level_metrics should reduce True Positives with higher min_overlap_ratio."""
-    predicted_geese, true_geese = create_minimal_geese(tmp_path)
+    """compute_interval_level_metrics should change the outcome when overlap falls below the threshold."""
+    predicted_geese, true_geese = create_min_overlap_ratio_geese(tmp_path)
 
     score_low = compute_interval_level_metrics(
         predicted_geese=predicted_geese,
@@ -138,7 +207,52 @@ def test_interval_level_min_overlap_ratio_effect(tmp_path: Path, output_dir: Pat
         predicted_geese=predicted_geese,
         true_geese=true_geese,
         output_directory=output_dir,
-        min_overlap_ratio=1.0
+        min_overlap_ratio=0.9
     )
 
-    assert score_high <= score_low
+    assert score_low == 1.0
+    assert score_high == 0.0
+
+
+# --------------------------------------------------------------------------------------
+# Test: class mismatch does not count as a match
+# --------------------------------------------------------------------------------------
+def test_interval_level_class_mismatch(tmp_path: Path, output_dir: Path):
+    """compute_interval_level_metrics should reject overlaps when predicted and true classes differ."""
+    predicted_geese, true_geese = create_class_mismatch_geese(tmp_path)
+
+    score = compute_interval_level_metrics(
+        predicted_geese=predicted_geese,
+        true_geese=true_geese,
+        output_directory=output_dir,
+        min_overlap_ratio=0.8
+    )
+
+    predicted_status = pd.read_csv(output_dir / "interval_predicted_status.tsv", sep="\t")
+    true_status = pd.read_csv(output_dir / "interval_true_status.tsv", sep="\t")
+
+    assert score == 0.0
+    assert predicted_status["status"].tolist() == ["FP"]
+    assert true_status["status"].tolist() == ["FN"]
+
+
+# --------------------------------------------------------------------------------------
+# Test: one true interval can be matched only once
+# --------------------------------------------------------------------------------------
+def test_interval_level_true_interval_matched_only_once(tmp_path: Path, output_dir: Path):
+    """compute_interval_level_metrics should allow only one predicted interval to match a true interval."""
+    predicted_geese, true_geese = create_single_true_match_geese(tmp_path)
+
+    score = compute_interval_level_metrics(
+        predicted_geese=predicted_geese,
+        true_geese=true_geese,
+        output_directory=output_dir,
+        min_overlap_ratio=0.8
+    )
+
+    predicted_status = pd.read_csv(output_dir / "interval_predicted_status.tsv", sep="\t")
+    true_status = pd.read_csv(output_dir / "interval_true_status.tsv", sep="\t")
+
+    assert score == 2 / 3
+    assert predicted_status["status"].tolist() == ["TP", "FP"]
+    assert true_status["status"].tolist() == ["TP"]
