@@ -5,6 +5,7 @@ Tests for the helper.py functions.
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from atomization_scorer.scoring_system.helpers import (
     _compute_and_write_metrics,  # noqa
@@ -40,6 +41,9 @@ def test_compute_and_write_metrics_overall_basic(output_dir: Path):
     assert df.iloc[0]["TP"] == 15
     assert df.iloc[0]["FP"] == 2
     assert df.iloc[0]["FN"] == 3
+    assert df.iloc[0]["Precision"] == 15 / 17
+    assert df.iloc[0]["Recall"] == 15 / 18
+    assert df.iloc[0]["F1-score"] == 6 / 7
 
 
 def test_compute_and_write_metrics_overall_all_zero(output_dir: Path):
@@ -81,9 +85,32 @@ def test_compute_and_write_metrics_per_class_basic(output_dir: Path):
     assert isinstance(result, list)
     assert output_file.is_file()
     assert len(result) == 2
+    assert result == [
+        {"Class": 1, "F1-score": 10 / 11},
+        {"Class": 2, "F1-score": 0.0},
+    ]
 
     df = pd.read_csv(output_file, sep="\t")
-    assert set(df["Class"]) == {1, 2}
+    assert df.to_dict("records") == [
+        {
+            "Class": 1,
+            "TP": 10,
+            "FP": 2,
+            "FN": 0,
+            "Precision": pytest.approx(10 / 12),
+            "Recall": pytest.approx(1.0),
+            "F1-score": pytest.approx(10 / 11),
+        },
+        {
+            "Class": 2,
+            "TP": 0,
+            "FP": 3,
+            "FN": 5,
+            "Precision": pytest.approx(0.0),
+            "Recall": pytest.approx(0.0),
+            "F1-score": pytest.approx(0.0),
+        },
+    ]
 
 
 def test_compute_and_write_metrics_classes_sorted(output_dir: Path):
@@ -121,43 +148,97 @@ def test_compute_and_write_metrics_return_format(output_dir: Path):
     assert result == [{"Class": 1, "F1-score": 1.0}]
 
 
+def test_compute_and_write_metrics_per_class_fn_only_class(output_dir: Path):
+    """_compute_and_write_metrics should include classes that appear only in FN."""
+    tp = {}
+    fp = {}
+    fn = {7: 4}
+
+    output_file = output_dir / "fn_only.tsv"
+
+    result = _compute_and_write_metrics(
+        tp=tp, fp=fp, fn=fn,
+        output_file=output_file,
+        per_class=True
+    )
+
+    df = pd.read_csv(output_file, sep="\t")
+
+    assert result == [{"Class": 7, "F1-score": 0.0}]
+    assert df.to_dict("records") == [
+        {
+            "Class": 7,
+            "TP": 0,
+            "FP": 0,
+            "FN": 4,
+            "Precision": 0.0,
+            "Recall": 0.0,
+            "F1-score": 0.0,
+        }
+    ]
+
+
 # --------------------------------------------------------------------------------------
 # Tests for _compute_metrics
 # --------------------------------------------------------------------------------------
-def test_compute_metrics_mixed_values():
-    """_compute_metrics should compute correct values for mixed TP, FP, FN."""
-    precision, recall, f1 = _compute_metrics(tp=5, fp=5, fn=5)
+@pytest.mark.parametrize(
+    ("tp", "fp", "fn", "expected_precision", "expected_recall", "expected_f1"),
+    [
+        (5, 5, 5, 0.5, 0.5, 0.5),
+        (10, 0, 0, 1.0, 1.0, 1.0),
+        (0, 0, 0, 0.0, 0.0, 0.0),
+        (0, 5, 0, 0.0, 0.0, 0.0),
+        (0, 0, 5, 0.0, 0.0, 0.0),
+    ],
+    ids=[
+        "mixed-values",
+        "perfect-prediction",
+        "all-zero",
+        "false-positives-only",
+        "false-negatives-only",
+    ],
+)
+def test_compute_metrics_cases(
+    tp: int,
+    fp: int,
+    fn: int,
+    expected_precision: float,
+    expected_recall: float,
+    expected_f1: float,
+):
+    """_compute_metrics should compute the expected values for simple scoring cases."""
+    precision, recall, f1 = _compute_metrics(tp=tp, fp=fp, fn=fn)
 
-    assert precision == 0.5
-    assert recall == 0.5
-    assert f1 == 0.5
+    assert precision == expected_precision
+    assert recall == expected_recall
+    assert f1 == expected_f1
 
 
-def test_compute_metrics_perfect_prediction():
-    """_compute_metrics should return 1.0 for a perfect prediction."""
-    precision, recall, f1 = _compute_metrics(tp=10, fp=0, fn=0)
+@pytest.mark.parametrize(
+    ("tp", "fp", "fn", "expected_precision", "expected_recall", "expected_f1"),
+    [
+        (4, 0, 2, 1.0, 4 / 6, 4 / 5),
+        (4, 2, 0, 4 / 6, 1.0, 4 / 5),
+    ],
+    ids=[
+        "perfect-precision-partial-recall",
+        "partial-precision-perfect-recall",
+    ],
+)
+def test_compute_metrics_asymmetric_cases(
+    tp: int,
+    fp: int,
+    fn: int,
+    expected_precision: float,
+    expected_recall: float,
+    expected_f1: float,
+):
+    """_compute_metrics should handle one-sided partial precision and recall correctly."""
+    precision, recall, f1 = _compute_metrics(tp=tp, fp=fp, fn=fn)
 
-    assert precision == 1.0
-    assert recall == 1.0
-    assert f1 == 1.0
-
-
-def test_compute_metrics_zero_everything():
-    """_compute_metrics should return all zeros when tp, fp, fn are zero."""
-    precision, recall, f1 = _compute_metrics(tp=0, fp=0, fn=0)
-
-    assert precision == 0.0
-    assert recall == 0.0
-    assert f1 == 0.0
-
-
-def test_compute_metrics_only_false_positives():
-    """_compute_metrics should return zero precision, recall, and f1 if only FP exist."""
-    precision, recall, f1 = _compute_metrics(tp=0, fp=5, fn=0)
-
-    assert precision == 0.0
-    assert recall == 0.0
-    assert f1 == 0.0
+    assert precision == expected_precision
+    assert recall == expected_recall
+    assert f1 == expected_f1
 
 
 # --------------------------------------------------------------------------------------
@@ -223,68 +304,62 @@ def test_write_metrics_tsv_overwrites_existing_file(output_dir: Path):
 # --------------------------------------------------------------------------------------
 # Tests for _create_new_row
 # --------------------------------------------------------------------------------------
-def test_create_new_row_basic():
-    """_create_new_row should correctly construct a new interval row."""
+def test_create_new_row_preserves_metadata_and_replaces_coordinates():
+    """_create_new_row should keep metadata while replacing the original coordinates."""
     row = pd.Series({
-        "name": "sequence",
-        "atom_nr": 5,
-        "class": 2,
-        "strand": "+",
-        "start": 0,
-        "end": 100
+        "name": "sequence_2",
+        "atom_nr": 9,
+        "class": 4,
+        "strand": "-",
+        "start": 100,
+        "end": 250
     })
 
     new_row = _create_new_row(
         row=row,
-        start=10,
-        end=20,
-        status="TP"
+        start=120,
+        end=140,
+        status="FN"
     )
 
-    assert isinstance(new_row, dict)
-    assert new_row["name"] == "sequence"
-    assert new_row["atom_nr"] == 5
-    assert new_row["class"] == 2
-    assert new_row["strand"] == "+"
-    assert new_row["start"] == 10
-    assert new_row["end"] == 20
-    assert new_row["status"] == "TP"
+    assert new_row == {
+        "name": "sequence_2",
+        "atom_nr": 9,
+        "class": 4,
+        "strand": "-",
+        "start": 120,
+        "end": 140,
+        "status": "FN",
+    }
 
 
 # --------------------------------------------------------------------------------------
 # Tests for _interval_overlap
 # --------------------------------------------------------------------------------------
-def test_interval_overlap_no_overlap():
-    """_interval_overlap should return 0.0 if intervals do not overlap."""
-    overlap = _interval_overlap(start1=0, end1=10, start2=20, end2=30)
-    assert overlap == 0.0
-
-
-def test_interval_overlap_identical_intervals():
-    """_interval_overlap should return 1.0 for identical intervals."""
-    overlap = _interval_overlap(start1=5, end1=15, start2=5, end2=15)
-    assert overlap == 1.0
-
-
-def test_interval_overlap_partial_overlap():
-    """_interval_overlap should correctly compute partial overlap."""
-    overlap = _interval_overlap(start1=0, end1=10, start2=6, end2=15)
-    assert overlap == 4 / 15
-
-
-def test_interval_overlap_interval_inside_another():
-    """_interval_overlap should handle one interval fully inside another."""
-    overlap = _interval_overlap(start1=0, end1=20, start2=5, end2=10)
-    assert overlap == 5 / 20
-
-
-def test_interval_overlap_single_base_overlap():
-    """_interval_overlap should return 0.0 for half-open intervals touching at one boundary."""
-    overlap = _interval_overlap(start1=0, end1=10, start2=10, end2=20)
-    assert overlap == 0.0
-
-
-def test_interval_overlap_adjacent_intervals():
-    """_interval_overlap should return 0.0 for adjacent but non-overlapping intervals."""
-    overlap = _interval_overlap(start1=0, end1=10, start2=10, end2=20)
-    assert overlap == 0.0
+@pytest.mark.parametrize(
+    ("start1", "end1", "start2", "end2", "expected_overlap"),
+    [
+        (0, 10, 20, 30, 0.0),
+        (5, 15, 5, 15, 1.0),
+        (0, 10, 6, 15, 4 / 15),
+        (0, 20, 5, 10, 5 / 20),
+        (0, 10, 10, 20, 0.0),
+    ],
+    ids=[
+        "no-overlap",
+        "identical-intervals",
+        "partial-overlap",
+        "interval-inside-another",
+        "touching-boundary",
+    ],
+)
+def test_interval_overlap_cases(
+    start1: int,
+    end1: int,
+    start2: int,
+    end2: int,
+    expected_overlap: float,
+):
+    """_interval_overlap should compute the expected overlap ratio for common interval cases."""
+    overlap = _interval_overlap(start1=start1, end1=end1, start2=start2, end2=end2)
+    assert overlap == expected_overlap

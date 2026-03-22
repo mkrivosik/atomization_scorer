@@ -32,10 +32,7 @@ def _compute_and_write_metrics(
     per_class: bool = False
 ) -> float | list[dict[str, float]]:
     """
-    Compute precision, recall, and F1-score from TP, FP, FN.
-
-    If `per_class` is False, the function returns the overall F1-score across all classes.
-    If `per_class` is True, it returns F1-score, Precision, and Recall for each class.
+    Compute precision, recall, and F1-score from True Positives, False Positives, and False Negatives.
 
     Parameters
     ----------
@@ -48,7 +45,8 @@ def _compute_and_write_metrics(
     output_file : Path
         Path to the output file where the metrics will be saved.
     per_class : bool, optional, default=False
-        If True, returns metrics for each class. Otherwise, computes overall metrics.
+        If True, returns per-class F1-scores and writes full per-class metrics to the file.
+        Otherwise, returns the overall F1-score and writes the full overall metrics to file.
 
     Returns
     -------
