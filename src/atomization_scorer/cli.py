@@ -18,6 +18,7 @@ main                : CLI entry point, parses arguments, validates inputs, calls
 # --------------------------------------------------------------------------------------
 # Imports
 # --------------------------------------------------------------------------------------
+from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path

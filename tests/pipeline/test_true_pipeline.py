@@ -13,8 +13,9 @@ from atomization_scorer import compute_true_alignment
 # --------------------------------------------------------------------------------------
 # Test: calls all pipeline steps and returns GEESE file
 # --------------------------------------------------------------------------------------
-@patch("atomization_scorer.pipeline.true_pipeline.plot_genome_atomization")
 @patch("atomization_scorer.pipeline.true_pipeline.paf_to_geese")
+@patch("atomization_scorer.pipeline.true_pipeline.validate_non_overlapping_geese")
+@patch("atomization_scorer.pipeline.true_pipeline.resolve_paf_overlaps")
 @patch("atomization_scorer.pipeline.true_pipeline.filter_paf")
 @patch("atomization_scorer.pipeline.true_pipeline.align_with_minimap2")
 @patch("atomization_scorer.pipeline.true_pipeline.extract_representatives")
@@ -22,8 +23,9 @@ def test_compute_true_alignment_pipeline(
     mock_extract,
     mock_minimap2,
     mock_filter_paf,
+    mock_resolve_paf,
+    mock_validate_geese,
     mock_paf_to_geese,
-    mock_visualization,
     mini_fasta: Path,
     mini_geese: Path,
     output_dir: Path
@@ -43,8 +45,8 @@ def test_compute_true_alignment_pipeline(
     representatives_fasta = output_dir / "mash_representatives.fa"
     paf_file = output_dir / "minimap2_alignments.paf"
     filtered_paf = output_dir / "minimap2_alignment_filtered.paf"
+    resolved_paf = output_dir / "minimap2_alignment_resolved.paf"
     true_geese = output_dir / "true_atomization.geese"
-    visualization_directory = output_dir / "atomization_visualization"
 
     assert geese_path == true_geese
 
@@ -69,24 +71,25 @@ def test_compute_true_alignment_pipeline(
         minimum_alignment_length=500
     )
 
-    mock_paf_to_geese.assert_called_once_with(
+    mock_resolve_paf.assert_called_once_with(
         paf_file=filtered_paf,
+        output_file=resolved_paf,
+    )
+
+    mock_paf_to_geese.assert_called_once_with(
+        paf_file=resolved_paf,
         output_file=true_geese
     )
 
-    mock_visualization.assert_called_once_with(
-        genomes_file=mini_fasta,
-        true_atoms_file=true_geese,
-        predicted_atoms_file=mini_geese,
-        output_directory=visualization_directory
-    )
+    mock_validate_geese.assert_called_once_with(true_geese)
 
 
 # --------------------------------------------------------------------------------------
 # Test: works with "first" mode instead of "mash"
 # --------------------------------------------------------------------------------------
-@patch("atomization_scorer.pipeline.true_pipeline.plot_genome_atomization")
 @patch("atomization_scorer.pipeline.true_pipeline.paf_to_geese")
+@patch("atomization_scorer.pipeline.true_pipeline.validate_non_overlapping_geese")
+@patch("atomization_scorer.pipeline.true_pipeline.resolve_paf_overlaps")
 @patch("atomization_scorer.pipeline.true_pipeline.filter_paf")
 @patch("atomization_scorer.pipeline.true_pipeline.align_with_minimap2")
 @patch("atomization_scorer.pipeline.true_pipeline.extract_representatives")
@@ -94,8 +97,9 @@ def test_compute_true_alignment_first_mode(
     mock_extract,
     mock_minimap2,
     mock_filter_paf,
+    mock_resolve_paf,
+    mock_validate_geese,
     mock_paf_to_geese,
-    mock_visualization,
     mini_fasta: Path,
     mini_geese: Path,
     output_dir: Path
@@ -125,15 +129,17 @@ def test_compute_true_alignment_first_mode(
 
     mock_minimap2.assert_called_once()
     mock_filter_paf.assert_called_once()
+    mock_resolve_paf.assert_called_once()
     mock_paf_to_geese.assert_called_once()
-    mock_visualization.assert_called_once()
+    mock_validate_geese.assert_called_once()
 
 
 # --------------------------------------------------------------------------------------
 # Test: forwards non-default filter parameters
 # --------------------------------------------------------------------------------------
-@patch("atomization_scorer.pipeline.true_pipeline.plot_genome_atomization")
 @patch("atomization_scorer.pipeline.true_pipeline.paf_to_geese")
+@patch("atomization_scorer.pipeline.true_pipeline.validate_non_overlapping_geese")
+@patch("atomization_scorer.pipeline.true_pipeline.resolve_paf_overlaps")
 @patch("atomization_scorer.pipeline.true_pipeline.filter_paf")
 @patch("atomization_scorer.pipeline.true_pipeline.align_with_minimap2")
 @patch("atomization_scorer.pipeline.true_pipeline.extract_representatives")
@@ -141,8 +147,9 @@ def test_compute_true_alignment_forwards_custom_filter_parameters(
     mock_extract,
     mock_minimap2,
     mock_filter_paf,
+    mock_resolve_paf,
+    mock_validate_geese,
     mock_paf_to_geese,
-    mock_visualization,
     mini_fasta: Path,
     mini_geese: Path,
     output_dir: Path
@@ -167,15 +174,17 @@ def test_compute_true_alignment_forwards_custom_filter_parameters(
         minimum_similarity=0.8,
         minimum_alignment_length=1234
     )
+    mock_resolve_paf.assert_called_once()
     mock_paf_to_geese.assert_called_once()
-    mock_visualization.assert_called_once()
+    mock_validate_geese.assert_called_once()
 
 
 # --------------------------------------------------------------------------------------
 # Test: creates output directory if missing
 # --------------------------------------------------------------------------------------
-@patch("atomization_scorer.pipeline.true_pipeline.plot_genome_atomization")
 @patch("atomization_scorer.pipeline.true_pipeline.paf_to_geese")
+@patch("atomization_scorer.pipeline.true_pipeline.validate_non_overlapping_geese")
+@patch("atomization_scorer.pipeline.true_pipeline.resolve_paf_overlaps")
 @patch("atomization_scorer.pipeline.true_pipeline.filter_paf")
 @patch("atomization_scorer.pipeline.true_pipeline.align_with_minimap2")
 @patch("atomization_scorer.pipeline.true_pipeline.extract_representatives")
@@ -183,8 +192,9 @@ def test_compute_true_alignment_creates_output_directory(
     mock_extract,
     mock_minimap2,
     mock_filter_paf,
+    mock_resolve_paf,
+    mock_validate_geese,
     mock_paf_to_geese,
-    mock_visualization,
     mini_fasta: Path,
     mini_geese: Path,
     tmp_path: Path
@@ -204,8 +214,9 @@ def test_compute_true_alignment_creates_output_directory(
     mock_extract.assert_called_once()
     mock_minimap2.assert_called_once()
     mock_filter_paf.assert_called_once()
+    mock_resolve_paf.assert_called_once()
     mock_paf_to_geese.assert_called_once()
-    mock_visualization.assert_called_once()
+    mock_validate_geese.assert_called_once()
 
 
 # --------------------------------------------------------------------------------------
@@ -246,8 +257,9 @@ def test_compute_true_alignment_missing_input_file(
 # --------------------------------------------------------------------------------------
 # Test: propagates minimap2 alignment failure
 # --------------------------------------------------------------------------------------
-@patch("atomization_scorer.pipeline.true_pipeline.plot_genome_atomization")
 @patch("atomization_scorer.pipeline.true_pipeline.paf_to_geese")
+@patch("atomization_scorer.pipeline.true_pipeline.validate_non_overlapping_geese")
+@patch("atomization_scorer.pipeline.true_pipeline.resolve_paf_overlaps")
 @patch("atomization_scorer.pipeline.true_pipeline.filter_paf")
 @patch("atomization_scorer.pipeline.true_pipeline.align_with_minimap2")
 @patch("atomization_scorer.pipeline.true_pipeline.extract_representatives")
@@ -255,8 +267,9 @@ def test_compute_true_alignment_propagates_alignment_failure(
     mock_extract,
     mock_minimap2,
     mock_filter_paf,
+    mock_resolve_paf,
+    mock_validate_geese,
     mock_paf_to_geese,
-    mock_visualization,
     mini_fasta: Path,
     mini_geese: Path,
     output_dir: Path
@@ -274,15 +287,17 @@ def test_compute_true_alignment_propagates_alignment_failure(
     mock_extract.assert_called_once()
     mock_minimap2.assert_called_once()
     mock_filter_paf.assert_not_called()
+    mock_resolve_paf.assert_not_called()
     mock_paf_to_geese.assert_not_called()
-    mock_visualization.assert_not_called()
+    mock_validate_geese.assert_not_called()
 
 
 # --------------------------------------------------------------------------------------
 # Test: propagates PAF filtering failure
 # --------------------------------------------------------------------------------------
-@patch("atomization_scorer.pipeline.true_pipeline.plot_genome_atomization")
 @patch("atomization_scorer.pipeline.true_pipeline.paf_to_geese")
+@patch("atomization_scorer.pipeline.true_pipeline.validate_non_overlapping_geese")
+@patch("atomization_scorer.pipeline.true_pipeline.resolve_paf_overlaps")
 @patch("atomization_scorer.pipeline.true_pipeline.filter_paf")
 @patch("atomization_scorer.pipeline.true_pipeline.align_with_minimap2")
 @patch("atomization_scorer.pipeline.true_pipeline.extract_representatives")
@@ -290,8 +305,9 @@ def test_compute_true_alignment_propagates_filter_failure(
     mock_extract,
     mock_minimap2,
     mock_filter_paf,
+    mock_resolve_paf,
+    mock_validate_geese,
     mock_paf_to_geese,
-    mock_visualization,
     mini_fasta: Path,
     mini_geese: Path,
     output_dir: Path
@@ -309,40 +325,42 @@ def test_compute_true_alignment_propagates_filter_failure(
     mock_extract.assert_called_once()
     mock_minimap2.assert_called_once()
     mock_filter_paf.assert_called_once()
+    mock_resolve_paf.assert_not_called()
     mock_paf_to_geese.assert_not_called()
-    mock_visualization.assert_not_called()
+    mock_validate_geese.assert_not_called()
 
 
 # --------------------------------------------------------------------------------------
-# Test: propagates visualization failure
+# Test: true pipeline returns after GEESE conversion
 # --------------------------------------------------------------------------------------
-@patch("atomization_scorer.pipeline.true_pipeline.plot_genome_atomization")
 @patch("atomization_scorer.pipeline.true_pipeline.paf_to_geese")
+@patch("atomization_scorer.pipeline.true_pipeline.validate_non_overlapping_geese")
+@patch("atomization_scorer.pipeline.true_pipeline.resolve_paf_overlaps")
 @patch("atomization_scorer.pipeline.true_pipeline.filter_paf")
 @patch("atomization_scorer.pipeline.true_pipeline.align_with_minimap2")
 @patch("atomization_scorer.pipeline.true_pipeline.extract_representatives")
-def test_compute_true_alignment_propagates_visualization_failure(
+def test_compute_true_alignment_finishes_after_geese_conversion(
     mock_extract,
     mock_minimap2,
     mock_filter_paf,
+    mock_resolve_paf,
+    mock_validate_geese,
     mock_paf_to_geese,
-    mock_visualization,
     mini_fasta: Path,
     mini_geese: Path,
     output_dir: Path
 ):
-    """compute_true_alignment should propagate visualization failures after earlier steps succeed."""
-    mock_visualization.side_effect = RuntimeError("visualization failed")
-
-    with pytest.raises(RuntimeError, match="visualization failed"):
-        compute_true_alignment(
-            genomes_file=mini_fasta,
-            atomization_file=mini_geese,
-            output_directory=output_dir
-        )
+    """compute_true_alignment should stop after generating the true GEESE file."""
+    geese_path = compute_true_alignment(
+        genomes_file=mini_fasta,
+        atomization_file=mini_geese,
+        output_directory=output_dir
+    )
 
     mock_extract.assert_called_once()
     mock_minimap2.assert_called_once()
     mock_filter_paf.assert_called_once()
+    mock_resolve_paf.assert_called_once()
     mock_paf_to_geese.assert_called_once()
-    mock_visualization.assert_called_once()
+    mock_validate_geese.assert_called_once()
+    assert geese_path == output_dir / "true_atomization.geese"

@@ -13,7 +13,12 @@ from atomization_scorer.scoring_system import compute_overall_score
 # --------------------------------------------------------------------------------------
 # Test: computes overall score and forwards alignment parameters
 # --------------------------------------------------------------------------------------
-def test_compute_overall_score(mini_fasta: Path, mini_geese: Path, output_dir: Path, monkeypatch):
+def test_compute_overall_score(
+    mini_fasta: Path,
+    mini_geese: Path,
+    output_dir: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
     """compute_overall_score should forward arguments and combine alignment and coverage scores."""
     mock_compute_alignment_score = Mock(return_value=0.8)
     mock_compute_coverage_score = Mock(return_value=0.9)
@@ -68,10 +73,10 @@ def test_compute_overall_score_edge_cases(
     mini_fasta: Path,
     mini_geese: Path,
     output_dir: Path,
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
     alignment_score: float,
     coverage_score: float,
-    expected_score: float
+    expected_score: float,
 ):
     """compute_overall_score should return the expected score for edge-case inputs."""
     monkeypatch.setattr(
@@ -94,7 +99,12 @@ def test_compute_overall_score_edge_cases(
 # --------------------------------------------------------------------------------------
 # Test: output_directory is created if it does not exist
 # --------------------------------------------------------------------------------------
-def test_compute_overall_score_creates_output_dir(mini_fasta: Path, mini_geese: Path, tmp_path: Path, monkeypatch):
+def test_compute_overall_score_creates_output_dir(
+    mini_fasta: Path,
+    mini_geese: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
     """compute_overall_score should create the output_directory if it does not exist."""
     non_existent_dir = tmp_path / "new_output_dir"
 
@@ -134,10 +144,10 @@ def test_compute_overall_score_invalid_weights(
     mini_fasta: Path,
     mini_geese: Path,
     output_dir: Path,
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
     alignment_weight: float,
     coverage_weight: float,
-    expected_message: str
+    expected_message: str,
 ):
     """compute_overall_score should reject invalid geometric-mean weights."""
     mock_compute_alignment_score = Mock()
@@ -172,7 +182,7 @@ def test_compute_overall_score_propagates_alignment_score_failure(
     mini_fasta: Path,
     mini_geese: Path,
     output_dir: Path,
-    monkeypatch
+    monkeypatch: pytest.MonkeyPatch,
 ):
     """compute_overall_score should propagate compute_alignment_score failures."""
     mock_compute_coverage_score = Mock()
@@ -206,7 +216,7 @@ def test_compute_overall_score_propagates_coverage_score_failure(
     mini_fasta: Path,
     mini_geese: Path,
     output_dir: Path,
-    monkeypatch
+    monkeypatch: pytest.MonkeyPatch,
 ):
     """compute_overall_score should propagate compute_coverage_score failures."""
     monkeypatch.setattr(

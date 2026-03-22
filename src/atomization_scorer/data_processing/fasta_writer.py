@@ -11,6 +11,7 @@ write_fasta : Writes sequences into a FASTA file.
 # --------------------------------------------------------------------------------------
 # Imports
 # --------------------------------------------------------------------------------------
+from __future__ import annotations
 from pathlib import Path
 
 from Bio.Seq import Seq

@@ -31,7 +31,7 @@ def create_minimal_files(tmp_path: Path):
 # --------------------------------------------------------------------------------------
 # Test: basic run uses the expected Minimap2 command
 # --------------------------------------------------------------------------------------
-def test_align_with_minimap2_basic(tmp_path: Path, monkeypatch):
+def test_align_with_minimap2_basic(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     """align_with_minimap2 should call Minimap2 with the expected default command."""
     genomes, representatives = create_minimal_files(tmp_path)
     output_paf = tmp_path / "alignment.paf"
@@ -65,7 +65,7 @@ def test_align_with_minimap2_basic(tmp_path: Path, monkeypatch):
 # --------------------------------------------------------------------------------------
 # Test: output directory is created if a nested path is missing
 # --------------------------------------------------------------------------------------
-def test_align_with_minimap2_creates_output_dir(tmp_path: Path, monkeypatch):
+def test_align_with_minimap2_creates_output_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     """align_with_minimap2 should create a missing nested output directory."""
     genomes, representatives = create_minimal_files(tmp_path)
     output_paf = tmp_path / "missing" / "nested" / "alignment.paf"
@@ -89,7 +89,11 @@ def test_align_with_minimap2_creates_output_dir(tmp_path: Path, monkeypatch):
 # Test: raises FileNotFoundError if the target or query is missing
 # --------------------------------------------------------------------------------------
 @pytest.mark.parametrize("missing_side", ["target", "query"])
-def test_align_with_minimap2_missing_input(tmp_path: Path, monkeypatch, missing_side: str):
+def test_align_with_minimap2_missing_input(
+    tmp_path: Path,
+    missing_side: str,
+    monkeypatch: pytest.MonkeyPatch,
+):
     """align_with_minimap2 should raise FileNotFoundError if an input file is missing."""
     target = tmp_path / "target.fa"
     query = tmp_path / "query.fa"
@@ -119,7 +123,10 @@ def test_align_with_minimap2_missing_input(tmp_path: Path, monkeypatch, missing_
 # --------------------------------------------------------------------------------------
 # Test: raises FileNotFoundError if Minimap2 is missing from PATH
 # --------------------------------------------------------------------------------------
-def test_align_with_minimap2_missing_minimap2_executable(tmp_path: Path, monkeypatch):
+def test_align_with_minimap2_missing_minimap2_executable(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
     """align_with_minimap2 should raise FileNotFoundError if Minimap2 is not on PATH."""
     genomes, representatives = create_minimal_files(tmp_path)
     output_paf = tmp_path / "alignment.paf"
@@ -137,7 +144,7 @@ def test_align_with_minimap2_missing_minimap2_executable(tmp_path: Path, monkeyp
 # --------------------------------------------------------------------------------------
 # Test: subprocess error if Minimap2 fails
 # --------------------------------------------------------------------------------------
-def test_align_with_minimap2_failure(tmp_path: Path, monkeypatch):
+def test_align_with_minimap2_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     """align_with_minimap2 should raise an exception if Minimap2 fails."""
     genomes, representatives = create_minimal_files(tmp_path)
     output_paf = tmp_path / "alignment.paf"
@@ -155,7 +162,10 @@ def test_align_with_minimap2_failure(tmp_path: Path, monkeypatch):
 # --------------------------------------------------------------------------------------
 # Test: missing or empty PAF output is rejected
 # --------------------------------------------------------------------------------------
-def test_align_with_minimap2_empty_output_raises_value_error(tmp_path: Path, monkeypatch):
+def test_align_with_minimap2_empty_output_raises_value_error(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
     """align_with_minimap2 should raise ValueError if Minimap2 writes no PAF output."""
     genomes, representatives = create_minimal_files(tmp_path)
     output_paf = tmp_path / "alignment.paf"

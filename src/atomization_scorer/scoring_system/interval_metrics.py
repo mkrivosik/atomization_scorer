@@ -7,12 +7,13 @@ Functions
 ---------
 compute_interval_level_metrics  : Computes per-interval alignment metrics and F1-score.
 _scan_intervals_interval_level  : Scan predicted and true intervals to count TP, FP, and FN at interval-level.
-_write_interval_status          : Write predicted and true intervals with status (TP/FP/FN) to a TSV file.
+_write_interval_status          : Write per-interval TP, FP, and FN status tables to TSV files.
 """
 
 # --------------------------------------------------------------------------------------
 # Imports
 # --------------------------------------------------------------------------------------
+from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd

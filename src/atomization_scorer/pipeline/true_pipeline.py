@@ -5,17 +5,22 @@ Provides the pipeline used to compute true (gold standard) genome atomization.
 
 Functions
 ---------
-compute_true_alignment : Compute true (gold standard) atomization and return a GEESE file path.
+compute_true_alignment  : Compute true (gold standard) atomization and return a GEESE file path.
 """
 
 # --------------------------------------------------------------------------------------
 # Imports
 # --------------------------------------------------------------------------------------
+from __future__ import annotations
 import logging
 from pathlib import Path
 
-from atomization_scorer.data_processing import filter_paf, paf_to_geese
-from atomization_scorer.visualization import plot_genome_atomization
+from atomization_scorer.data_processing import (
+    filter_paf,
+    paf_to_geese,
+    resolve_paf_overlaps,
+    validate_non_overlapping_geese,
+)
 
 from .minimap2_aligner import align_with_minimap2
 from .representatives_selector import extract_representatives
@@ -26,7 +31,7 @@ from .representatives_selector import extract_representatives
 logger = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------------------
-# True (Gold Standard) Alignment Pipeline Entry Point
+# True (Gold Standard) Alignment Pipeline
 # --------------------------------------------------------------------------------------
 
 def compute_true_alignment(
@@ -38,8 +43,9 @@ def compute_true_alignment(
     minimum_alignment_length: int = 500
 ) -> Path:
     """
-    Run a full true (gold standard) genome atomization pipeline: extract representatives, align genome
-    sequences on them with minimap2, filter PAF, and convert to GEESE format.
+    Run a full true (gold standard) genome atomization pipeline: extract representatives, align
+    genome sequences on them with minimap2, filter PAF alignments, resolve PAF overlaps, convert
+    to GEESE format, and validate the result.
 
     Parameters
     ----------
@@ -114,22 +120,25 @@ def compute_true_alignment(
         minimum_alignment_length=minimum_alignment_length
     )
 
+    # Resolve PAF overlaps
+    resolved_paf = output_directory / "minimap2_alignment_resolved.paf"
+    logger.info("Resolving overlapping PAF alignments into %s", resolved_paf)
+    resolve_paf_overlaps(
+        paf_file=filtered_paf,
+        output_file=resolved_paf,
+    )
+
     # Convert PAF to GEESE
     geese_file = output_directory / "true_atomization.geese"
-    logger.info("Converting filtered PAF to GEESE at %s", geese_file)
+    logger.info("Converting resolved PAF to GEESE at %s", geese_file)
     paf_to_geese(
-        paf_file=filtered_paf,
+        paf_file=resolved_paf,
         output_file=geese_file
     )
 
-    visualization_directory = output_directory / "atomization_visualization"
-    logger.info("Generating visualization into %s", visualization_directory)
-    plot_genome_atomization(
-        genomes_file=genomes_file,
-        true_atoms_file=geese_file,
-        predicted_atoms_file=atomization_file,
-        output_directory=visualization_directory
-    )
+    # Validate true atomization
+    logger.info("Validating true atomization non-overlap at %s", geese_file)
+    validate_non_overlapping_geese(geese_file)
 
     logger.info("True alignment pipeline finished with output %s", geese_file)
     return geese_file

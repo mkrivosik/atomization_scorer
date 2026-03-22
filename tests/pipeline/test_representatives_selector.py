@@ -61,7 +61,7 @@ def test_extract_representatives_first(tmp_path: Path):
 # --------------------------------------------------------------------------------------
 # Test: extract representatives with "mash" mode
 # --------------------------------------------------------------------------------------
-def test_extract_representatives_mash(tmp_path: Path, monkeypatch):
+def test_extract_representatives_mash(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     """extract_representatives should correctly select a representative using mash distances."""
     fasta_file, geese_file = create_minimal_files(tmp_path)
     output_fasta = tmp_path / "representatives_mash.fa"
@@ -188,7 +188,10 @@ def test_extract_representatives_missing_genome_name_raises_value_error(tmp_path
 # --------------------------------------------------------------------------------------
 # Test: cleans up temporary file after Mash failure
 # --------------------------------------------------------------------------------------
-def test_extract_representatives_mash_failure_cleans_up_temporary_file(tmp_path: Path, monkeypatch):
+def test_extract_representatives_mash_failure_cleans_up_temporary_file(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
     """extract_representatives should delete the temporary Mash FASTA even when Mash fails."""
     fasta_file, geese_file = create_minimal_files(tmp_path)
     temporary_fasta_path: Path | None = None
@@ -217,7 +220,10 @@ def test_extract_representatives_mash_failure_cleans_up_temporary_file(tmp_path:
 # --------------------------------------------------------------------------------------
 # Test: raises ValueError for malformed Mash output
 # --------------------------------------------------------------------------------------
-def test_extract_representatives_malformed_mash_output_raises_value_error(tmp_path: Path, monkeypatch):
+def test_extract_representatives_malformed_mash_output_raises_value_error(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
     """extract_representatives should raise ValueError for malformed Mash output."""
     fasta_file, geese_file = create_minimal_files(tmp_path)
 

@@ -6,12 +6,13 @@ used in genome atomization scoring.
 
 Modules
 -------
-fasta_reader    : Function for reading FASTA genome sequences.
-fasta_writer    : Function for writing FASTA sequence files.
-geese_reader    : Function for reading GEESE atomization tabular files.
-paf_processing  : Function for processing Minimap2 PAF files.
-paf_to_geese    : Function for converting PAF files to GEESE files.
-utils           : Shared utility functions (column checks, renaming, etc.)
+fasta_reader     : Function for reading FASTA genome sequences.
+fasta_writer     : Function for writing FASTA sequence files.
+geese_reader     : Function for reading GEESE atomization tabular files.
+paf_processing   : Function for processing Minimap2 PAF files.
+paf_segmentation : Functions for resolving PAF overlaps and validating true atomization.
+paf_to_geese     : Function for converting PAF files to GEESE files.
+utils            : Shared utility functions (column checks, renaming, etc.)
 """
 
 # --------------------------------------------------------------------------------------
@@ -40,6 +41,14 @@ from .paf_processing import filter_paf
 from .paf_to_geese import paf_to_geese
 
 # --------------------------------------------------------------------------------------
+# PAF Segmentation
+# --------------------------------------------------------------------------------------
+from .paf_segmentation import (
+    resolve_paf_overlaps,
+    validate_non_overlapping_geese,
+)
+
+# --------------------------------------------------------------------------------------
 # Utils
 # --------------------------------------------------------------------------------------
 from .utils import (
@@ -62,6 +71,10 @@ __all__ = [
 
     # PAF processing
     'filter_paf',
+
+    # PAF segmentation
+    'resolve_paf_overlaps',
+    'validate_non_overlapping_geese',
 
     # PAF processing
     'paf_to_geese',

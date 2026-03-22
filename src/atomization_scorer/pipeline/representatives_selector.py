@@ -5,12 +5,14 @@ Utility function for extracting representative sequences for a true (gold standa
 
 Functions
 ---------
+_extract_atom_sequence  : Extract the nucleotide sequence of one atom interval from a genome.
 extract_representatives : Select class representatives using different strategies ("first", "mash").
 """
 
 # --------------------------------------------------------------------------------------
 # Imports
 # --------------------------------------------------------------------------------------
+from __future__ import annotations
 import logging
 import subprocess
 import tempfile

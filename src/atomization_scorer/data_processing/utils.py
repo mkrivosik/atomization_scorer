@@ -12,10 +12,11 @@ rename_column           : Rename a column in a DataFrame if it exists.
 # --------------------------------------------------------------------------------------
 # Imports
 # --------------------------------------------------------------------------------------
+from __future__ import annotations
 import pandas as pd
 
 # --------------------------------------------------------------------------------------
-# Utils functions
+# Utils Functions
 # --------------------------------------------------------------------------------------
 
 def check_required_columns(df: pd.DataFrame, required_columns: list[str]) -> None:

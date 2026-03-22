@@ -11,6 +11,7 @@ compute_coverage_score  : Computes a fraction of the genomes covered by atoms.
 # --------------------------------------------------------------------------------------
 # Imports
 # --------------------------------------------------------------------------------------
+from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd

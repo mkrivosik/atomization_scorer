@@ -12,10 +12,12 @@ compute_alignment_score : Computes the alignment score comparing predicted
 # --------------------------------------------------------------------------------------
 # Imports
 # --------------------------------------------------------------------------------------
+from __future__ import annotations
 import logging
 from pathlib import Path
 
 from atomization_scorer.pipeline import compute_true_alignment
+from atomization_scorer.visualization import plot_atomization
 
 from .base_metrics import compute_base_level_metrics
 from .interval_metrics import compute_interval_level_metrics
@@ -93,6 +95,7 @@ def compute_alignment_score(
         output_directory=output_directory
     )
 
+    visualization_directory = output_directory / "atomization_visualization"
     if level == "base":
         logger.info("Computing base-level metrics")
         score = compute_base_level_metrics(
@@ -110,6 +113,14 @@ def compute_alignment_score(
             per_class=per_class,
             min_overlap_ratio=min_overlap_ratio
         )
+
+    logger.info("Generating atomization visualization into %s", visualization_directory)
+    plot_atomization(
+        genomes_file=genomes_file,
+        true_atoms_file=Path(true_geese),
+        predicted_atoms_file=atomization_file,
+        output_directory=visualization_directory,
+    )
 
     logger.info("Alignment score result: %s", score)
     return score

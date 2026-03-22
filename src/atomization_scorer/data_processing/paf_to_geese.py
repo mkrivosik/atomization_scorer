@@ -11,6 +11,7 @@ paf_to_geese : Convert a PAF file to a GEESE file.
 # --------------------------------------------------------------------------------------
 # Imports
 # --------------------------------------------------------------------------------------
+from __future__ import annotations
 import logging
 from pathlib import Path
 

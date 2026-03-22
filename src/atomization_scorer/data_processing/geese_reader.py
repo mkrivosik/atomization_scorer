@@ -13,6 +13,7 @@ read_geese : Load the GEESE atomization tabular file into a pandas DataFrame
 # --------------------------------------------------------------------------------------
 # Imports
 # --------------------------------------------------------------------------------------
+from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd

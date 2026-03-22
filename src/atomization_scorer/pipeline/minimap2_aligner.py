@@ -11,6 +11,7 @@ align_with_minimap2 : Align query sequences to target sequences using Minimap2.
 # --------------------------------------------------------------------------------------
 # Imports
 # --------------------------------------------------------------------------------------
+from __future__ import annotations
 import logging
 import subprocess
 from pathlib import Path

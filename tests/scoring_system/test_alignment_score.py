@@ -12,7 +12,12 @@ from atomization_scorer.scoring_system import compute_alignment_score
 # --------------------------------------------------------------------------------------
 # Test: base-level score computation forwards expected arguments
 # --------------------------------------------------------------------------------------
-def test_compute_alignment_score_base(mini_fasta: Path, mini_geese: Path, output_dir: Path, monkeypatch):
+def test_compute_alignment_score_base(
+    mini_fasta: Path,
+    mini_geese: Path,
+    output_dir: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
     """compute_alignment_score should call base-level metrics with the expected arguments."""
     true_geese = output_dir / "true_atomization.geese"
     calls = {}
@@ -25,6 +30,9 @@ def test_compute_alignment_score_base(mini_fasta: Path, mini_geese: Path, output
         calls["base_metrics"] = kwargs
         return 0.85
 
+    def fake_atomization_visualization(**kwargs):
+        calls["atomization_visualization"] = kwargs
+
     monkeypatch.setattr(
         "atomization_scorer.scoring_system.alignment_score.compute_true_alignment",
         fake_true_alignment
@@ -32,6 +40,10 @@ def test_compute_alignment_score_base(mini_fasta: Path, mini_geese: Path, output
     monkeypatch.setattr(
         "atomization_scorer.scoring_system.alignment_score.compute_base_level_metrics",
         fake_base_metrics
+    )
+    monkeypatch.setattr(
+        "atomization_scorer.scoring_system.alignment_score.plot_atomization",
+        fake_atomization_visualization
     )
 
     score = compute_alignment_score(
@@ -54,12 +66,23 @@ def test_compute_alignment_score_base(mini_fasta: Path, mini_geese: Path, output
         "output_directory": output_dir,
         "per_class": False,
     }
+    assert calls["atomization_visualization"] == {
+        "genomes_file": mini_fasta,
+        "true_atoms_file": true_geese,
+        "predicted_atoms_file": mini_geese,
+        "output_directory": output_dir / "atomization_visualization",
+    }
 
 
 # --------------------------------------------------------------------------------------
 # Test: interval-level score computation forwards expected arguments
 # --------------------------------------------------------------------------------------
-def test_compute_alignment_score_interval(mini_fasta: Path, mini_geese: Path, output_dir: Path, monkeypatch):
+def test_compute_alignment_score_interval(
+    mini_fasta: Path,
+    mini_geese: Path,
+    output_dir: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
     """compute_alignment_score should call interval-level metrics with the expected arguments."""
     true_geese = output_dir / "true_atomization.geese"
     calls = {}
@@ -72,6 +95,9 @@ def test_compute_alignment_score_interval(mini_fasta: Path, mini_geese: Path, ou
         calls["interval_metrics"] = kwargs
         return 0.75
 
+    def fake_atomization_visualization(**kwargs):
+        calls["atomization_visualization"] = kwargs
+
     monkeypatch.setattr(
         "atomization_scorer.scoring_system.alignment_score.compute_true_alignment",
         fake_true_alignment
@@ -79,6 +105,10 @@ def test_compute_alignment_score_interval(mini_fasta: Path, mini_geese: Path, ou
     monkeypatch.setattr(
         "atomization_scorer.scoring_system.alignment_score.compute_interval_level_metrics",
         fake_interval_metrics
+    )
+    monkeypatch.setattr(
+        "atomization_scorer.scoring_system.alignment_score.plot_atomization",
+        fake_atomization_visualization
     )
 
     score = compute_alignment_score(
@@ -103,6 +133,12 @@ def test_compute_alignment_score_interval(mini_fasta: Path, mini_geese: Path, ou
         "per_class": False,
         "min_overlap_ratio": 0.9,
     }
+    assert calls["atomization_visualization"] == {
+        "genomes_file": mini_fasta,
+        "true_atoms_file": true_geese,
+        "predicted_atoms_file": mini_geese,
+        "output_directory": output_dir / "atomization_visualization",
+    }
 
 
 # --------------------------------------------------------------------------------------
@@ -112,7 +148,7 @@ def test_compute_alignment_score_invalid_level_does_not_call_true_alignment(
     mini_fasta: Path,
     mini_geese: Path,
     output_dir: Path,
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
 ):
     """compute_alignment_score should reject an invalid level before computing the gold standard."""
     was_called = False
@@ -145,7 +181,7 @@ def test_compute_alignment_score_propagates_true_alignment_failure(
     mini_fasta: Path,
     mini_geese: Path,
     output_dir: Path,
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
 ):
     """compute_alignment_score should propagate failures from gold-standard generation."""
     def fake_true_alignment(**_kwargs):
@@ -172,7 +208,7 @@ def test_compute_alignment_score_propagates_base_metrics_failure(
     mini_fasta: Path,
     mini_geese: Path,
     output_dir: Path,
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
 ):
     """compute_alignment_score should propagate failures from base-level metrics."""
     monkeypatch.setattr(
@@ -186,6 +222,10 @@ def test_compute_alignment_score_propagates_base_metrics_failure(
     monkeypatch.setattr(
         "atomization_scorer.scoring_system.alignment_score.compute_base_level_metrics",
         fake_base_metrics
+    )
+    monkeypatch.setattr(
+        "atomization_scorer.scoring_system.alignment_score.plot_atomization",
+        lambda **_kwargs: None
     )
 
     with pytest.raises(RuntimeError, match="base metrics failed"):
@@ -204,7 +244,7 @@ def test_compute_alignment_score_propagates_interval_metrics_failure(
     mini_fasta: Path,
     mini_geese: Path,
     output_dir: Path,
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
 ):
     """compute_alignment_score should propagate failures from interval-level metrics."""
     monkeypatch.setattr(
@@ -218,6 +258,10 @@ def test_compute_alignment_score_propagates_interval_metrics_failure(
     monkeypatch.setattr(
         "atomization_scorer.scoring_system.alignment_score.compute_interval_level_metrics",
         fake_interval_metrics
+    )
+    monkeypatch.setattr(
+        "atomization_scorer.scoring_system.alignment_score.plot_atomization",
+        lambda **_kwargs: None
     )
 
     with pytest.raises(RuntimeError, match="interval metrics failed"):

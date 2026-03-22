@@ -1,217 +1,222 @@
 """
 atomization_visualization.py
 
-Provides functionality to visualize genome atomization for each genome separately.
+Wrapped atomization visualization of predicted versus true atomization.
 
-Modules
--------
-plot_genome_atomization : Generates PNG visualizations of true vs predicted atoms per genome.
+Functions
+---------
+_draw_baseline      : Draw uncovered genome baseline segments for a wrapped track.
+_draw_atom_track    : Draw colored atom segments plus true start/end boundary markers.
+plot_atomization    : Generate one wrapped atomization figure per genome.
 """
 
 # --------------------------------------------------------------------------------------
 # Imports
 # --------------------------------------------------------------------------------------
+from __future__ import annotations
+import logging
+import math
 from pathlib import Path
-import matplotlib.pyplot as plt
+
 import matplotlib.patches as patches
-from matplotlib.collections import PatchCollection, LineCollection
+import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
+from matplotlib.collections import LineCollection, PatchCollection
 
 from atomization_scorer import read_fasta, read_geese
 
-# --------------------------------------------------------------------------------------
-# Visualization style constants
-# --------------------------------------------------------------------------------------
-RECT_HEIGHT = 0.15
-VLINE_HEIGHT = 0.35
-ROW_SPACING = 3
-TARGET_ROWS = 20
+from .plotting_utils import (
+    compute_gap_segments,
+    get_sorted_intervals,
+    normalize_output_format,
+    save_figure,
+    split_interval_for_rows,
+)
 
 # --------------------------------------------------------------------------------------
-# Helper functions
+# Logging
 # --------------------------------------------------------------------------------------
+logger = logging.getLogger(__name__)
 
-def _wrapped_intervals(
+
+# --------------------------------------------------------------------------------------
+# Helper: draw uncovered genome baseline for one wrapped track
+# --------------------------------------------------------------------------------------
+def _draw_baseline(
+    ax: Axes,
     intervals: list[tuple[int, int]],
+    genome_length: int,
     line_length: int,
-) -> list[tuple[int, int]]:
+    track_y: float,
+) -> None:
     """
-    Split genome atom intervals into sub-intervals that fit within a single row.
-
-    This function ensures that any interval spanning multiple rows is divided so that
-    each piece fits within `line_length`. This is used to layout atoms across multiple
-    rows for visualization.
+    Draw black baseline segments for genome regions not covered by atom intervals.
 
     Parameters
     ----------
-    intervals : list of tuple[int, int]
-        List of start-end positions of atoms for the genome.
+    ax : matplotlib.axes.Axes
+        Axis where the baseline segments are drawn.
+    intervals : list[tuple[int, int]]
+        Atom intervals for one track.
+    genome_length : int
+        Total length of the genome.
     line_length : int
-        Maximum number of bases per row.
+        Number of genome bases shown in one wrapped row.
+    track_y : float
+        Base y-position of the track inside each wrapped row.
 
     Returns
     -------
-    list of tuple[int, int]
-        List of intervals split to fit within row boundaries.
+    None
     """
-    new_intervals: list[tuple[int, int]] = []
-    for start, end in intervals:
-        s = start
-        while s < end:
-            row_start = (s // line_length) * line_length
-            row_end = row_start + line_length
-            new_end = min(end, row_end)
-            new_intervals.append((s, new_end))
-            s = new_end
-    return new_intervals
+    lines: list[list[list[float]]] = []
+    n_rows = math.ceil(genome_length / line_length)
+    for row in range(n_rows):
+        y = track_y + row * 3.0
+        for gap_start, gap_end in compute_gap_segments(intervals, row, line_length, genome_length):
+            lines.append([[gap_start, y], [gap_end, y]])
+
+    if lines:
+        ax.add_collection(
+            LineCollection(
+                lines,
+                colors="black",
+                linewidths=2.0,
+                zorder=1,
+            )
+        )
 
 
-def _draw_atoms(
-    ax,
+# --------------------------------------------------------------------------------------
+# Helper: draw atom segments and boundary markers for one wrapped track
+# --------------------------------------------------------------------------------------
+def _draw_atom_track(
+    ax: Axes,
     intervals: list[tuple[int, int]],
     line_length: int,
-    base_y: float,
+    track_y: float,
     color: str,
 ) -> None:
     """
-    Draw rectangles representing genome atoms along a track, with vertical
-    boundary lines marking true atom starts and ends.
+    Draw colored atom segments and their true start and end boundary markers.
 
     Parameters
     ----------
     ax : matplotlib.axes.Axes
-        The matplotlib axes to draw on.
-    intervals : list of tuple[int, int]
-        List of start-end positions of atoms for the genome.
+        Axis where the atom segments and boundary markers are drawn.
+    intervals : list[tuple[int, int]]
+        Atom intervals for one track.
     line_length : int
-        Number of bases per row (used for wrapping).
-    base_y : float
-        Y-coordinate of the base track for this set of atoms.
+        Number of genome bases shown in one wrapped row.
+    track_y : float
+        Base y-position of the track inside each wrapped row.
     color : str
-        Color of the rectangles and vertical lines.
+        Color used for the atom segments and boundary markers.
 
     Returns
     -------
     None
     """
-    rects = []
-    vlines = []
+    rectangles = []
+    boundaries = []
 
     for start, end in intervals:
-        s = start
-        while s < end:
-            row_start = (s // line_length) * line_length
-            row_end = row_start + line_length
-            fragment_end = min(end, row_end)
-            y = base_y + (s // line_length) * ROW_SPACING
+        # noinspection PyTypeChecker
+        for fragment in split_interval_for_rows(start, end, line_length):
+            row, x_start, x_end, is_true_start, is_true_end = fragment
+            y = track_y + row * 3.0
+            rectangles.append(
+                patches.Rectangle(
+                    (x_start, y - 0.075),
+                    x_end - x_start,
+                    0.15,
+                )
+            )
+            if is_true_start:
+                boundaries.append([[x_start, y - 0.175], [x_start, y + 0.175]])
+            if is_true_end:
+                boundaries.append([[x_end, y - 0.175], [x_end, y + 0.175]])
 
-            # Rectangle
-            rects.append(patches.Rectangle(
-                (s - row_start, y - RECT_HEIGHT/2),
-                fragment_end - s,
-                RECT_HEIGHT
-            ))
+    if rectangles:
+        ax.add_collection(
+            PatchCollection(
+                rectangles,
+                facecolor=color,
+                edgecolor=color,
+                alpha=1.0,
+                zorder=3
+            )
+        )
+    if boundaries:
+        ax.add_collection(
+            LineCollection(
+                boundaries,
+                colors=color,
+                linewidths=2.0,
+                zorder=4,
+                clip_on=False,
+                capstyle="projecting",
+            )
+        )
 
-            # Vertical lines only at true atom boundaries
-            if s == start:
-                vlines.append([[s - row_start, y - VLINE_HEIGHT/2], [s - row_start, y + VLINE_HEIGHT/2]])
-            if fragment_end == end:
-                vlines.append([[fragment_end - row_start, y - VLINE_HEIGHT/2], [fragment_end - row_start, y + VLINE_HEIGHT/2]])
-
-            s = fragment_end
-
-    if rects:
-        ax.add_collection(PatchCollection(rects, facecolor=color, edgecolor=color, alpha=1.0, zorder=3))
-    if vlines:
-        ax.add_collection(LineCollection(vlines, colors=color, linewidths=2, zorder=3))
-
-
-def _draw_gap_lines(
-    ax,
-    intervals: list[tuple[int, int]],
-    row: int,
-    line_length: int,
-    line_y: float,
-) -> None:
-    """
-    Draw a genome line for a specific row, showing black segments only in the gaps
-    where no atoms are present. This ensures that the line appears continuous except
-    where predicted or true atoms exist in the given intervals.
-
-    Parameters
-    ----------
-    ax : matplotlib.axes.Axes
-        The matplotlib axes to draw on.
-    intervals : list of tuple[int, int]
-        List of start-end positions of atoms for the genome.
-    row : int
-        The row index for the current line (used for wrapping by line_length).
-    line_length : int
-        Number of bases per row.
-    line_y : float
-        Y-coordinate on the plot where the line should be drawn.
-
-    Returns
-    -------
-    None
-    """
-    row_start = row * line_length
-    row_end = row_start + line_length
-    intervals_in_row = []
-
-    for start, end in intervals:
-        if end <= row_start or start >= row_end:
-            continue
-        intervals_in_row.append((max(start, row_start), min(end, row_end)))
-
-    intervals_in_row.sort()
-    current = row_start
-    lines = []
-
-    for start, end in intervals_in_row:
-        if start > current:
-            lines.append([[current - row_start, line_y], [start - row_start, line_y]])
-        current = end
-
-    if current < row_end:
-        lines.append([[current - row_start, line_y], [row_end - row_start, line_y]])
-
-    if lines:
-        ax.add_collection(LineCollection(lines, colors="black", linewidths=2, zorder=1))
 
 # --------------------------------------------------------------------------------------
-# Genome Atomization Visualization
+# Atomization Visualization
 # --------------------------------------------------------------------------------------
-
-def plot_genome_atomization(
+def plot_atomization(
     genomes_file: Path,
     true_atoms_file: Path,
     predicted_atoms_file: Path,
     output_directory: Path,
+    figure_width: float = 12.0,
+    dpi: int = 150,
+    target_rows: int = 20,
+    min_bases_per_row: int = 10_000,
+    max_bases_per_row: int = 250_000,
+    true_color: str = "#2C7FB8",
+    predicted_color: str = "#F28E2B",
+    output_format: str = "png",
 ) -> None:
     """
-    Generate per-genome visualizations of predicted vs true atomization.
-
-    Each genome gets its own PNG file showing the true atoms (blue) and predicted atoms (orange).
+    Generate one wrapped atomization figure per genome comparing predicted and true atomization.
 
     Parameters
     ----------
     genomes_file : Path
         Input genomes FASTA file containing the genome sequences.
     true_atoms_file : Path
-        Input GEESE TSV file with true (gold standard) atomization.
+        Input GEESE file containing the true atomization.
     predicted_atoms_file : Path
-        Input GEESE TSV file with predicted atomization.
+        Input GEESE file containing the predicted atomization.
     output_directory : Path
-        Directory where per-genome PNG visualizations are saved.
-
-    Returns
-    -------
-    None
+        Path to the output directory where figures are stored.
+    figure_width : float, optional, default=12.0
+        Width of the output figure in inches.
+    dpi : int, optional, default=150
+        Resolution of the saved figure.
+    target_rows : int, optional, default=20
+        Target number of wrapped rows per genome.
+    min_bases_per_row : int, optional, default=10_000
+        Minimum number of genome bases shown in one wrapped row.
+    max_bases_per_row : int, optional, default=250_000
+        Maximum number of genome bases shown in one wrapped row.
+    true_color : str, optional, default="#2C7FB8"
+        Color used for the true atomization track.
+    predicted_color : str, optional, default="#F28E2B"
+        Color used for the predicted atomization track.
+    output_format : str, optional, default="png"
+        Output figure format.
 
     Raises
     ------
     FileNotFoundError
-        Raised if any of the input files do not exist.
+        Raised if genomes_file, true_atoms_file, or predicted_atoms_file do not exist.
+    ValueError
+        Raised if target_rows, min_bases_per_row, or max_bases_per_row are invalid.
+
+    Returns
+    -------
+    None
     """
     if not genomes_file.is_file():
         raise FileNotFoundError(f"Genomes FASTA file not found: {genomes_file}")
@@ -219,64 +224,106 @@ def plot_genome_atomization(
         raise FileNotFoundError(f"True atoms file not found: {true_atoms_file}")
     if not predicted_atoms_file.is_file():
         raise FileNotFoundError(f"Predicted atoms file not found: {predicted_atoms_file}")
+    if target_rows <= 0:
+        raise ValueError("target_rows must be a positive integer.")
+    if min_bases_per_row <= 0:
+        raise ValueError("min_bases_per_row must be a positive integer.")
+    if max_bases_per_row <= 0:
+        raise ValueError("max_bases_per_row must be a positive integer.")
+    if min_bases_per_row > max_bases_per_row:
+        raise ValueError("min_bases_per_row must be less than or equal to max_bases_per_row.")
 
+    normalized_format = normalize_output_format(output_format)
     output_directory.mkdir(parents=True, exist_ok=True)
 
+    logger.info(
+        (
+            "Generating wrapped atomization visualizations from "
+            "genomes=%s true_atoms=%s predicted_atoms=%s into %s as %s"
+        ),
+        genomes_file,
+        true_atoms_file,
+        predicted_atoms_file,
+        output_directory,
+        normalized_format,
+    )
+
     genome_dictionary = read_fasta(genomes_file)
-    df_predicted = read_geese(predicted_atoms_file)
     df_true = read_geese(true_atoms_file)
+    df_predicted = read_geese(predicted_atoms_file)
 
-    # Process each genome separately
-    for genome_name, record in genome_dictionary.items():
-        genome_length = len(record)
-        line_length = max(10_000, genome_length // TARGET_ROWS)
-        n_rows = (genome_length + line_length - 1) // line_length
+    for genome_name, sequence in genome_dictionary.items():
+        genome_length = len(sequence)
+        line_length = math.ceil(genome_length / target_rows)
+        line_length = max(min_bases_per_row, line_length)
+        line_length = min(max_bases_per_row, line_length, genome_length)
+        n_rows = max(1, math.ceil(genome_length / line_length))
 
-        predicted_intervals = list(zip(
-            df_predicted.loc[df_predicted["name"] == genome_name, "start"],
-            df_predicted.loc[df_predicted["name"] == genome_name, "end"],
-        ))
+        true_intervals = get_sorted_intervals(
+            df_true,
+            genome_name,
+            genome_length,
+            "True",
+        )
+        predicted_intervals = get_sorted_intervals(
+            df_predicted,
+            genome_name,
+            genome_length,
+            "Predicted",
+        )
 
-        true_intervals = list(zip(
-            df_true.loc[df_true["name"] == genome_name, "start"],
-            df_true.loc[df_true["name"] == genome_name, "end"],
-        ))
+        logger.info(
+            (
+                "Rendering wrapped atomization visualization for genome=%s "
+                "length=%s true_intervals=%s predicted_intervals=%s rows=%s "
+                "line_length=%s target_rows=%s min_bases_per_row=%s "
+                "max_bases_per_row=%s"
+            ),
+            genome_name,
+            genome_length,
+            len(true_intervals),
+            len(predicted_intervals),
+            n_rows,
+            line_length,
+            target_rows,
+            min_bases_per_row,
+            max_bases_per_row,
+        )
 
-        wrapped_true = _wrapped_intervals(true_intervals, line_length)
-        wrapped_pred = _wrapped_intervals(predicted_intervals, line_length)
+        figure_height = max(3.0, 1.5 + n_rows * 1.8)
+        fig, ax = plt.subplots(figsize=(figure_width, figure_height))
 
-        fig, ax = plt.subplots(figsize=(12, 2 + 1.5 * n_rows))
+        _draw_baseline(ax, predicted_intervals, genome_length, line_length, 1.0)
+        _draw_baseline(ax, true_intervals, genome_length, line_length, 2.0)
+        _draw_atom_track(ax, predicted_intervals, line_length, 1.0, predicted_color)
+        _draw_atom_track(ax, true_intervals, line_length, 2.0, true_color)
 
-        # Draw genome gap lines
-        for row in range(n_rows):
-            _draw_gap_lines(ax, true_intervals, row, line_length, 2 + row * ROW_SPACING)
-            _draw_gap_lines(ax, predicted_intervals, row, line_length, 1 + row * ROW_SPACING)
-
-        # Draw atoms
-        _draw_atoms(ax, wrapped_true, line_length, 2, "tab:blue")
-        _draw_atoms(ax, wrapped_pred, line_length, 1, "tab:orange")
-
-        ax.set_xlim(0, line_length)
-        ax.set_ylim(0.5, ROW_SPACING * n_rows)
+        ax.set_xlim(-0.5, line_length + 0.5)
+        ax.set_ylim(2.50 + (n_rows - 1) * 3.0, 0.5)
 
         ticks = []
         labels = []
-
         for row in range(n_rows):
-            ticks.append(1 + row * ROW_SPACING)
-            labels.append("Predicted Atoms")
-            ticks.append(2 + row * ROW_SPACING)
-            labels.append("True Atoms")
+            row_start = row * line_length
+            row_end = min(row_start + line_length, genome_length) - 1
+            ticks.append(1.0 + row * 3.0)
+            labels.append(f"Predicted {row_start}-{row_end}")
+            ticks.append(2.0 + row * 3.0)
+            labels.append(f"True {row_start}-{row_end}")
 
         ax.set_yticks(ticks)
         ax.set_yticklabels(labels)
+        ax.set_xlabel("Genome position within wrapped row")
+        ax.set_title(f"Atomization: {genome_name}")
 
-        ax.set_xlabel("Genome position")
-        ax.set_title(f"Genome Atomization: {genome_name}")
-
-        plt.tight_layout()
-        output_file = output_directory / f"{genome_name}.png"
-        plt.savefig(output_file)
+        fig.tight_layout()
+        output_path = output_directory / genome_name
+        save_figure(fig, output_path, normalized_format, dpi)
         plt.close(fig)
 
-        print(f"Saved visualization for genome '{genome_name}' ({genome_length} bp) -> {output_file}")
+        logger.info(
+            "Saved wrapped atomization visualization for genome=%s to %s.%s",
+            genome_name,
+            output_path,
+            normalized_format,
+        )

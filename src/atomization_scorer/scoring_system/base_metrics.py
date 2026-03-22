@@ -12,6 +12,7 @@ _scan_intervals_base_level  : Scan predicted and true intervals to count TP, FP,
 # --------------------------------------------------------------------------------------
 # Imports
 # --------------------------------------------------------------------------------------
+from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd

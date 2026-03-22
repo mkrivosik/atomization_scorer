@@ -11,6 +11,7 @@ filter_paf : Filter PAF alignments by minimum similarity and minimum alignment l
 # --------------------------------------------------------------------------------------
 # Imports
 # --------------------------------------------------------------------------------------
+from __future__ import annotations
 import logging
 from pathlib import Path
 

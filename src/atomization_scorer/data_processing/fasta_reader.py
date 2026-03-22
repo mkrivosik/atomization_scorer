@@ -11,6 +11,7 @@ read_fasta : Loads a FASTA file into a dictionary.
 # --------------------------------------------------------------------------------------
 # Imports
 # --------------------------------------------------------------------------------------
+from __future__ import annotations
 from pathlib import Path
 
 from Bio.Seq import Seq

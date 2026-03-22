@@ -1,21 +1,21 @@
 """
 visualization
 
-This package provides functions for visualizing genome atomization results.
+This package provides a function for visualizing genome atomization results.
 
 Modules
 -------
-genome_visualization : Function for plotting genome atomization intervals.
+atomization_visualization   : Function for plotting genome atomization.
 """
 
 # --------------------------------------------------------------------------------------
-# Genome Visualization
+# Visualization API
 # --------------------------------------------------------------------------------------
-from .atomization_visualization import plot_genome_atomization
+from .atomization_visualization import plot_atomization
 
 # --------------------------------------------------------------------------------------
 # Package API
 # --------------------------------------------------------------------------------------
 __all__ = [
-    'plot_genome_atomization',
+    'plot_atomization',
 ]

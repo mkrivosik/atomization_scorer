@@ -5,12 +5,13 @@ Provides the main overall scoring function for genome atomization.
 
 Modules
 -------
-compute_overall_score : Computes overall atomization score.
+compute_overall_score   : Computes overall atomization score.
 """
 
 # --------------------------------------------------------------------------------------
 # Imports
 # --------------------------------------------------------------------------------------
+from __future__ import annotations
 import logging
 from pathlib import Path
 
