@@ -7,7 +7,13 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from atomization_scorer import degrade_atomization, read_geese, write_geese
+from atomization_scorer import (
+    compute_overall_score,
+    compute_true_alignment,
+    degrade_atomization,
+    read_geese,
+    write_geese,
+)
 
 
 # --------------------------------------------------------------------------------------
@@ -146,3 +152,44 @@ def test_degrade_atomization_is_reproducible_with_seed(tmp_path: Path):
     second_result = read_geese(geese_file=second_output)
 
     pd.testing.assert_frame_equal(first_result, second_result)
+
+
+# --------------------------------------------------------------------------------------
+# Test: overall score does not increase as degradation grows
+# --------------------------------------------------------------------------------------
+def test_degrade_atomization_real_pipeline_overall_score_non_increasing(
+    mini_fasta: Path,
+    mini_geese: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """compute_overall_score should not increase when class degradation is increased."""
+    degradation_fractions = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    reference_true_geese = compute_true_alignment(
+        genomes_file=mini_fasta,
+        atomization_file=mini_geese,
+        output_directory=tmp_path / "reference_true_alignment",
+    )
+    monkeypatch.setattr(
+        "atomization_scorer.scoring_system.alignment_score.compute_true_alignment",
+        lambda **_kwargs: reference_true_geese,
+    )
+    previous_score = None
+
+    for degradation_fraction in degradation_fractions:
+        degraded_file = degrade_atomization(
+            atomization_file=mini_geese,
+            output_directory=tmp_path / f"degraded_{degradation_fraction:.1f}",
+            degradation_fraction=degradation_fraction,
+            random_seed=7,
+        )
+        current_score = compute_overall_score(
+            genomes_file=mini_fasta,
+            atomization_file=degraded_file,
+            output_directory=tmp_path / f"score_{degradation_fraction:.1f}",
+        )
+
+        if previous_score is not None:
+            assert current_score <= previous_score
+
+        previous_score = current_score
