@@ -180,7 +180,7 @@ def _scan_intervals_interval_level(
 
         for true_index, used in true_used.items():
             if not used:
-                atom_class = int(true_df.loc[true_index, "class"])
+                atom_class = int(true_df.at[true_index, "class"])
                 fn[atom_class] = fn.get(atom_class, 0) + 1
 
     predicted_file = output_directory / "interval_predicted_statuses.tsv"

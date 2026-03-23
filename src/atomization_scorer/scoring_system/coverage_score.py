@@ -59,11 +59,11 @@ def compute_coverage_score(
     if total_genomes_length == 0:
         return 0.0
 
-    atoms_df = read_geese(geese_file=atomization_file)
+    atoms_df = read_geese(geese_file=atomization_file).copy()
 
     atoms_df["start"] = pd.to_numeric(atoms_df["start"], errors="coerce")
     atoms_df["end"] = pd.to_numeric(atoms_df["end"], errors="coerce")
-    atoms_df = atoms_df.dropna(subset=["start", "end"])
+    atoms_df = atoms_df.dropna(subset=["start", "end"]).copy()
 
     # Based on the IMP atom definition, atoms are assumed not to overlap.
     atoms_df["length"] = atoms_df["end"] - atoms_df["start"]

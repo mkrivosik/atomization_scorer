@@ -23,6 +23,7 @@ from .data_processing import (
     read_geese,
     validate_non_overlapping_geese,
     write_fasta,
+    write_geese,
 )
 
 # --------------------------------------------------------------------------------------
@@ -43,6 +44,7 @@ from .scoring_system import (
     compute_coverage_score,
     compute_interval_level_metrics,
     compute_overall_score,
+    degrade_atomization,
 )
 
 # --------------------------------------------------------------------------------------
@@ -60,6 +62,7 @@ __all__ = [
     'read_fasta',
     'write_fasta',
     'read_geese',
+    'write_geese',
     'filter_paf',
     'resolve_paf_overlaps',
     'paf_to_geese',
@@ -76,6 +79,7 @@ __all__ = [
     'compute_alignment_score',
     'compute_coverage_score',
     'compute_overall_score',
+    'degrade_atomization',
 
     # Visualization
     'plot_atomization',

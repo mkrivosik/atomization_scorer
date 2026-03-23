@@ -9,6 +9,7 @@ compute_base_level_metrics      : Function for computing base level metrics.
 compute_interval_level_metrics  : Function for computing interval level metrics.
 compute_alignment_score         : Function for computing alignment scores.
 compute_coverage_score          : Function for computing genomes coverage score.
+artificial_degradation          : Function for creating artificially degraded atomization.
 overall_score                   : Function for computing overall atomization score.
 """
 
@@ -26,6 +27,11 @@ from .base_metrics import compute_base_level_metrics
 # Coverage Score
 # --------------------------------------------------------------------------------------
 from .coverage_score import compute_coverage_score
+
+# --------------------------------------------------------------------------------------
+# Artificial Degradation
+# --------------------------------------------------------------------------------------
+from .artificial_degradation import degrade_atomization
 
 # --------------------------------------------------------------------------------------
 # Interval Metrics
@@ -52,6 +58,9 @@ __all__ = [
 
     # Coverage score
     'compute_coverage_score',
+
+    # Artificial degradation
+    'degrade_atomization',
 
     # Overall score
     'compute_overall_score',

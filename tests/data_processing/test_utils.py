@@ -1,11 +1,11 @@
 """
-Tests for the utils.py functions: check_required_columns and rename_column.
+Tests for the utils.py functions.
 """
 
 import pandas as pd
 import pytest
 
-from atomization_scorer.data_processing import check_required_columns, rename_column
+from atomization_scorer.data_processing import check_required_columns
 
 
 # --------------------------------------------------------------------------------------
@@ -54,46 +54,3 @@ def test_check_required_columns_multiple_missing():
         check_required_columns(df=df, required_columns=required)
 
     assert "Missing required columns: B, C, D" in str(exception_info.value)
-
-
-# --------------------------------------------------------------------------------------
-# Test: rename_column renames a column if it exists
-# --------------------------------------------------------------------------------------
-def test_rename_column_existing():
-    """rename_column should rename the column if it exists in the DataFrame."""
-    df = pd.DataFrame({
-        'old_name': [1, 2],
-        'other': [3, 4]
-    })
-    df = rename_column(df=df, old_name='old_name', new_name='new_name')
-
-    assert 'new_name' in df.columns
-    assert 'old_name' not in df.columns
-    assert df['new_name'].tolist() == [1, 2]
-
-
-# --------------------------------------------------------------------------------------
-# Test: rename_column does nothing if the column does not exist
-# --------------------------------------------------------------------------------------
-def test_rename_column_nonexistent():
-    """rename_column should not modify DataFrame if old_name does not exist."""
-    df = pd.DataFrame({
-        'A': [1, 2],
-        'B': [3, 4]
-    })
-    df_copy = df.copy()
-    df = rename_column(df=df, old_name='C', new_name='D')  # 'C' does not exist
-
-    assert df.equals(df_copy)
-
-
-# --------------------------------------------------------------------------------------
-# Test: rename_column with empty DataFrame
-# --------------------------------------------------------------------------------------
-def test_rename_column_empty_dataframe():
-    """rename_column should not fail on an empty DataFrame and return it unchanged."""
-    df = pd.DataFrame()
-    df_renamed = rename_column(df=df, old_name='any_column', new_name='new_name')
-
-    assert df_renamed.empty
-    assert df_renamed.columns.tolist() == []

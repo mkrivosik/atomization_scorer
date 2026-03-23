@@ -9,6 +9,7 @@ Modules
 fasta_reader     : Function for reading FASTA genome sequences.
 fasta_writer     : Function for writing FASTA sequence files.
 geese_reader     : Function for reading GEESE atomization tabular files.
+geese_writer     : Function for writing GEESE atomization tabular files.
 paf_processing   : Function for processing Minimap2 PAF files.
 paf_segmentation : Functions for resolving PAF overlaps and validating true atomization.
 paf_to_geese     : Function for converting PAF files to GEESE files.
@@ -29,6 +30,11 @@ from .fasta_writer import write_fasta
 # GEESE Reader
 # --------------------------------------------------------------------------------------
 from .geese_reader import read_geese
+
+# --------------------------------------------------------------------------------------
+# GEESE Writer
+# --------------------------------------------------------------------------------------
+from .geese_writer import write_geese
 
 # --------------------------------------------------------------------------------------
 # PAF Processing
@@ -53,7 +59,6 @@ from .paf_segmentation import (
 # --------------------------------------------------------------------------------------
 from .utils import (
     check_required_columns,
-    rename_column,
 )
 
 # --------------------------------------------------------------------------------------
@@ -69,6 +74,9 @@ __all__ = [
     # GEESE reader
     'read_geese',
 
+    # GEESE writer
+    'write_geese',
+
     # PAF processing
     'filter_paf',
 
@@ -81,5 +89,4 @@ __all__ = [
 
     # Utility functions
     'check_required_columns',
-    'rename_column',
 ]

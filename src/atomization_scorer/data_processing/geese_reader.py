@@ -21,7 +21,6 @@ from pandas.errors import EmptyDataError, ParserError
 
 from .utils import (
     check_required_columns,
-    rename_column,
 )
 
 # --------------------------------------------------------------------------------------
@@ -62,7 +61,7 @@ def read_geese(geese_file: Path) -> pd.DataFrame:
     except (EmptyDataError, ParserError, UnicodeDecodeError) as error:
         raise ValueError(f"Malformed GEESE file: {geese_file}") from error
 
-    df = rename_column(df=df, old_name="#name", new_name="name")
+    df = df.rename(columns={"#name": "name"})
 
     required_columns = ["name", "class", "start", "end"]
     check_required_columns(df=df, required_columns=required_columns)
