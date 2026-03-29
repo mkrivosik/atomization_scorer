@@ -29,11 +29,14 @@ from matplotlib.figure import Figure
 logger = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------------------
-# Plotting Utils Functions
+# Constants
 # --------------------------------------------------------------------------------------
 SUPPORTED_OUTPUT_FORMATS = {"png", "svg", "pdf"}
 
 
+# --------------------------------------------------------------------------------------
+# Plotting Utils Functions
+# --------------------------------------------------------------------------------------
 def normalize_output_format(output_format: str) -> str:
     """
     Validate and normalize a requested figure output format.

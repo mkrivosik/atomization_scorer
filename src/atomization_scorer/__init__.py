@@ -7,6 +7,7 @@ and data processing utilities for evaluating genome atomization.
 Modules
 -------
 data_processing : Subpackage providing data readers and writers for PSL and GEESE files.
+diagnostics     : Subpackage providing diagnostic functions for PAF overlaps.
 pipeline        : Subpackage providing predicted and true alignment pipelines.
 scoring_system  : Subpackage providing scoring functions.
 visualization   : Subpackage providing a genome atomization plotting function.
@@ -33,6 +34,15 @@ from .pipeline import (
     align_with_minimap2,
     compute_true_alignment,
     extract_representatives,
+)
+
+# --------------------------------------------------------------------------------------
+# Diagnostics
+# --------------------------------------------------------------------------------------
+from .diagnostics import (
+    diagnose_paf_overlaps,
+    run_dotter_for_anchor,
+    run_dotter_for_anchors,
 )
 
 # --------------------------------------------------------------------------------------
@@ -72,6 +82,11 @@ __all__ = [
     'compute_true_alignment',
     'align_with_minimap2',
     'extract_representatives',
+
+    # Diagnostics
+    'diagnose_paf_overlaps',
+    'run_dotter_for_anchor',
+    'run_dotter_for_anchors',
 
     # Scoring system
     'compute_base_level_metrics',

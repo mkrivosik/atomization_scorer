@@ -69,7 +69,7 @@ def _draw_baseline(
     -------
     None
     """
-    lines: list[list[list[float]]] = []
+    lines = []
     n_rows = math.ceil(genome_length / line_length)
     for row in range(n_rows):
         y = track_y + row * 3.0

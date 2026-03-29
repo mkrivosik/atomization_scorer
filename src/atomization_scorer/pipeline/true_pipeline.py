@@ -21,6 +21,7 @@ from atomization_scorer.data_processing import (
     resolve_paf_overlaps,
     validate_non_overlapping_geese,
 )
+from atomization_scorer.diagnostics import diagnose_paf_overlaps
 
 from .minimap2_aligner import align_with_minimap2
 from .representatives_selector import extract_representatives
@@ -40,7 +41,10 @@ def compute_true_alignment(
     output_directory: Path,
     mode: str = "mash",
     minimum_similarity: float = 0.95,
-    minimum_alignment_length: int = 500
+    minimum_alignment_length: int = 500,
+    run_overlap_diagnostics: bool = True,
+    overlap_report_min_len: int = 10,
+    overlap_plot_min_len: int = 100,
 ) -> Path:
     """
     Run a full true (gold standard) genome atomization pipeline: extract representatives, align
@@ -61,6 +65,13 @@ def compute_true_alignment(
         Minimum similarity for PAF filtering.
     minimum_alignment_length : int, optional, default: 500
         Minimum alignment length for PAF filtering.
+    run_overlap_diagnostics : bool, optional, default: False
+        Whether to generate overlap-diagnostic reports from the filtered PAF before
+        overlap resolution.
+    overlap_report_min_len : int, optional, default: 10
+        Minimum overlap length required for overlap-level reporting.
+    overlap_plot_min_len : int, optional, default: 100
+        Minimum overlap length required for dotplot FASTA generation.
 
     Raises
     ------
@@ -119,6 +130,22 @@ def compute_true_alignment(
         minimum_similarity=minimum_similarity,
         minimum_alignment_length=minimum_alignment_length
     )
+
+    if run_overlap_diagnostics:
+        overlap_diagnostics_directory = output_directory / "overlap_diagnostics"
+        logger.info(
+            "Generating overlap diagnostics into %s with report_min_len=%s and plot_min_len=%s",
+            overlap_diagnostics_directory,
+            overlap_report_min_len,
+            overlap_plot_min_len,
+        )
+        diagnose_paf_overlaps(
+            paf_file=filtered_paf,
+            representatives_fasta=representatives_fasta,
+            output_directory=overlap_diagnostics_directory,
+            minimum_report_overlap_length=overlap_report_min_len,
+            minimum_plot_overlap_length=overlap_plot_min_len,
+        )
 
     # Resolve PAF overlaps
     resolved_paf = output_directory / "minimap2_alignment_resolved.paf"

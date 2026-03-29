@@ -16,6 +16,7 @@ from atomization_scorer import compute_true_alignment
 @patch("atomization_scorer.pipeline.true_pipeline.paf_to_geese")
 @patch("atomization_scorer.pipeline.true_pipeline.validate_non_overlapping_geese")
 @patch("atomization_scorer.pipeline.true_pipeline.resolve_paf_overlaps")
+@patch("atomization_scorer.pipeline.true_pipeline.diagnose_paf_overlaps")
 @patch("atomization_scorer.pipeline.true_pipeline.filter_paf")
 @patch("atomization_scorer.pipeline.true_pipeline.align_with_minimap2")
 @patch("atomization_scorer.pipeline.true_pipeline.extract_representatives")
@@ -23,6 +24,7 @@ def test_compute_true_alignment_pipeline(
     mock_extract,
     mock_minimap2,
     mock_filter_paf,
+    mock_diagnose,
     mock_resolve_paf,
     mock_validate_geese,
     mock_paf_to_geese,
@@ -70,6 +72,7 @@ def test_compute_true_alignment_pipeline(
         minimum_similarity=0.95,
         minimum_alignment_length=500
     )
+    mock_diagnose.assert_not_called()
 
     mock_resolve_paf.assert_called_once_with(
         paf_file=filtered_paf,
@@ -90,6 +93,7 @@ def test_compute_true_alignment_pipeline(
 @patch("atomization_scorer.pipeline.true_pipeline.paf_to_geese")
 @patch("atomization_scorer.pipeline.true_pipeline.validate_non_overlapping_geese")
 @patch("atomization_scorer.pipeline.true_pipeline.resolve_paf_overlaps")
+@patch("atomization_scorer.pipeline.true_pipeline.diagnose_paf_overlaps")
 @patch("atomization_scorer.pipeline.true_pipeline.filter_paf")
 @patch("atomization_scorer.pipeline.true_pipeline.align_with_minimap2")
 @patch("atomization_scorer.pipeline.true_pipeline.extract_representatives")
@@ -97,6 +101,7 @@ def test_compute_true_alignment_first_mode(
     mock_extract,
     mock_minimap2,
     mock_filter_paf,
+    mock_diagnose,
     mock_resolve_paf,
     mock_validate_geese,
     mock_paf_to_geese,
@@ -129,6 +134,7 @@ def test_compute_true_alignment_first_mode(
 
     mock_minimap2.assert_called_once()
     mock_filter_paf.assert_called_once()
+    mock_diagnose.assert_not_called()
     mock_resolve_paf.assert_called_once()
     mock_paf_to_geese.assert_called_once()
     mock_validate_geese.assert_called_once()
@@ -140,6 +146,7 @@ def test_compute_true_alignment_first_mode(
 @patch("atomization_scorer.pipeline.true_pipeline.paf_to_geese")
 @patch("atomization_scorer.pipeline.true_pipeline.validate_non_overlapping_geese")
 @patch("atomization_scorer.pipeline.true_pipeline.resolve_paf_overlaps")
+@patch("atomization_scorer.pipeline.true_pipeline.diagnose_paf_overlaps")
 @patch("atomization_scorer.pipeline.true_pipeline.filter_paf")
 @patch("atomization_scorer.pipeline.true_pipeline.align_with_minimap2")
 @patch("atomization_scorer.pipeline.true_pipeline.extract_representatives")
@@ -147,6 +154,7 @@ def test_compute_true_alignment_forwards_custom_filter_parameters(
     mock_extract,
     mock_minimap2,
     mock_filter_paf,
+    mock_diagnose,
     mock_resolve_paf,
     mock_validate_geese,
     mock_paf_to_geese,
@@ -174,6 +182,7 @@ def test_compute_true_alignment_forwards_custom_filter_parameters(
         minimum_similarity=0.8,
         minimum_alignment_length=1234
     )
+    mock_diagnose.assert_not_called()
     mock_resolve_paf.assert_called_once()
     mock_paf_to_geese.assert_called_once()
     mock_validate_geese.assert_called_once()
@@ -185,6 +194,7 @@ def test_compute_true_alignment_forwards_custom_filter_parameters(
 @patch("atomization_scorer.pipeline.true_pipeline.paf_to_geese")
 @patch("atomization_scorer.pipeline.true_pipeline.validate_non_overlapping_geese")
 @patch("atomization_scorer.pipeline.true_pipeline.resolve_paf_overlaps")
+@patch("atomization_scorer.pipeline.true_pipeline.diagnose_paf_overlaps")
 @patch("atomization_scorer.pipeline.true_pipeline.filter_paf")
 @patch("atomization_scorer.pipeline.true_pipeline.align_with_minimap2")
 @patch("atomization_scorer.pipeline.true_pipeline.extract_representatives")
@@ -192,6 +202,7 @@ def test_compute_true_alignment_creates_output_directory(
     mock_extract,
     mock_minimap2,
     mock_filter_paf,
+    mock_diagnose,
     mock_resolve_paf,
     mock_validate_geese,
     mock_paf_to_geese,
@@ -214,6 +225,7 @@ def test_compute_true_alignment_creates_output_directory(
     mock_extract.assert_called_once()
     mock_minimap2.assert_called_once()
     mock_filter_paf.assert_called_once()
+    mock_diagnose.assert_not_called()
     mock_resolve_paf.assert_called_once()
     mock_paf_to_geese.assert_called_once()
     mock_validate_geese.assert_called_once()
@@ -260,6 +272,7 @@ def test_compute_true_alignment_missing_input_file(
 @patch("atomization_scorer.pipeline.true_pipeline.paf_to_geese")
 @patch("atomization_scorer.pipeline.true_pipeline.validate_non_overlapping_geese")
 @patch("atomization_scorer.pipeline.true_pipeline.resolve_paf_overlaps")
+@patch("atomization_scorer.pipeline.true_pipeline.diagnose_paf_overlaps")
 @patch("atomization_scorer.pipeline.true_pipeline.filter_paf")
 @patch("atomization_scorer.pipeline.true_pipeline.align_with_minimap2")
 @patch("atomization_scorer.pipeline.true_pipeline.extract_representatives")
@@ -267,6 +280,7 @@ def test_compute_true_alignment_propagates_alignment_failure(
     mock_extract,
     mock_minimap2,
     mock_filter_paf,
+    mock_diagnose,
     mock_resolve_paf,
     mock_validate_geese,
     mock_paf_to_geese,
@@ -287,6 +301,7 @@ def test_compute_true_alignment_propagates_alignment_failure(
     mock_extract.assert_called_once()
     mock_minimap2.assert_called_once()
     mock_filter_paf.assert_not_called()
+    mock_diagnose.assert_not_called()
     mock_resolve_paf.assert_not_called()
     mock_paf_to_geese.assert_not_called()
     mock_validate_geese.assert_not_called()
@@ -298,6 +313,7 @@ def test_compute_true_alignment_propagates_alignment_failure(
 @patch("atomization_scorer.pipeline.true_pipeline.paf_to_geese")
 @patch("atomization_scorer.pipeline.true_pipeline.validate_non_overlapping_geese")
 @patch("atomization_scorer.pipeline.true_pipeline.resolve_paf_overlaps")
+@patch("atomization_scorer.pipeline.true_pipeline.diagnose_paf_overlaps")
 @patch("atomization_scorer.pipeline.true_pipeline.filter_paf")
 @patch("atomization_scorer.pipeline.true_pipeline.align_with_minimap2")
 @patch("atomization_scorer.pipeline.true_pipeline.extract_representatives")
@@ -305,6 +321,7 @@ def test_compute_true_alignment_propagates_filter_failure(
     mock_extract,
     mock_minimap2,
     mock_filter_paf,
+    mock_diagnose,
     mock_resolve_paf,
     mock_validate_geese,
     mock_paf_to_geese,
@@ -325,6 +342,7 @@ def test_compute_true_alignment_propagates_filter_failure(
     mock_extract.assert_called_once()
     mock_minimap2.assert_called_once()
     mock_filter_paf.assert_called_once()
+    mock_diagnose.assert_not_called()
     mock_resolve_paf.assert_not_called()
     mock_paf_to_geese.assert_not_called()
     mock_validate_geese.assert_not_called()
@@ -336,6 +354,7 @@ def test_compute_true_alignment_propagates_filter_failure(
 @patch("atomization_scorer.pipeline.true_pipeline.paf_to_geese")
 @patch("atomization_scorer.pipeline.true_pipeline.validate_non_overlapping_geese")
 @patch("atomization_scorer.pipeline.true_pipeline.resolve_paf_overlaps")
+@patch("atomization_scorer.pipeline.true_pipeline.diagnose_paf_overlaps")
 @patch("atomization_scorer.pipeline.true_pipeline.filter_paf")
 @patch("atomization_scorer.pipeline.true_pipeline.align_with_minimap2")
 @patch("atomization_scorer.pipeline.true_pipeline.extract_representatives")
@@ -343,6 +362,7 @@ def test_compute_true_alignment_finishes_after_geese_conversion(
     mock_extract,
     mock_minimap2,
     mock_filter_paf,
+    mock_diagnose,
     mock_resolve_paf,
     mock_validate_geese,
     mock_paf_to_geese,
@@ -360,7 +380,50 @@ def test_compute_true_alignment_finishes_after_geese_conversion(
     mock_extract.assert_called_once()
     mock_minimap2.assert_called_once()
     mock_filter_paf.assert_called_once()
+    mock_diagnose.assert_not_called()
     mock_resolve_paf.assert_called_once()
     mock_paf_to_geese.assert_called_once()
     mock_validate_geese.assert_called_once()
     assert geese_path == output_dir / "true_atomization.geese"
+
+
+# --------------------------------------------------------------------------------------
+# Test: optionally runs overlap diagnostics between filter and resolve stages
+# --------------------------------------------------------------------------------------
+@patch("atomization_scorer.pipeline.true_pipeline.paf_to_geese")
+@patch("atomization_scorer.pipeline.true_pipeline.validate_non_overlapping_geese")
+@patch("atomization_scorer.pipeline.true_pipeline.resolve_paf_overlaps")
+@patch("atomization_scorer.pipeline.true_pipeline.diagnose_paf_overlaps")
+@patch("atomization_scorer.pipeline.true_pipeline.filter_paf")
+@patch("atomization_scorer.pipeline.true_pipeline.align_with_minimap2")
+@patch("atomization_scorer.pipeline.true_pipeline.extract_representatives")
+def test_compute_true_alignment_optionally_runs_overlap_diagnostics(
+    mock_extract,
+    mock_minimap2,
+    mock_filter_paf,
+    mock_diagnose,
+    mock_resolve_paf,
+    mock_validate_geese,
+    mock_paf_to_geese,
+    mini_fasta: Path,
+    mini_geese: Path,
+    output_dir: Path,
+):
+    """compute_true_alignment should optionally generate diagnostics from the filtered PAF."""
+    compute_true_alignment(
+        genomes_file=mini_fasta,
+        atomization_file=mini_geese,
+        output_directory=output_dir,
+        run_overlap_diagnostics=True,
+        overlap_report_min_len=200,
+        overlap_plot_min_len=900,
+    )
+
+    mock_diagnose.assert_called_once_with(
+        paf_file=output_dir / "minimap2_alignment_filtered.paf",
+        representatives_fasta=output_dir / "mash_representatives.fa",
+        output_directory=output_dir / "overlap_diagnostics",
+        minimum_report_overlap_length=200,
+        minimum_plot_overlap_length=900,
+    )
+    mock_resolve_paf.assert_called_once()

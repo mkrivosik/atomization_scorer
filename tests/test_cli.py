@@ -25,6 +25,7 @@ def test_cli_valid(mini_fasta: Path, mini_geese: Path, output_dir: Path):
         text=True
     )
 
+    print(f"Output directory: {output_dir}")
     assert result.returncode == 0
     assert "Processing files:" in result.stdout
     assert f"  Genomes FASTA:        {mini_fasta}" in result.stdout
