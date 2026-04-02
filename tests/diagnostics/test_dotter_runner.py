@@ -273,6 +273,8 @@ def test_run_dotter_for_anchors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
     )
 
     assert len(calls) == 2
+    assert calls[0][0][6:9] == ["dotter", "-e", "/work/dotter001.pdf"]
+    assert calls[1][0][6:9] == ["dotter", "-e", "/work/dotter002.pdf"]
 
 
 # --------------------------------------------------------------------------------------
@@ -288,8 +290,13 @@ def test_run_dotter_for_anchors_forwards_extra_args_and_output_format(
     anchor_b = _create_anchor_directory(anchors_directory, "rep_B")
     calls = []
 
-    def fake_run_dotter_for_anchor(anchor_directory: Path, extra_args=None, output_format: str = "pdf"):
-        calls.append((anchor_directory, extra_args, output_format))
+    def fake_run_dotter_for_anchor(
+        anchor_directory: Path,
+        extra_args=None,
+        output_format: str = "pdf",
+        output_stem: str = "dotter",
+    ):
+        calls.append((anchor_directory, extra_args, output_format, output_stem))
 
     monkeypatch.setattr(dr, "run_dotter_for_anchor", fake_run_dotter_for_anchor)
 
@@ -300,6 +307,6 @@ def test_run_dotter_for_anchors_forwards_extra_args_and_output_format(
     )
 
     assert calls == [
-        (anchor_a, ["-v", "-q"], "svg"),
-        (anchor_b, ["-v", "-q"], "svg"),
+        (anchor_a, ["-v", "-q"], "svg", "dotter001"),
+        (anchor_b, ["-v", "-q"], "svg", "dotter002"),
     ]

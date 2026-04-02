@@ -423,8 +423,8 @@ def diagnose_paf_overlaps(
     paf_file: Path,
     representatives_fasta: Path,
     output_directory: Path,
-    minimum_report_overlap_length: int = 10,
-    minimum_plot_overlap_length: int = 100,
+    minimum_report_overlap_length: int = 0,
+    minimum_plot_overlap_length: int = 20_000,
     include_reverse: bool = False,
     run_dotter: bool = True,
     dotter_extra_args: list[str] | None = None,
@@ -440,17 +440,17 @@ def diagnose_paf_overlaps(
         FASTA file containing representative atom sequences.
     output_directory : Path
         Directory where diagnostic outputs should be written.
-    minimum_report_overlap_length : int, optional, default=10
+    minimum_report_overlap_length : int, optional, default=100
         Overlaps at or below this threshold are counted in the summary but excluded from
         anchor-level reports.
-    minimum_plot_overlap_length : int, optional, default=100
+    minimum_plot_overlap_length : int, optional, default=1000
         Overlaps above this threshold get FASTA files for dotplot inspection.
     include_reverse : bool, optional, default=False
         Whether to duplicate anchor-partner diagnostics from both anchor perspectives.
     run_dotter : bool, optional, default=True
         Whether to run Dotter immediately after generating anchor FASTA inputs.
     dotter_extra_args : list[str] or None, optional, default=None
-        Additional command-line arguments passed to Dotter when ``run_dotter`` is enabled.
+        Additional command-line arguments passed to Dotter when run_dotter is enabled.
 
     Raises
     ------

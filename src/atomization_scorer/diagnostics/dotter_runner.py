@@ -139,6 +139,7 @@ def run_dotter_for_anchor(
     anchor_directory: Path,
     extra_args: list[str] | None = None,
     output_format: str = "pdf",
+    output_stem: str = "dotter",
 ) -> None:
     """
     Run Dotter for one anchor directory.
@@ -151,6 +152,8 @@ def run_dotter_for_anchor(
         Additional command-line arguments passed to Dotter.
     output_format : str, optional, default="pdf"
         Output format written into the anchor directory.
+    output_stem : str, optional, default="dotter"
+        Basename of the exported Dotter output file without extension.
 
     Raises
     ------
@@ -181,7 +184,7 @@ def run_dotter_for_anchor(
             f"Supported formats: {sorted(SUPPORTED_OUTPUT_FORMATS)}"
         )
 
-    output_file = anchor_directory / f"dotter.{output_format}"
+    output_file = anchor_directory / f"{output_stem}.{output_format}"
     command = _build_dotter_command(
         anchor_directory=anchor_directory,
         x_fasta=x_fasta,
@@ -238,6 +241,7 @@ def run_dotter_for_anchors(
     if not anchors_directory.is_dir():
         raise FileNotFoundError(f"Anchors directory not found: {anchors_directory}")
 
+    dotter_index = 1
     for anchor_directory in sorted(path for path in anchors_directory.iterdir() if path.is_dir()):
         if not (anchor_directory / "X.fasta").is_file():
             continue
@@ -248,6 +252,8 @@ def run_dotter_for_anchors(
             anchor_directory=anchor_directory,
             extra_args=extra_args,
             output_format=output_format,
+            output_stem=f"dotter{dotter_index:03d}",
         )
+        dotter_index += 1
 
     return None
