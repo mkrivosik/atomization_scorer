@@ -342,11 +342,13 @@ def test_diagnose_paf_overlaps_writes_reports_and_anchor_fastas(
     assert summary == {
         "total_filtered_alignments": "5",
         "total_overlapping_pairs": "2",
-        "pairs_le_50bp": "1",
-        "pairs_gt_50bp": "1",
-        "pairs_gt_100bp": "1",
+        "pairs_overlap_1_to_9bp": "0",
+        "pairs_overlap_10_to_99bp": "1",
+        "pairs_overlap_ge_100bp": "1",
+        "pairs_overlap_1000_to_9999bp": "0",
+        "pairs_overlap_ge_10000bp": "0",
         "pairs_both_edge": "2",
-        "pairs_mixed_edge_internal": "0",
+        "pairs_one_eaten": "0",
         "anchors_with_reported_overlaps": "1",
         "query_anchor_pairs_with_reported_overlaps": "1",
         "max_overlap_length": "150",
@@ -360,7 +362,7 @@ def test_diagnose_paf_overlaps_writes_reports_and_anchor_fastas(
             "n_overlaps": "1",
             "max_overlap_length": "150",
             "n_both_edge": "1",
-            "n_mixed_edge_internal": "0",
+            "n_one_eaten": "0",
         },
     ]
 
@@ -368,8 +370,8 @@ def test_diagnose_paf_overlaps_writes_reports_and_anchor_fastas(
     assert (anchor_a_directory / "X.fasta").is_file()
     assert (anchor_a_directory / "Y.fasta").is_file()
     assert (anchor_a_directory / "pairs.tsv").is_file()
-    assert "partner=rep|B" in (anchor_a_directory / "Y.fasta").read_text()
-    assert "ATGC" in (anchor_a_directory / "Y.fasta").read_text()
+    assert "partner=rep|B" in (anchor_a_directory / "X.fasta").read_text()
+    assert "ATGC" in (anchor_a_directory / "X.fasta").read_text()
     assert not (output_directory / "anchors" / "rep_B").exists()
 
 
@@ -488,7 +490,7 @@ def test_diagnose_paf_overlaps_optionally_includes_reverse_anchor_outputs(
             "n_overlaps": "1",
             "max_overlap_length": "150",
             "n_both_edge": "1",
-            "n_mixed_edge_internal": "0",
+            "n_one_eaten": "0",
         },
         {
             "query_name": "genome1",
@@ -497,7 +499,7 @@ def test_diagnose_paf_overlaps_optionally_includes_reverse_anchor_outputs(
             "n_overlaps": "1",
             "max_overlap_length": "150",
             "n_both_edge": "1",
-            "n_mixed_edge_internal": "0",
+            "n_one_eaten": "0",
         },
     ]
 

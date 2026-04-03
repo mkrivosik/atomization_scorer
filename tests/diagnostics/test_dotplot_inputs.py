@@ -101,9 +101,9 @@ def test_write_anchor_dotplot_fastas_builds_forward_only_anchor_directories_by_d
     assert (anchor_a / "pairs.tsv").is_file()
     assert not anchor_b.exists()
 
-    assert "AACCGGTT" in (anchor_a / "X.fasta").read_text()
-    assert "ATGC" in (anchor_a / "Y.fasta").read_text()
-    assert ">partner=rep|B" in (anchor_a / "Y.fasta").read_text()
+    assert "AACCGGTT" in (anchor_a / "Y.fasta").read_text()
+    assert "ATGC" in (anchor_a / "X.fasta").read_text()
+    assert ">partner=rep|B" in (anchor_a / "X.fasta").read_text()
 
     anchor_a_pairs = _read_tsv_rows(anchor_a / "pairs.tsv")
     assert anchor_a_pairs[0]["partner_atom"] == "rep|B"
@@ -139,7 +139,7 @@ def test_write_anchor_dotplot_fastas_optionally_builds_bidirectional_anchor_dire
     assert (anchor_b / "Y.fasta").is_file()
     assert (anchor_b / "pairs.tsv").is_file()
 
-    assert "AACCGGTT" in (anchor_b / "Y.fasta").read_text()
+    assert "AACCGGTT" in (anchor_b / "X.fasta").read_text()
     anchor_b_pairs = _read_tsv_rows(anchor_b / "pairs.tsv")
     assert anchor_b_pairs[0]["partner_atom"] == "rep|A"
 
@@ -173,7 +173,7 @@ def test_write_anchor_dotplot_fastas_sorts_partner_entries_for_each_anchor(tmp_p
 
     partner_headers = [
         line[1:]
-        for line in (anchors_directory / "rep_A" / "Y.fasta").read_text().splitlines()
+        for line in (anchors_directory / "rep_A" / "X.fasta").read_text().splitlines()
         if line.startswith(">")
     ]
     assert partner_headers == [

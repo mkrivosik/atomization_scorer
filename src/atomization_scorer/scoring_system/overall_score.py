@@ -47,15 +47,15 @@ def compute_overall_score(
         Input GEESE file containing the predicted atomization.
     output_directory : Path
         Path to the output directory where results are stored.
-    level : str, optional, default: "interval"
+    level : str, optional, default="interval"
         Alignment-score evaluation level.
-    per_class : bool, optional, default: False
+    per_class : bool, optional, default=False
         Whether to compute per-class alignment metrics.
-    min_overlap_ratio : float, optional, default: 0.8
+    min_overlap_ratio : float, optional, default=0.8
         Minimum overlap ratio for interval-level alignment scoring.
-    alignment_weight : float, optional, default: 0.7
+    alignment_weight : float, optional, default=0.7
         Weight of the alignment score in the geometric mean.
-    coverage_weight : float, optional, default: 0.3
+    coverage_weight : float, optional, default=0.3
         Weight of the coverage score in the geometric mean.
 
     Raises

@@ -424,7 +424,7 @@ def diagnose_paf_overlaps(
     representatives_fasta: Path,
     output_directory: Path,
     minimum_report_overlap_length: int = 0,
-    minimum_plot_overlap_length: int = 20_000,
+    minimum_plot_overlap_length: int = 0,
     include_reverse: bool = False,
     run_dotter: bool = True,
     dotter_extra_args: list[str] | None = None,
@@ -440,10 +440,10 @@ def diagnose_paf_overlaps(
         FASTA file containing representative atom sequences.
     output_directory : Path
         Directory where diagnostic outputs should be written.
-    minimum_report_overlap_length : int, optional, default=100
+    minimum_report_overlap_length : int, optional, default=0
         Overlaps at or below this threshold are counted in the summary but excluded from
         anchor-level reports.
-    minimum_plot_overlap_length : int, optional, default=1000
+    minimum_plot_overlap_length : int, optional, default=0
         Overlaps above this threshold get FASTA files for dotplot inspection.
     include_reverse : bool, optional, default=False
         Whether to duplicate anchor-partner diagnostics from both anchor perspectives.
@@ -527,7 +527,7 @@ def diagnose_paf_overlaps(
             "n_overlaps": str(int(stats["count"])),
             "max_overlap_length": str(int(stats["max_overlap_length"])),
             "n_both_edge": str(int(stats["both_edge"])),
-            "n_mixed_edge_internal": str(int(stats["mixed_edge_internal"])),
+            "n_one_eaten": str(int(stats["mixed_edge_internal"])),
         }
         for (query_name, anchor_atom), stats in sorted(anchor_genome_stats.items())
     ]
@@ -541,7 +541,7 @@ def diagnose_paf_overlaps(
             "n_overlaps",
             "max_overlap_length",
             "n_both_edge",
-            "n_mixed_edge_internal",
+            "n_one_eaten",
         ],
         header_separator=True,
     )
@@ -550,26 +550,52 @@ def diagnose_paf_overlaps(
         {"metric": "total_filtered_alignments", "value": str(total_alignments)},
         {"metric": "total_overlapping_pairs", "value": str(len(all_overlaps))},
         {
-            "metric": f"pairs_le_{minimum_report_overlap_length}bp", # le = less than or equal to
+            "metric": "pairs_overlap_1_to_9bp",
             "value": str(
                 sum(
                     1
                     for overlap in all_overlaps
-                    if int(overlap["overlap_length"]) <= minimum_report_overlap_length
+                    if 0 < int(overlap["overlap_length"]) < 10
                 )
             ),
         },
         {
-            "metric": f"pairs_gt_{minimum_report_overlap_length}bp", # gt = greater than
-            "value": str(len(reported_overlaps)),
-        },
-        {
-            "metric": f"pairs_gt_{minimum_plot_overlap_length}bp",
+            "metric": "pairs_overlap_10_to_99bp",
             "value": str(
                 sum(
                     1
                     for overlap in all_overlaps
-                    if int(overlap["overlap_length"]) > minimum_plot_overlap_length
+                    if 10 <= int(overlap["overlap_length"]) < 100
+                )
+            ),
+        },
+        {
+            "metric": "pairs_overlap_ge_100bp",
+            "value": str(
+                sum(
+                    1
+                    for overlap in all_overlaps
+                    if 100 <= int(overlap["overlap_length"]) < 1000
+                )
+            ),
+        },
+        {
+            "metric": "pairs_overlap_1000_to_9999bp",
+            "value": str(
+                sum(
+                    1
+                    for overlap in all_overlaps
+                    if 1000 <= int(overlap["overlap_length"]) < 10000
+                )
+            ),
+        },
+        {
+            "metric": "pairs_overlap_ge_10000bp",
+            "value": str(
+                sum(
+                    1
+                    for overlap in all_overlaps
+                    if 10000 <= int(overlap["overlap_length"])
                 )
             ),
         },
@@ -584,7 +610,7 @@ def diagnose_paf_overlaps(
             ),
         },
         {
-            "metric": "pairs_mixed_edge_internal",
+            "metric": "pairs_one_eaten",
             "value": str(
                 sum(
                     1

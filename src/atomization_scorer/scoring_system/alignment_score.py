@@ -50,7 +50,7 @@ def compute_alignment_score(
         Input GEESE file containing the predicted atomization.
     output_directory : Path
         Path to the output directory where results are stored.
-    level : str, optional, default: "interval"
+    level : str, optional, default="interval"
         Select "base" or "interval".
     per_class : bool, optional, default=False
         If True, compute score per class; else overall.

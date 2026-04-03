@@ -42,9 +42,9 @@ def compute_true_alignment(
     mode: str = "mash",
     minimum_similarity: float = 0.95,
     minimum_alignment_length: int = 500,
-    run_overlap_diagnostics: bool = True,
-    overlap_report_min_len: int = 10,
-    overlap_plot_min_len: int = 100,
+    run_overlap_diagnostics: bool = False,
+    overlap_report_min_len: int = 0,
+    overlap_plot_min_len: int = 0,
 ) -> Path:
     """
     Run a full true (gold standard) genome atomization pipeline: extract representatives, align
@@ -59,18 +59,18 @@ def compute_true_alignment(
         Input GEESE file containing the predicted atomization.
     output_directory : Path
         Path to the output directory where results are stored.
-    mode : str, optional, default: "mash"
+    mode : str, optional, default="mash"
         Representative selection mode ("mash" or "first").
-    minimum_similarity : float, optional, default: 0.95
+    minimum_similarity : float, optional, default=0.95
         Minimum similarity for PAF filtering.
-    minimum_alignment_length : int, optional, default: 500
+    minimum_alignment_length : int, optional, default=500
         Minimum alignment length for PAF filtering.
-    run_overlap_diagnostics : bool, optional, default: False
+    run_overlap_diagnostics : bool, optional, default=False
         Whether to generate overlap-diagnostic reports from the filtered PAF before
         overlap resolution.
-    overlap_report_min_len : int, optional, default: 10
+    overlap_report_min_len : int, optional, default=0
         Minimum overlap length required for overlap-level reporting.
-    overlap_plot_min_len : int, optional, default: 100
+    overlap_plot_min_len : int, optional, default=0
         Minimum overlap length required for dotplot FASTA generation.
 
     Raises
@@ -131,6 +131,7 @@ def compute_true_alignment(
         minimum_alignment_length=minimum_alignment_length
     )
 
+    # Run Diagnostics
     if run_overlap_diagnostics:
         overlap_diagnostics_directory = output_directory / "overlap_diagnostics"
         logger.info(

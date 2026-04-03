@@ -94,7 +94,7 @@ def extract_representatives(
         Input GEESE file containing the predicted atomization.
     output_path : Path
         Path to the output FASTA file.
-    mode : str, optional, default: "mash"
+    mode : str, optional, default="mash"
         Selection mode: "first" or "mash".
 
     Raises

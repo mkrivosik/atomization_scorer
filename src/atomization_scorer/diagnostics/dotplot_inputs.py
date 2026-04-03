@@ -159,7 +159,7 @@ def write_anchor_dotplot_fastas(
         anchor_sequence = representatives[anchor_atom]
         write_fasta(
             sequences={f"anchor={anchor_atom}": anchor_sequence},
-            output_path=anchor_directory / "X.fasta",
+            output_path=anchor_directory / "Y.fasta",
         )
 
         partner_sequences = {}
@@ -185,7 +185,7 @@ def write_anchor_dotplot_fastas(
             pair_rows.append(entry)
 
         if partner_sequences:
-            write_fasta(sequences=partner_sequences, output_path=anchor_directory / "Y.fasta")
+            write_fasta(sequences=partner_sequences, output_path=anchor_directory / "X.fasta")
 
         with (anchor_directory / "pairs.tsv").open("w", newline="") as file:
             writer = csv.DictWriter(file, fieldnames=PAIR_FIELDNAMES, delimiter="\t")

@@ -128,7 +128,7 @@ def _build_dotter_command(
     ])
     if extra_args:
         command.extend(extra_args)
-    command.extend([str(container_x), str(container_y)])
+    command.extend([str(container_y), str(container_x)])
     return command
 
 
