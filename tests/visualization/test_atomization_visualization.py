@@ -1,18 +1,14 @@
 """
-Tests for the plot_atomization() function.
+Tests for the interactive plot_atomization() function.
 """
 
 from pathlib import Path
-from typing import cast
 
-import matplotlib.pyplot as plt
-from matplotlib.collections import LineCollection, PatchCollection
-import pandas as pd
-import pytest
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from PIL import Image
+import pandas as pd
+import pytest
 
 from atomization_scorer import plot_atomization
 from atomization_scorer.visualization import atomization_visualization as av
@@ -24,11 +20,11 @@ from atomization_scorer.visualization import atomization_visualization as av
 def _write_atomization_inputs(
     tmp_path: Path,
     genome_length: int,
-    true_intervals: list[tuple[int, int]],
-    predicted_intervals: list[tuple[int, int]],
+    true_rows: list[dict[str, object]],
+    predicted_rows: list[dict[str, object]],
     genome_name: str = "test_genome",
 ) -> tuple[Path, Path, Path]:
-    """Create synthetic FASTA and GEESE files for atomization visualization tests."""
+    """Create synthetic FASTA and GEESE files for interactive visualization tests."""
     sample_fasta = tmp_path / "sample.fa"
     true_geese = tmp_path / "true.geese"
     predicted_geese = tmp_path / "predicted.geese"
@@ -36,53 +32,70 @@ def _write_atomization_inputs(
     sample_record = SeqRecord(Seq("A" * genome_length), id=genome_name)
     SeqIO.write([sample_record], sample_fasta, "fasta")
 
-    df_true = pd.DataFrame(
-        {
-            "name": [genome_name] * len(true_intervals),
-            "class": [f"T{index}" for index in range(len(true_intervals))],
-            "start": [start for start, _ in true_intervals],
-            "end": [end for _, end in true_intervals],
-        }
-    )
-    df_true.to_csv(true_geese, sep="\t", index=False)
-
-    df_predicted = pd.DataFrame(
-        {
-            "name": [genome_name] * len(predicted_intervals),
-            "class": [f"P{index}" for index in range(len(predicted_intervals))],
-            "start": [start for start, _ in predicted_intervals],
-            "end": [end for _, end in predicted_intervals],
-        }
-    )
-    df_predicted.to_csv(predicted_geese, sep="\t", index=False)
-
+    pd.DataFrame(true_rows).to_csv(true_geese, sep="\t", index=False)
+    pd.DataFrame(predicted_rows).to_csv(predicted_geese, sep="\t", index=False)
     return sample_fasta, true_geese, predicted_geese
 
 
 # --------------------------------------------------------------------------------------
-# Helper: collect line segments from one LineCollection
+# Test: plot_atomization writes one HTML file per genome
 # --------------------------------------------------------------------------------------
-def _segments_as_tuples(collection: LineCollection) -> list[tuple[tuple[float, float], tuple[float, float]]]:
-    """Convert LineCollection segments to tuples for stable assertions."""
-    return [
-        ((float(segment[0][0]), float(segment[0][1])), (float(segment[1][0]), float(segment[1][1])))
-        for segment in collection.get_segments()
-    ]
-
-
-# --------------------------------------------------------------------------------------
-# Test: whole-genome atomization visualization generation
-# --------------------------------------------------------------------------------------
-def test_plot_atomization(
-    output_dir: Path,
-    tmp_path: Path,
-):
-    """plot_atomization should create one PNG file for the genome."""
+def test_plot_atomization_writes_html(output_dir: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """plot_atomization should write one HTML file per genome using the interactive renderer."""
     sample_fasta, true_geese, predicted_geese = _write_atomization_inputs(
         tmp_path=tmp_path,
         genome_length=20_000,
-        true_intervals=[(0, 4900), (5400, 9999), (10000, 18000)],
-        predicted_intervals=[(500, 5400), (5400, 10100), (10800, 17000)],
+        true_rows=[
+            {"name": "test_genome", "class": "A", "start": 0, "end": 4900},
+            {"name": "test_genome", "class": "B", "start": 5400, "end": 9999},
+        ],
+        predicted_rows=[
+            {"name": "test_genome", "class": "A", "start": 500, "end": 5400},
+            {"name": "test_genome", "class": "C", "start": 10_800, "end": 17_000},
+        ],
+    )
+    captured: dict[str, object] = {}
+
+    def fake_render_genome_html(**kwargs):
+        captured.update(kwargs)
+        return "<html><body>interactive-plot</body></html>"
+
+    monkeypatch.setattr(av, "_render_genome_html", fake_render_genome_html)
+
+    plot_atomization(
+        genomes_file=sample_fasta,
+        true_atoms_file=true_geese,
+        predicted_atoms_file=predicted_geese,
+        output_directory=output_dir,
+    )
+
+    html_files = sorted(output_dir.glob("*.html"))
+    assert len(html_files) == 1
+    assert html_files[0].read_text(encoding="utf-8") == "<html><body>interactive-plot</body></html>"
+    assert captured["genome_name"] == "test_genome"
+    assert captured["genome_length"] == 20_000
+    assert len(captured["matched_pairs"]) == 1
+    assert len(captured["unmatched_true"]) == 1
+    assert len(captured["unmatched_predicted"]) == 1
+    assert set(captured["class_colors"]) == {"A", "B", "C"}
+
+
+# --------------------------------------------------------------------------------------
+# Test: real HTML output embeds Bokeh resources and interactive controls
+# --------------------------------------------------------------------------------------
+def test_plot_atomization_real_html_contains_inline_resources_and_controls(output_dir: Path, tmp_path: Path):
+    """plot_atomization should emit standalone HTML with inline Bokeh assets and controls."""
+    sample_fasta, true_geese, predicted_geese = _write_atomization_inputs(
+        tmp_path=tmp_path,
+        genome_length=20_000,
+        true_rows=[
+            {"name": "test_genome", "class": "A", "start": 0, "end": 4900},
+            {"name": "test_genome", "class": "B", "start": 5400, "end": 9999},
+        ],
+        predicted_rows=[
+            {"name": "test_genome", "class": "A", "start": 500, "end": 5400},
+            {"name": "test_genome", "class": "B", "start": 5400, "end": 10100},
+        ],
     )
 
     plot_atomization(
@@ -90,168 +103,56 @@ def test_plot_atomization(
         true_atoms_file=true_geese,
         predicted_atoms_file=predicted_geese,
         output_directory=output_dir,
-        target_rows=4,
-        min_bases_per_row=5_000,
-        max_bases_per_row=5_000,
     )
 
-    png_files = sorted(output_dir.glob("*.png"))
-    assert len(png_files) == 1, "Expected exactly one atomization visualization PNG file."
-
-    with Image.open(png_files[0]) as img:
-        img.verify()
-
-
-# --------------------------------------------------------------------------------------
-# Test: _draw_baseline draws only uncovered genome segments across wrapped rows
-# --------------------------------------------------------------------------------------
-def test_draw_baseline_segments_across_rows():
-    """_draw_baseline should draw one black line segment for each uncovered row-local gap."""
-    fig, ax = plt.subplots()
-
-    av._draw_baseline(
-        ax=ax,
-        intervals=[(0, 4900), (5400, 9999), (10000, 18000)],
-        genome_length=20_000,
-        line_length=5_000,
-        track_y=1.0,
-    )
-
-    assert len(ax.collections) == 1
-    baseline_collection = ax.collections[0]
-    assert isinstance(baseline_collection, LineCollection)
-    assert _segments_as_tuples(baseline_collection) == [
-        ((4900.0, 1.0), (5000.0, 1.0)),
-        ((0.0, 4.0), (400.0, 4.0)),
-        ((4999.0, 4.0), (5000.0, 4.0)),
-        ((3000.0, 10.0), (5000.0, 10.0)),
-    ]
-
-    plt.close(fig)
+    html_path = output_dir / "test_genome.html"
+    html = html_path.read_text(encoding="utf-8")
+    assert "Interactive Genome View" in html
+    assert "Visible genome window" in html
+    assert "Selected Atoms" in html
+    assert "Atom details" in html
+    assert "background: linear-gradient(180deg" in html
+    assert "@start{0,0}" in html
+    assert "@atom_number{0,0}" in html
+    assert '"format":"0,0"' in html
+    assert '"active_scroll":null' in html
+    assert "cdn.bokeh.org" not in html
 
 
 # --------------------------------------------------------------------------------------
-# Test: _draw_baseline does not draw anything when the whole genome is covered
-# --------------------------------------------------------------------------------------
-def test_draw_baseline_no_segments_when_fully_covered():
-    """_draw_baseline should not add a collection if there are no uncovered gaps."""
-    fig, ax = plt.subplots()
-
-    av._draw_baseline(
-        ax=ax,
-        intervals=[(0, 5000), (5000, 10000)],
-        genome_length=10_000,
-        line_length=5_000,
-        track_y=1.0,
-    )
-
-    assert len(ax.collections) == 0
-    plt.close(fig)
-
-
-# --------------------------------------------------------------------------------------
-# Test: _draw_atom_track draws only true atom boundaries, not wrap boundaries
-# --------------------------------------------------------------------------------------
-def test_draw_atom_track_true_boundaries_only():
-    """_draw_atom_track should add boundary markers only at true atom starts and ends."""
-    fig, ax = plt.subplots()
-
-    av._draw_atom_track(
-        ax=ax,
-        intervals=[(3000, 13000)],
-        line_length=5_000,
-        track_y=1.0,
-        color="tab:orange",
-    )
-
-    assert len(ax.collections) == 2
-    assert isinstance(ax.collections[0], PatchCollection)
-    assert isinstance(ax.collections[1], LineCollection)
-    patch_collection = cast(PatchCollection, ax.collections[0])
-    boundary_collection = cast(LineCollection, ax.collections[1])
-    assert len(patch_collection.get_paths()) == 3
-    assert _segments_as_tuples(boundary_collection) == [
-        ((3000.0, 0.825), (3000.0, 1.175)),
-        ((3000.0, 6.825), (3000.0, 7.175)),
-    ]
-
-    plt.close(fig)
-
-
-# --------------------------------------------------------------------------------------
-# Test: _draw_atom_track shows true boundaries at wrapped row edges
+# Test: initial visible window still respects target/min/max bounds
 # --------------------------------------------------------------------------------------
 @pytest.mark.parametrize(
-    ("interval", "expected_segments"),
+    ("genome_length", "target_rows", "minimum", "maximum", "expected_window"),
     [
-        (
-            (5000, 7000),
-            [((0.0, 3.825), (0.0, 4.175)), ((2000.0, 3.825), (2000.0, 4.175))],
-        ),
-        (
-            (2000, 5000),
-            [((2000.0, 0.825), (2000.0, 1.175)), ((5000.0, 0.825), (5000.0, 1.175))],
-        ),
+        (20_000, 20, 10_000, 250_000, 10_000),
+        (10_000_000, 20, 10_000, 250_000, 250_000),
+        (3_000, 20, 10_000, 250_000, 3_000),
     ],
 )
-def test_draw_atom_track_boundary_markers_at_row_edges(
-    interval: tuple[int, int],
-    expected_segments: list[tuple[tuple[float, float], tuple[float, float]]],
-):
-    """_draw_atom_track should preserve true boundaries that land exactly on row edges."""
-    fig, ax = plt.subplots()
-
-    av._draw_atom_track(
-        ax=ax,
-        intervals=[interval],
-        line_length=5_000,
-        track_y=1.0,
-        color="tab:blue",
-    )
-
-    assert len(ax.collections) == 2
-    boundary_collection = cast(LineCollection, ax.collections[1])
-    assert _segments_as_tuples(boundary_collection) == expected_segments
-
-    plt.close(fig)
-
-
-# --------------------------------------------------------------------------------------
-# Test: adaptive row width follows min/max per-row bounds
-# --------------------------------------------------------------------------------------
-@pytest.mark.parametrize(
-    ("genome_length", "target_rows", "min_bases_per_row", "max_bases_per_row", "expected_xlim"),
-    [
-        (20_000, 20, 10_000, 250_000, 10_000.5),
-        (10_000_000, 20, 10_000, 250_000, 250_000.5),
-    ],
-)
-def test_plot_atomization_adaptive_row_width(
+def test_plot_atomization_forwards_initial_window_configuration(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     genome_length: int,
     target_rows: int,
-    min_bases_per_row: int,
-    max_bases_per_row: int,
-    expected_xlim: float,
+    minimum: int,
+    maximum: int,
+    expected_window: int,
 ):
-    """plot_atomization should adapt wrapped row width from genome length and bounds."""
+    """plot_atomization should pass the computed initial genome window to the renderer."""
     sample_fasta, true_geese, predicted_geese = _write_atomization_inputs(
         tmp_path=tmp_path,
         genome_length=genome_length,
-        true_intervals=[(0, min(5_000, genome_length))],
-        predicted_intervals=[(500, min(5_500, genome_length))],
+        true_rows=[{"name": "test_genome", "class": "A", "start": 0, "end": min(500, genome_length)}],
+        predicted_rows=[{"name": "test_genome", "class": "A", "start": 0, "end": min(500, genome_length)}],
     )
-    captured_axes = []
+    calls: list[int] = []
 
-    original_subplots = av.plt.subplots
+    def fake_render_genome_html(**kwargs):
+        calls.append(int(kwargs["initial_window_bases"]))
+        return "<html></html>"
 
-    def recording_subplots(*args, **kwargs):
-        fig, ax = original_subplots(*args, **kwargs)
-        captured_axes.append(ax)
-        return fig, ax
-
-    monkeypatch.setattr(av.plt, "subplots", recording_subplots)
+    monkeypatch.setattr(av, "_render_genome_html", fake_render_genome_html)
 
     plot_atomization(
         genomes_file=sample_fasta,
@@ -259,81 +160,11 @@ def test_plot_atomization_adaptive_row_width(
         predicted_atoms_file=predicted_geese,
         output_directory=tmp_path / "output",
         target_rows=target_rows,
-        min_bases_per_row=min_bases_per_row,
-        max_bases_per_row=max_bases_per_row,
+        min_bases_per_row=minimum,
+        max_bases_per_row=maximum,
     )
 
-    assert len(captured_axes) == 1
-    x_limits = captured_axes[0].get_xlim()
-    assert x_limits[0] == -0.5
-    assert x_limits[1] == expected_xlim
-    assert captured_axes[0].get_yticklabels()[0].get_text().startswith("Predicted")
-
-
-# --------------------------------------------------------------------------------------
-# Test: one-row rendering for genomes shorter than min_bases_per_row
-# --------------------------------------------------------------------------------------
-def test_plot_atomization_short_genome_single_row(output_dir: Path, tmp_path: Path):
-    """plot_atomization should render a short genome as a single wrapped row."""
-    sample_fasta, true_geese, predicted_geese = _write_atomization_inputs(
-        tmp_path=tmp_path,
-        genome_length=3_000,
-        true_intervals=[(0, 1500)],
-        predicted_intervals=[(500, 2500)],
-    )
-
-    plot_atomization(
-        genomes_file=sample_fasta,
-        true_atoms_file=true_geese,
-        predicted_atoms_file=predicted_geese,
-        output_directory=output_dir,
-    )
-
-    png_files = sorted(output_dir.glob("*.png"))
-    assert len(png_files) == 1
-    with Image.open(png_files[0]) as img:
-        img.verify()
-
-
-# --------------------------------------------------------------------------------------
-# Test: render succeeds when one track has no atoms
-# --------------------------------------------------------------------------------------
-@pytest.mark.parametrize(
-    ("true_intervals", "predicted_intervals"),
-    [
-        ([], [(500, 5400)]),
-        ([(0, 4900)], []),
-        ([], []),
-    ],
-)
-def test_plot_atomization_empty_tracks(
-    output_dir: Path,
-    tmp_path: Path,
-    true_intervals: list[tuple[int, int]],
-    predicted_intervals: list[tuple[int, int]],
-):
-    """plot_atomization should still generate a valid figure when one or both tracks are empty."""
-    sample_fasta, true_geese, predicted_geese = _write_atomization_inputs(
-        tmp_path=tmp_path,
-        genome_length=20_000,
-        true_intervals=true_intervals,
-        predicted_intervals=predicted_intervals,
-    )
-
-    plot_atomization(
-        genomes_file=sample_fasta,
-        true_atoms_file=true_geese,
-        predicted_atoms_file=predicted_geese,
-        output_directory=output_dir,
-        target_rows=4,
-        min_bases_per_row=5_000,
-        max_bases_per_row=5_000,
-    )
-
-    png_files = sorted(output_dir.glob("*.png"))
-    assert len(png_files) == 1
-    with Image.open(png_files[0]) as img:
-        img.verify()
+    assert calls == [expected_window]
 
 
 # --------------------------------------------------------------------------------------
@@ -356,8 +187,8 @@ def test_plot_atomization_missing_file_raises(
     sample_fasta, true_geese, predicted_geese = _write_atomization_inputs(
         tmp_path=tmp_path,
         genome_length=20_000,
-        true_intervals=[(0, 4900)],
-        predicted_intervals=[(500, 5400)],
+        true_rows=[{"name": "test_genome", "class": "A", "start": 0, "end": 4900}],
+        predicted_rows=[{"name": "test_genome", "class": "A", "start": 500, "end": 5400}],
     )
     file_map = {
         "genomes_file": sample_fasta,
@@ -376,60 +207,10 @@ def test_plot_atomization_missing_file_raises(
 
 
 # --------------------------------------------------------------------------------------
-# Test: invalid intervals raise ValueError
+# Test: invalid configuration still raises before rendering
 # --------------------------------------------------------------------------------------
 @pytest.mark.parametrize(
-    ("true_intervals", "predicted_intervals", "expected_message"),
-    [
-        ([(-1, 10)], [(0, 5)], "contains a negative coordinate"),
-        ([(5, 5)], [(0, 5)], "must satisfy start < end"),
-        ([(0, 25_000)], [(0, 5)], "ends outside genome length"),
-        ([(0, 10), (5, 15)], [(0, 5)], "plotting will continue"),
-    ],
-)
-def test_plot_atomization_invalid_or_overlapping_intervals(
-    output_dir: Path,
-    tmp_path: Path,
-    caplog: pytest.LogCaptureFixture,
-    true_intervals: list[tuple[int, int]],
-    predicted_intervals: list[tuple[int, int]],
-    expected_message: str,
-):
-    """plot_atomization should reject invalid intervals and log overlapping ones."""
-    sample_fasta, true_geese, predicted_geese = _write_atomization_inputs(
-        tmp_path=tmp_path,
-        genome_length=20_000,
-        true_intervals=true_intervals,
-        predicted_intervals=predicted_intervals,
-    )
-
-    if expected_message == "plotting will continue":
-        with caplog.at_level("WARNING"):
-            plot_atomization(
-                genomes_file=sample_fasta,
-                true_atoms_file=true_geese,
-                predicted_atoms_file=predicted_geese,
-                output_directory=output_dir,
-                target_rows=4,
-                min_bases_per_row=5_000,
-                max_bases_per_row=5_000,
-            )
-        assert "plotting will continue" in caplog.text
-    else:
-        with pytest.raises(ValueError, match=expected_message):
-            plot_atomization(
-                genomes_file=sample_fasta,
-                true_atoms_file=true_geese,
-                predicted_atoms_file=predicted_geese,
-                output_directory=output_dir,
-            )
-
-
-# --------------------------------------------------------------------------------------
-# Test: invalid adaptive configuration raises ValueError
-# --------------------------------------------------------------------------------------
-@pytest.mark.parametrize(
-    ("target_rows", "min_bases_per_row", "max_bases_per_row", "expected_message"),
+    ("target_rows", "minimum", "maximum", "expected_message"),
     [
         (0, 10_000, 250_000, "target_rows must be a positive integer"),
         (20, 0, 250_000, "min_bases_per_row must be a positive integer"),
@@ -440,16 +221,16 @@ def test_plot_atomization_invalid_or_overlapping_intervals(
 def test_plot_atomization_invalid_configuration_raises(
     tmp_path: Path,
     target_rows: int,
-    min_bases_per_row: int,
-    max_bases_per_row: int,
+    minimum: int,
+    maximum: int,
     expected_message: str,
 ):
-    """plot_atomization should reject invalid adaptive wrapping configuration."""
+    """plot_atomization should reject invalid interactive window configuration."""
     sample_fasta, true_geese, predicted_geese = _write_atomization_inputs(
         tmp_path=tmp_path,
         genome_length=20_000,
-        true_intervals=[(0, 4900)],
-        predicted_intervals=[(500, 5400)],
+        true_rows=[{"name": "test_genome", "class": "A", "start": 0, "end": 4900}],
+        predicted_rows=[{"name": "test_genome", "class": "A", "start": 500, "end": 5400}],
     )
 
     with pytest.raises(ValueError, match=expected_message):
@@ -459,6 +240,243 @@ def test_plot_atomization_invalid_configuration_raises(
             predicted_atoms_file=predicted_geese,
             output_directory=tmp_path / "output",
             target_rows=target_rows,
-            min_bases_per_row=min_bases_per_row,
-            max_bases_per_row=max_bases_per_row,
+            min_bases_per_row=minimum,
+            max_bases_per_row=maximum,
         )
+
+
+# --------------------------------------------------------------------------------------
+# Test: only HTML output is supported by the new visualization
+# --------------------------------------------------------------------------------------
+def test_plot_atomization_rejects_non_html_output_format(tmp_path: Path):
+    """plot_atomization should reject static output formats from the previous renderer."""
+    sample_fasta, true_geese, predicted_geese = _write_atomization_inputs(
+        tmp_path=tmp_path,
+        genome_length=20_000,
+        true_rows=[{"name": "test_genome", "class": "A", "start": 0, "end": 4900}],
+        predicted_rows=[{"name": "test_genome", "class": "A", "start": 500, "end": 5400}],
+    )
+
+    with pytest.raises(ValueError, match="Unsupported output format"):
+        plot_atomization(
+            genomes_file=sample_fasta,
+            true_atoms_file=true_geese,
+            predicted_atoms_file=predicted_geese,
+            output_directory=tmp_path / "output",
+            output_format="png",
+        )
+
+
+# --------------------------------------------------------------------------------------
+# Test: Bokeh loader exposes the components used by the interactive renderer
+# --------------------------------------------------------------------------------------
+def test_load_bokeh_returns_required_components():
+    """_load_bokeh should expose the Bokeh components needed by the renderer."""
+    components = av._load_bokeh()
+
+    assert "figure" in components
+    assert "ColumnDataSource" in components
+    assert "CustomJS" in components
+    assert "components" in components
+    assert "NumberFormatter" in components
+    assert "NumeralTickFormatter" in components
+    assert "TapTool" in components
+    assert "Tap" in components
+
+
+# --------------------------------------------------------------------------------------
+# Test: matched connectors use straight polygon edges instead of curved Bezier paths
+# --------------------------------------------------------------------------------------
+def test_build_connector_polygon_uses_straight_edges():
+    """_build_connector_polygon should connect matched atoms with one straight-sided quadrilateral."""
+    true_atom = {
+        "start": 100,
+        "end": 220,
+        "class_id": "A",
+        "atom_number": 1,
+        "source": "true",
+    }
+    predicted_atom = {
+        "start": 140,
+        "end": 280,
+        "class_id": "A",
+        "atom_number": 1,
+        "source": "predicted",
+    }
+
+    xs, ys = av._build_connector_polygon(true_atom=true_atom, predicted_atom=predicted_atom)
+
+    assert xs == [100.0, 220.0, 280.0, 140.0]
+    assert ys == [
+        av.TRUE_TRACK_Y - av.ATOM_HALF_HEIGHT,
+        av.TRUE_TRACK_Y - av.ATOM_HALF_HEIGHT,
+        av.PREDICTED_TRACK_Y + av.ATOM_HALF_HEIGHT,
+        av.PREDICTED_TRACK_Y + av.ATOM_HALF_HEIGHT,
+    ]
+
+
+# --------------------------------------------------------------------------------------
+# Test: uncovered genome gaps render as thin baseline rectangles between atoms
+# --------------------------------------------------------------------------------------
+def test_build_gap_source_data_returns_uncovered_segments():
+    """_build_gap_source_data should emit merged uncovered intervals for one track."""
+    atoms = [
+        {
+            "start": 10,
+            "end": 20,
+            "class_id": "A",
+            "atom_number": 1,
+            "source": "true",
+        },
+        {
+            "start": 18,
+            "end": 30,
+            "class_id": "B",
+            "atom_number": 1,
+            "source": "true",
+        },
+        {
+            "start": 40,
+            "end": 45,
+            "class_id": "C",
+            "atom_number": 1,
+            "source": "true",
+        },
+    ]
+
+    gap_data = av._build_gap_source_data(
+        atoms=atoms,
+        genome_length=50,
+        track_y=av.TRUE_TRACK_Y,
+        source_label="true_gap",
+    )
+
+    assert gap_data["start"] == [0, 30, 45]
+    assert gap_data["end"] == [10, 40, 50]
+    assert gap_data["source"] == ["true_gap", "true_gap", "true_gap"]
+    assert gap_data["length"] == [10, 10, 5]
+    assert gap_data["top"] == [av.TRUE_TRACK_Y + av.BASELINE_HALF_HEIGHT] * 3
+    assert gap_data["bottom"] == [av.TRUE_TRACK_Y - av.BASELINE_HALF_HEIGHT] * 3
+    assert gap_data["fill_color"] == [av.BASELINE_COLOR, av.BASELINE_COLOR, av.BASELINE_COLOR]
+    assert gap_data["line_color"] == [av.BASELINE_COLOR, av.BASELINE_COLOR, av.BASELINE_COLOR]
+
+
+# --------------------------------------------------------------------------------------
+# Test: atom glyph data includes the sequence slice for click-driven details
+# --------------------------------------------------------------------------------------
+def test_build_atom_source_data_includes_atom_sequence():
+    """_build_atom_source_data should carry the genome subsequence for each atom."""
+    atoms = [
+        {
+            "start": 2,
+            "end": 6,
+            "class_id": "A",
+            "atom_number": 9,
+            "atom_id": "A:9",
+            "length": 4,
+            "source": "true",
+        },
+    ]
+
+    atom_data = av._build_atom_source_data(
+        atoms=atoms,
+        class_colors={"A": "#123456"},
+        outline_color="#000000",
+        status_by_signature={("A", 9, 2, 6, "true"): "matched"},
+        track_y=av.TRUE_TRACK_Y,
+        genome_sequence="AACCGGTT",
+    )
+
+    assert atom_data["sequence"] == ["CCGG"]
+
+
+# --------------------------------------------------------------------------------------
+# Test: selection-row data captures matched and unmatched atom comparisons
+# --------------------------------------------------------------------------------------
+def test_build_selection_row_source_data_captures_comparison_rows():
+    """_build_selection_row_source_data should emit rows for matched and unmatched atom comparisons."""
+    matched_true = {
+        "class_id": "A",
+        "atom_number": 1,
+        "start": 10,
+        "end": 20,
+        "length": 10,
+        "source": "true",
+    }
+    matched_predicted = {
+        "class_id": "A",
+        "atom_number": 7,
+        "start": 12,
+        "end": 22,
+        "length": 10,
+        "source": "predicted",
+    }
+    unmatched_true = {
+        "class_id": "B",
+        "atom_number": 2,
+        "start": 30,
+        "end": 40,
+        "length": 10,
+        "source": "true",
+    }
+    unmatched_predicted = {
+        "class_id": "C",
+        "atom_number": 8,
+        "start": 50,
+        "end": 70,
+        "length": 20,
+        "source": "predicted",
+    }
+
+    row_data = av._build_selection_row_source_data(
+        matched_pairs=[(matched_true, matched_predicted)],
+        unmatched_true=[unmatched_true],
+        unmatched_predicted=[unmatched_predicted],
+    )
+
+    assert row_data["status"] == ["matched", "missing predicted", "unexpected predicted"]
+    assert row_data["class_id"] == ["A", "B", "C"]
+    assert row_data["predicted_atom_nr"] == [7, None, 8]
+    assert row_data["true_atom_nr"] == [1, 2, None]
+
+
+# --------------------------------------------------------------------------------------
+# Test: sanitized filename collisions still produce one HTML per genome
+# --------------------------------------------------------------------------------------
+def test_plot_atomization_avoids_output_filename_collisions(tmp_path: Path):
+    """plot_atomization should not let sanitized genome names overwrite each other."""
+    sample_fasta, true_geese, predicted_geese = _write_atomization_inputs(
+        tmp_path=tmp_path,
+        genome_length=500,
+        true_rows=[
+            {"name": "genome/1", "class": "A", "start": 0, "end": 100},
+            {"name": "genome:1", "class": "B", "start": 20, "end": 120},
+        ],
+        predicted_rows=[
+            {"name": "genome/1", "class": "A", "start": 5, "end": 105},
+            {"name": "genome:1", "class": "B", "start": 25, "end": 125},
+        ],
+        genome_name="genome/1",
+    )
+    from Bio import SeqIO
+    from Bio.Seq import Seq
+    from Bio.SeqRecord import SeqRecord
+
+    SeqIO.write(
+        [
+            SeqRecord(Seq("A" * 500), id="genome/1"),
+            SeqRecord(Seq("C" * 500), id="genome:1"),
+        ],
+        sample_fasta,
+        "fasta",
+    )
+
+    plot_atomization(
+        genomes_file=sample_fasta,
+        true_atoms_file=true_geese,
+        predicted_atoms_file=predicted_geese,
+        output_directory=tmp_path / "output",
+    )
+
+    html_files = sorted((tmp_path / "output").glob("*.html"))
+    assert len(html_files) == 2

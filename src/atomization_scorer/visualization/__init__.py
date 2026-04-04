@@ -1,11 +1,11 @@
 """
 visualization
 
-This package provides a function for visualizing genome atomization results.
+This package provides an interactive HTML visualization for genome atomization results.
 
 Modules
 -------
-atomization_visualization   : Function for plotting genome atomization.
+atomization_visualization   : Function for rendering interactive genome atomization views.
 """
 
 # --------------------------------------------------------------------------------------

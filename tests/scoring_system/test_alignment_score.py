@@ -70,7 +70,7 @@ def test_compute_alignment_score_base(
         "genomes_file": mini_fasta,
         "true_atoms_file": true_geese,
         "predicted_atoms_file": mini_geese,
-        "output_directory": output_dir / "atomization_visualization",
+        "output_directory": output_dir / "atomization_visualizations",
     }
 
 
@@ -137,7 +137,7 @@ def test_compute_alignment_score_interval(
         "genomes_file": mini_fasta,
         "true_atoms_file": true_geese,
         "predicted_atoms_file": mini_geese,
-        "output_directory": output_dir / "atomization_visualization",
+        "output_directory": output_dir / "atomization_visualizations",
     }
 
 

@@ -53,10 +53,9 @@ def paf_to_geese(paf_file: Path, output_file: Path) -> Path:
     logger.info("Converting PAF file %s to GEESE file %s", paf_file, output_file)
 
     converted_rows = 0
+    converted_entries = []
 
-    with paf_file.open("r") as paf, output_file.open("w") as geese:
-        geese.write("#name\tclass\tstart\tend\n")
-
+    with paf_file.open("r") as paf:
         for line_number, line in enumerate(paf, start=1):
             fields = line.strip().split("\t")
 
@@ -93,9 +92,15 @@ def paf_to_geese(paf_file: Path, output_file: Path) -> Path:
                 )
 
             _, class_id = target_name.split("|class_")
-
-            geese.write(f"{query_name}\t{class_id}\t{query_start}\t{query_end}\n")
+            converted_entries.append((query_name, class_id, query_start, query_end))
             converted_rows += 1
+
+    converted_entries.sort(key=lambda entry: (entry[0], entry[2], entry[3], entry[1]))
+
+    with output_file.open("w") as geese:
+        geese.write("#name\tatom_nr\tclass\tstart\tend\n")
+        for atom_nr, (query_name, class_id, query_start, query_end) in enumerate(converted_entries, start=1):
+            geese.write(f"{query_name}\t{atom_nr}\t{class_id}\t{query_start}\t{query_end}\n")
 
     logger.info("GEESE file saved to %s with %s converted rows", output_file, converted_rows)
 

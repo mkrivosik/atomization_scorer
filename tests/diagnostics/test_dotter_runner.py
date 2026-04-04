@@ -143,8 +143,8 @@ def test_run_dotter_for_anchor(
                 "-e",
                 f"/work/dotter.{output_format}",
                 "-v",
-                "/work/X.fasta",
                 "/work/Y.fasta",
+                "/work/X.fasta",
             ],
             {"check": True, "capture_output": True, "text": True},
         )
@@ -190,8 +190,8 @@ def test_run_dotter_for_anchor_forwards_x11_runtime(
                 "dotter",
                 "-e",
                 "/work/dotter.pdf",
-                "/work/X.fasta",
                 "/work/Y.fasta",
+                "/work/X.fasta",
             ],
             {"check": True, "capture_output": True, "text": True},
         )

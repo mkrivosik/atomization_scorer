@@ -1,10 +1,9 @@
 """
-Tests for the plotting_utils() function.
+Tests for interactive visualization helper functions.
 """
 
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import pandas as pd
 import pytest
 
@@ -12,220 +11,355 @@ from atomization_scorer.visualization import plotting_utils as pu
 
 
 # --------------------------------------------------------------------------------------
-# Test: normalize_output_format accepts supported formats and normalizes case
+# Test: HTML is the only supported visualization output format
 # --------------------------------------------------------------------------------------
 @pytest.mark.parametrize(
     ("output_format", "expected"),
     [
-        ("png", "png"),
-        ("PNG", "png"),
-        ("Svg", "svg"),
-        ("PDF", "pdf"),
+        ("html", "html"),
+        ("HTML", "html"),
     ],
 )
 def test_normalize_output_format_supported_values(output_format: str, expected: str):
-    """normalize_output_format should lowercase supported figure formats."""
+    """normalize_output_format should lowercase supported interactive formats."""
     assert pu.normalize_output_format(output_format) == expected
 
 
-# --------------------------------------------------------------------------------------
-# Test: normalize_output_format rejects unsupported formats
-# --------------------------------------------------------------------------------------
-def test_normalize_output_format_unsupported_value():
-    """normalize_output_format should raise for unsupported figure formats."""
-    with pytest.raises(ValueError, match="Unsupported output format 'jpg'"):
-        pu.normalize_output_format("jpg")
+def test_normalize_output_format_rejects_unsupported_value():
+    """normalize_output_format should reject legacy static figure formats."""
+    with pytest.raises(ValueError, match="Unsupported output format"):
+        pu.normalize_output_format("png")
 
 
 # --------------------------------------------------------------------------------------
-# Test: save_figure saves the figure using the normalized suffix
+# Test: initial window follows target row count and min/max bounds
 # --------------------------------------------------------------------------------------
-def test_save_figure_writes_normalized_output_file(tmp_path: Path):
-    """save_figure should write the figure with a normalized output suffix."""
-    fig, _ = plt.subplots()
-    output_path = tmp_path / "atomization_plot"
-
-    pu.save_figure(fig=fig, output_path=output_path, output_format="PNG", dpi=150)
-
-    assert output_path.with_suffix(".png").is_file()
-    plt.close(fig)
-
-
-# --------------------------------------------------------------------------------------
-# Test: save_figure rejects unsupported formats before saving
-# --------------------------------------------------------------------------------------
-def test_save_figure_rejects_unsupported_output_format(tmp_path: Path):
-    """save_figure should raise ValueError for unsupported output formats."""
-    fig, _ = plt.subplots()
-    output_path = tmp_path / "atomization_plot"
-
-    with pytest.raises(ValueError, match="Unsupported output format 'jpg'"):
-        pu.save_figure(fig=fig, output_path=output_path, output_format="jpg", dpi=150)
-
-    assert not output_path.with_suffix(".jpg").exists()
-    plt.close(fig)
+@pytest.mark.parametrize(
+    ("genome_length", "target_rows", "minimum", "maximum", "expected"),
+    [
+        (20_000, 20, 10_000, 250_000, 10_000),
+        (10_000_000, 20, 10_000, 250_000, 250_000),
+        (3_000, 20, 10_000, 250_000, 3_000),
+    ],
+)
+def test_compute_initial_window(
+    genome_length: int,
+    target_rows: int,
+    minimum: int,
+    maximum: int,
+    expected: int,
+):
+    """compute_initial_window should clamp the visible window to the configured bounds."""
+    assert pu.compute_initial_window(genome_length, target_rows, minimum, maximum) == expected
 
 
 # --------------------------------------------------------------------------------------
-# Test: get_sorted_intervals filters the selected genome and sorts its intervals
+# Test: atom extraction infers genome-global display numbers and per-class match numbers
 # --------------------------------------------------------------------------------------
-def test_get_sorted_intervals_filters_and_sorts_selected_genome():
-    """get_sorted_intervals should return sorted intervals only for the requested genome."""
+def test_get_atoms_for_genome_infers_global_display_numbers_and_per_class_match_numbers():
+    """get_atoms_for_genome should expose genome-global display numbers while keeping per-class match numbers."""
     df = pd.DataFrame(
         {
-            "name": ["genome_b", "genome_a", "genome_a", "genome_b"],
-            "start": [30, 40, 10, 5],
-            "end": [50, 60, 20, 9],
+            "name": ["genome1", "genome1", "genome1"],
+            "class": ["A", "A", "B"],
+            "start": [100, 400, 250],
+            "end": [200, 500, 350],
         }
     )
 
-    assert pu.get_sorted_intervals(df, genome_name="genome_a", genome_length=100, label="True") == [
-        (10, 20),
-        (40, 60),
+    atoms = pu.get_atoms_for_genome(
+        df=df,
+        genome_name="genome1",
+        genome_length=1_000,
+        label="True",
+        source="true",
+    )
+
+    assert atoms == [
+        {
+            "genome_name": "genome1",
+            "source": "true",
+            "class_id": "A",
+            "atom_number": 1,
+            "match_number": 1,
+            "atom_id": "A:1",
+            "start": 100,
+            "end": 200,
+            "length": 100,
+        },
+        {
+            "genome_name": "genome1",
+            "source": "true",
+            "class_id": "B",
+            "atom_number": 3,
+            "match_number": 1,
+            "atom_id": "B:3",
+            "start": 250,
+            "end": 350,
+            "length": 100,
+        },
+        {
+            "genome_name": "genome1",
+            "source": "true",
+            "class_id": "A",
+            "atom_number": 2,
+            "match_number": 2,
+            "atom_id": "A:2",
+            "start": 400,
+            "end": 500,
+            "length": 100,
+        },
     ]
 
 
 # --------------------------------------------------------------------------------------
-# Test: get_sorted_intervals returns an empty list when the genome is absent
+# Test: explicit atom numbers are preserved when present
 # --------------------------------------------------------------------------------------
-def test_get_sorted_intervals_returns_empty_list_for_missing_genome():
-    """get_sorted_intervals should return an empty list when the genome has no intervals."""
+def test_get_atoms_for_genome_preserves_explicit_atom_numbers():
+    """get_atoms_for_genome should use an explicit atom_number column when available."""
     df = pd.DataFrame(
         {
-            "name": ["genome_a"],
-            "start": [10],
-            "end": [20],
+            "name": ["genome1", "genome1"],
+            "class": ["A", "A"],
+            "atom_number": [3, 7],
+            "start": [100, 400],
+            "end": [200, 500],
         }
     )
 
-    assert pu.get_sorted_intervals(df, genome_name="missing", genome_length=100, label="True") == []
+    atoms = pu.get_atoms_for_genome(
+        df=df,
+        genome_name="genome1",
+        genome_length=1_000,
+        label="Predicted",
+        source="predicted",
+    )
+
+    assert [atom["atom_number"] for atom in atoms] == [3, 7]
+    assert [atom["match_number"] for atom in atoms] == [3, 7]
 
 
 # --------------------------------------------------------------------------------------
-# Test: get_sorted_intervals rejects invalid interval coordinates
+# Test: atom_nr is preferred for displayed atom numbers when present in GEESE
+# --------------------------------------------------------------------------------------
+def test_get_atoms_for_genome_prefers_atom_nr_for_display_numbers():
+    """get_atoms_for_genome should display original GEESE atom_nr values when they are present."""
+    df = pd.DataFrame(
+        {
+            "name": ["genome1", "genome1"],
+            "class": ["A", "B"],
+            "atom_nr": [11, 42],
+            "start": [100, 400],
+            "end": [200, 500],
+        }
+    )
+
+    atoms = pu.get_atoms_for_genome(
+        df=df,
+        genome_name="genome1",
+        genome_length=1_000,
+        label="Predicted",
+        source="predicted",
+    )
+
+    assert [atom["atom_number"] for atom in atoms] == [11, 42]
+    assert [atom["match_number"] for atom in atoms] == [1, 1]
+
+
+# --------------------------------------------------------------------------------------
+# Test: invalid intervals still raise and overlapping intervals only warn
 # --------------------------------------------------------------------------------------
 @pytest.mark.parametrize(
-    ("start", "end", "genome_length", "message"),
+    ("df", "expected_message"),
     [
-        (-1, 10, 100, "contains a negative coordinate"),
-        (5, -1, 100, "contains a negative coordinate"),
-        (10, 10, 100, "must satisfy start < end"),
-        (20, 10, 100, "must satisfy start < end"),
-        (10, 101, 100, "ends outside genome length 100"),
+        (
+            pd.DataFrame({"name": ["genome1"], "class": ["A"], "start": [-1], "end": [5]}),
+            "contains a negative coordinate",
+        ),
+        (
+            pd.DataFrame({"name": ["genome1"], "class": ["A"], "start": [5], "end": [5]}),
+            "must satisfy start < end",
+        ),
+        (
+            pd.DataFrame({"name": ["genome1"], "class": ["A"], "start": [0], "end": [2_000]}),
+            "ends outside genome length",
+        ),
     ],
 )
-def test_get_sorted_intervals_rejects_invalid_coordinates(
-    start: int,
-    end: int,
-    genome_length: int,
-    message: str,
-):
-    """get_sorted_intervals should raise ValueError for invalid interval coordinates."""
+def test_get_atoms_for_genome_rejects_invalid_intervals(df: pd.DataFrame, expected_message: str):
+    """get_atoms_for_genome should reject invalid coordinates."""
+    with pytest.raises(ValueError, match=expected_message):
+        pu.get_atoms_for_genome(
+            df=df,
+            genome_name="genome1",
+            genome_length=1_000,
+            label="True",
+            source="true",
+        )
+
+
+def test_get_atoms_for_genome_logs_overlapping_intervals(caplog: pytest.LogCaptureFixture):
+    """get_atoms_for_genome should warn and continue when intervals overlap."""
     df = pd.DataFrame(
         {
-            "name": ["genome_a"],
-            "start": [start],
-            "end": [end],
-        }
-    )
-
-    with pytest.raises(ValueError, match=message):
-        pu.get_sorted_intervals(df, genome_name="genome_a", genome_length=genome_length, label="True")
-
-
-# --------------------------------------------------------------------------------------
-# Test: get_sorted_intervals warns on overlaps but still returns sorted intervals
-# --------------------------------------------------------------------------------------
-def test_get_sorted_intervals_warns_on_overlap(caplog: pytest.LogCaptureFixture):
-    """get_sorted_intervals should log a warning when sorted intervals overlap."""
-    df = pd.DataFrame(
-        {
-            "name": ["genome_a", "genome_a"],
-            "start": [20, 10],
-            "end": [30, 25],
+            "name": ["genome1", "genome1"],
+            "class": ["A", "B"],
+            "start": [100, 150],
+            "end": [200, 250],
         }
     )
 
     with caplog.at_level("WARNING"):
-        intervals = pu.get_sorted_intervals(
-            df,
-            genome_name="genome_a",
-            genome_length=100,
+        atoms = pu.get_atoms_for_genome(
+            df=df,
+            genome_name="genome1",
+            genome_length=1_000,
             label="Predicted",
+            source="predicted",
         )
 
-    assert intervals == [(10, 25), (20, 30)]
-    assert "Predicted intervals for genome 'genome_a' overlap near (20, 30)" in caplog.text
+    assert len(atoms) == 2
+    assert "visualization will continue" in caplog.text
 
 
 # --------------------------------------------------------------------------------------
-# Test: split_interval_for_rows preserves wrapped fragments and true boundary flags
+# Test: class colors are deterministic and matching pairs use class plus overlap
 # --------------------------------------------------------------------------------------
-@pytest.mark.parametrize(
-    ("start", "end", "line_length", "expected_fragments"),
-    [
-        (
-            1000,
-            2000,
-            5000,
-            [(0, 1000, 2000, True, True)],
+def test_build_class_color_map_is_deterministic():
+    """build_class_color_map should assign stable colors from sorted class names."""
+    color_map = pu.build_class_color_map(["B", "A", "B"])
+
+    assert set(color_map) == {"A", "B"}
+    assert color_map["A"] != color_map["B"]
+
+
+def test_pair_atoms_matches_same_class_atoms_that_overlap():
+    """pair_atoms should match true and predicted atoms when they share a class and overlap in genome coordinates."""
+    true_atoms = [
+        pu.AtomRecord(
+            genome_name="genome1",
+            source="true",
+            class_id="A",
+            atom_number=1,
+            match_number=1,
+            atom_id="A:1",
+            start=10,
+            end=20,
+            length=10,
         ),
-        (
-            3000,
-            13000,
-            5000,
-            [
-                (0, 3000, 5000, True, False),
-                (1, 0, 5000, False, False),
-                (2, 0, 3000, False, True),
-            ],
+        pu.AtomRecord(
+            genome_name="genome1",
+            source="true",
+            class_id="A",
+            atom_number=2,
+            match_number=2,
+            atom_id="A:2",
+            start=30,
+            end=40,
+            length=10,
         ),
-        (
-            5000,
-            7000,
-            5000,
-            [(1, 0, 2000, True, True)],
+    ]
+    predicted_atoms = [
+        pu.AtomRecord(
+            genome_name="genome1",
+            source="predicted",
+            class_id="A",
+            atom_number=1,
+            match_number=1,
+            atom_id="A:1",
+            start=12,
+            end=22,
+            length=10,
         ),
-        (
-            2000,
-            5000,
-            5000,
-            [(0, 2000, 5000, True, True)],
+        pu.AtomRecord(
+            genome_name="genome1",
+            source="predicted",
+            class_id="A",
+            atom_number=2,
+            match_number=1,
+            atom_id="A:2",
+            start=34,
+            end=44,
+            length=10,
         ),
-    ],
-)
-def test_split_interval_for_rows_expected_fragments(
-    start: int,
-    end: int,
-    line_length: int,
-    expected_fragments: list[tuple[int, int, int, bool, bool]],
-):
-    """split_interval_for_rows should yield row-local fragments with correct boundary flags."""
-    # noinspection PyTypeChecker
-    assert list(pu.split_interval_for_rows(start, end, line_length)) == expected_fragments
+        pu.AtomRecord(
+            genome_name="genome1",
+            source="predicted",
+            class_id="B",
+            atom_number=3,
+            match_number=1,
+            atom_id="B:3",
+            start=30,
+            end=40,
+            length=10,
+        ),
+    ]
+
+    matched_pairs, unmatched_true, unmatched_predicted = pu.pair_atoms(true_atoms, predicted_atoms)
+
+    assert matched_pairs == [
+        (true_atoms[0], predicted_atoms[0]),
+        (true_atoms[1], predicted_atoms[1]),
+    ]
+    assert unmatched_true == []
+    assert unmatched_predicted == [predicted_atoms[2]]
+
+
+def test_pair_atoms_emits_all_same_class_overlaps_for_visualization():
+    """pair_atoms should emit every same-class overlap pair so split atoms can connect to one larger partner."""
+    true_atoms = [
+        pu.AtomRecord(
+            genome_name="genome1",
+            source="true",
+            class_id="A",
+            atom_number=1,
+            match_number=1,
+            atom_id="A:1",
+            start=10,
+            end=50,
+            length=40,
+        ),
+    ]
+    predicted_atoms = [
+        pu.AtomRecord(
+            genome_name="genome1",
+            source="predicted",
+            class_id="A",
+            atom_number=1,
+            match_number=1,
+            atom_id="A:1",
+            start=12,
+            end=20,
+            length=8,
+        ),
+        pu.AtomRecord(
+            genome_name="genome1",
+            source="predicted",
+            class_id="A",
+            atom_number=2,
+            match_number=2,
+            atom_id="A:2",
+            start=30,
+            end=40,
+            length=10,
+        ),
+    ]
+
+    matched_pairs, unmatched_true, unmatched_predicted = pu.pair_atoms(true_atoms, predicted_atoms)
+
+    assert matched_pairs == [
+        (true_atoms[0], predicted_atoms[0]),
+        (true_atoms[0], predicted_atoms[1]),
+    ]
+    assert unmatched_true == []
+    assert unmatched_predicted == []
 
 
 # --------------------------------------------------------------------------------------
-# Test: compute_gap_segments returns expected row-local gaps
+# Test: filesystem-safe output names are generated for genome files
 # --------------------------------------------------------------------------------------
-@pytest.mark.parametrize(
-    ("intervals", "row", "line_length", "genome_length", "expected_gaps"),
-    [
-        ([], 0, 5000, 5000, [(0, 5000)]),
-        ([(0, 5000)], 0, 5000, 5000, []),
-        ([(1000, 3000)], 0, 5000, 5000, [(0, 1000), (3000, 5000)]),
-        ([(4500, 6500)], 1, 5000, 10000, [(1500, 5000)]),
-        ([(5200, 7000), (7600, 8300)], 1, 5000, 10000, [(0, 200), (2000, 2600), (3300, 5000)]),
-        ([(0, 4900), (5400, 9999), (10000, 18000)], 1, 5000, 20000, [(0, 400), (4999, 5000)]),
-        ([(0, 4900), (5400, 9999), (10000, 18000)], 3, 5000, 20000, [(3000, 5000)]),
-    ],
-)
-def test_compute_gap_segments_expected_gaps(
-    intervals: list[tuple[int, int]],
-    row: int,
-    line_length: int,
-    genome_length: int,
-    expected_gaps: list[tuple[int, int]],
-):
-    """compute_gap_segments should return uncovered row-local segments for wrapped rows."""
-    assert pu.compute_gap_segments(intervals, row, line_length, genome_length) == expected_gaps
+def test_sanitize_output_stem():
+    """sanitize_output_stem should preserve safe characters and hash empty results."""
+    assert pu.sanitize_output_stem("genome.1") == "genome.1"
+    assert pu.sanitize_output_stem("genome/1") == "genome_1"
+    assert pu.sanitize_output_stem("|||").startswith("genome_")

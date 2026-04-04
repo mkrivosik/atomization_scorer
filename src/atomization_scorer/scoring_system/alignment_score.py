@@ -45,7 +45,7 @@ def compute_alignment_score(
     Parameters
     ----------
     genomes_file : Path
-        Input genomes FASTA file containing the genomes sequences.
+        Input genomes FASTA file containing the genome sequences.
     atomization_file : Path
         Input GEESE file containing the predicted atomization.
     output_directory : Path
@@ -95,7 +95,7 @@ def compute_alignment_score(
         output_directory=output_directory
     )
 
-    visualization_directory = output_directory / "atomization_visualization"
+    visualization_directory = output_directory / "atomization_visualizations"
     if level == "base":
         logger.info("Computing base-level metrics")
         score = compute_base_level_metrics(

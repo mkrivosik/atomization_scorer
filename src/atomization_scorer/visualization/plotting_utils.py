@@ -1,27 +1,28 @@
 """
 plotting_utils.py
 
-Shared helper functions for atomization visualization.
+Shared helper functions for the interactive atomization visualization.
 
 Functions
 ---------
-normalize_output_format : Validate and normalize a requested figure output format.
-save_figure             : Save a matplotlib figure using the requested format.
-get_sorted_intervals    : Extract, sort, and validate intervals for one genome.
-split_interval_for_rows : Split an interval across wrapped rows while preserving boundaries.
-compute_gap_segments    : Compute uncovered baseline segments for one wrapped row.
+normalize_output_format    : Validate and normalize the interactive output format.
+compute_initial_window     : Compute the initial visible genome window for one plot.
+get_atoms_for_genome       : Extract validated atom metadata for one genome.
+build_class_color_map      : Assign deterministic colors to atom classes.
+pair_atoms                 : Match true and predicted atoms by class and interval overlap.
+sanitize_output_stem       : Convert a genome name into a filesystem-safe HTML stem.
 """
 
 # --------------------------------------------------------------------------------------
 # Imports
 # --------------------------------------------------------------------------------------
 from __future__ import annotations
-from pathlib import Path
-from typing import Iterable
+from collections import defaultdict
+import hashlib
+import logging
+from typing import Iterable, TypedDict
 
 import pandas as pd
-import logging
-from matplotlib.figure import Figure
 
 # --------------------------------------------------------------------------------------
 # Logging
@@ -31,25 +32,64 @@ logger = logging.getLogger(__name__)
 # --------------------------------------------------------------------------------------
 # Constants
 # --------------------------------------------------------------------------------------
-SUPPORTED_OUTPUT_FORMATS = {"png", "svg", "pdf"}
+SUPPORTED_OUTPUT_FORMATS = {"html"}
+CLASS_PALETTE = [
+    "#1f77b4",
+    "#ff7f0e",
+    "#2ca02c",
+    "#d62728",
+    "#9467bd",
+    "#8c564b",
+    "#e377c2",
+    "#7f7f7f",
+    "#bcbd22",
+    "#17becf",
+    "#4e79a7",
+    "#f28e2b",
+    "#59a14f",
+    "#e15759",
+    "#76b7b2",
+    "#edc948",
+    "#b07aa1",
+    "#ff9da7",
+    "#9c755f",
+    "#bab0ab",
+]
 
 
 # --------------------------------------------------------------------------------------
-# Plotting Utils Functions
+# Types
+# --------------------------------------------------------------------------------------
+class AtomRecord(TypedDict):
+    """Normalized atom metadata for one genome and one source."""
+
+    genome_name: str
+    source: str
+    class_id: str
+    atom_number: int
+    match_number: int
+    atom_id: str
+    start: int
+    end: int
+    length: int
+
+
+# --------------------------------------------------------------------------------------
+# Output Format
 # --------------------------------------------------------------------------------------
 def normalize_output_format(output_format: str) -> str:
     """
-    Validate and normalize a requested figure output format.
+    Validate and normalize the interactive output format.
 
     Parameters
     ----------
     output_format : str
-        Requested figure output format.
+        Requested visualization output format.
 
     Raises
     ------
     ValueError
-        Raised if output_format is not one of the supported figure formats.
+        Raised if the requested format is not supported.
 
     Returns
     -------
@@ -65,81 +105,171 @@ def normalize_output_format(output_format: str) -> str:
     return normalized
 
 
-def save_figure(fig: Figure, output_path: Path, output_format: str, dpi: int) -> None:
+def compute_initial_window(
+    genome_length: int,
+    target_rows: int,
+    min_bases_per_row: int,
+    max_bases_per_row: int,
+) -> int:
     """
-    Save a matplotlib figure using the requested format.
+    Compute the initial visible window size for one interactive genome plot.
 
     Parameters
     ----------
-    fig : matplotlib.figure.Figure
-        A matplotlib figure to save.
-    output_path : Path
-        Output file path without the figure format suffix.
-    output_format : str
-        Requested figure output format.
-    dpi : int
-        Resolution used when saving the figure.
+    genome_length : int
+        Total genome length in bases.
+    target_rows : int
+        Desired number of windows across the genome.
+    min_bases_per_row : int
+        Minimum initial window size in bases.
+    max_bases_per_row : int
+        Maximum initial window size in bases.
+
+    Returns
+    -------
+    int
+        Initial visible window size in bases.
+    """
+    window = max(1, genome_length)
+    if target_rows > 0:
+        window = max(1, -(-genome_length // target_rows))
+    window = max(min_bases_per_row, window)
+    window = min(max_bases_per_row, window, genome_length)
+    return max(1, window)
+
+
+# --------------------------------------------------------------------------------------
+# Atom Extraction
+# --------------------------------------------------------------------------------------
+def _resolve_display_atom_numbers(genome_df: pd.DataFrame) -> pd.Series:
+    """
+    Resolve genome-global atom numbers for display and lookup.
+
+    Parameters
+    ----------
+    genome_df : pd.DataFrame
+        Genome-specific atom table.
 
     Raises
     ------
     ValueError
-        Raised if output_format is not one of the supported figure formats.
+        Raised if an explicit atom number column is present but not numeric.
 
     Returns
     -------
-    None
+    pd.Series
+        One-based atom number per row.
     """
-    normalized_format = normalize_output_format(output_format)
-    fig.savefig(
-        output_path.with_suffix(f".{normalized_format}"),
-        format=normalized_format,
-        dpi=dpi,
-        bbox_inches="tight",
-    )
+    if "atom_nr" in genome_df.columns:
+        try:
+            return pd.to_numeric(genome_df["atom_nr"], errors="raise").astype(int)
+        except (TypeError, ValueError) as error:
+            raise ValueError("Atom number column must contain integer-compatible values.") from error
+
+    if "atom_number" in genome_df.columns:
+        try:
+            return pd.to_numeric(genome_df["atom_number"], errors="raise").astype(int)
+        except (TypeError, ValueError) as error:
+            raise ValueError("Atom number column must contain integer-compatible values.") from error
+
+    if "atom" in genome_df.columns:
+        parsed = pd.to_numeric(genome_df["atom"], errors="coerce")
+        if parsed.notna().all():
+            return parsed.astype(int)
+
+    return pd.Series(range(1, len(genome_df) + 1), index=genome_df.index, dtype=int)
 
 
-def get_sorted_intervals(
+def _resolve_match_numbers(genome_df: pd.DataFrame) -> pd.Series:
+    """
+    Resolve per-class atom numbers from explicit columns or infer them by genomic order.
+
+    Parameters
+    ----------
+    genome_df : pd.DataFrame
+        Genome-specific atom table.
+
+    Raises
+    ------
+    ValueError
+        Raised if an explicit atom number column is present but not numeric.
+
+    Returns
+    -------
+    pd.Series
+        One-based atom number per row.
+    """
+    if "atom_number" in genome_df.columns:
+        try:
+            return pd.to_numeric(genome_df["atom_number"], errors="raise").astype(int)
+        except (TypeError, ValueError) as error:
+            raise ValueError("Atom number column must contain integer-compatible values.") from error
+
+    if "atom" in genome_df.columns:
+        parsed = pd.to_numeric(genome_df["atom"], errors="coerce")
+        if parsed.notna().all():
+            return parsed.astype(int)
+
+    sorted_df = genome_df.sort_values(["class", "start", "end"], kind="stable")
+    inferred = sorted_df.groupby("class").cumcount() + 1
+    return inferred.sort_index()
+
+
+def get_atoms_for_genome(
     df: pd.DataFrame,
     genome_name: str,
     genome_length: int,
     label: str,
-) -> list[tuple[int, int]]:
+    source: str,
+) -> list[AtomRecord]:
     """
-    Extract, sort, and validate intervals for a single genome.
+    Extract, validate, and normalize atoms for a single genome.
 
     Parameters
     ----------
-    df : pandas.DataFrame
+    df : pd.DataFrame
         Table containing atom intervals for one or more genomes.
     genome_name : str
-        Name of the genome whose intervals are extracted.
+        Name of the genome whose atoms are extracted.
     genome_length : int
-        Total length of the genome.
+        Total genome length in bases.
     label : str
-        Label used in warning and error messages to identify the interval source.
+        Label used in warning and error messages.
+    source : str
+        Source label recorded in the output, typically "true" or "predicted".
 
     Raises
     ------
     ValueError
         Raised if an interval contains a negative coordinate, does not satisfy
-        start < end, or ends outside the genome length.
+        start < end, ends outside the genome length, or has invalid explicit atom numbers.
 
     Returns
     -------
-    list[tuple[int, int]]
-        Sorted list of validated (start, end) atom intervals for the genome.
+    list[AtomRecord]
+        Sorted list of normalized atom records for the selected genome.
     """
-    intervals = [
-        (int(start), int(end))
-        for start, end in zip(
-            df.loc[df["name"] == genome_name, "start"],
-            df.loc[df["name"] == genome_name, "end"],
-        )
-    ]
-    intervals.sort()
+    genome_df = df.loc[df["name"] == genome_name].copy()
+    if genome_df.empty:
+        return []
+
+    genome_df["start"] = pd.to_numeric(genome_df["start"], errors="raise").astype(int)
+    genome_df["end"] = pd.to_numeric(genome_df["end"], errors="raise").astype(int)
+    genome_df["class"] = genome_df["class"].astype(str)
+    genome_df["match_number"] = _resolve_match_numbers(genome_df)
+    genome_df["atom_number"] = _resolve_display_atom_numbers(genome_df)
+
+    display_df = genome_df.sort_values(["start", "end", "class", "atom_number"], kind="stable")
 
     previous_end = None
-    for start, end in intervals:
+    atoms = []
+    for row in display_df.to_dict(orient="records"):
+        start = int(row["start"])
+        end = int(row["end"])
+        atom_number = int(row["atom_number"])
+        match_number = int(row["match_number"])
+        class_id = str(row["class"])
+
         if start < 0 or end < 0:
             raise ValueError(f"{label} interval for genome '{genome_name}' contains a negative coordinate.")
         if start >= end:
@@ -152,7 +282,7 @@ def get_sorted_intervals(
             )
         if previous_end is not None and start < previous_end:
             logger.warning(
-                "%s intervals for genome '%s' overlap near (%s, %s); plotting will continue.",
+                "%s intervals for genome '%s' overlap near (%s, %s); visualization will continue.",
                 label,
                 genome_name,
                 start,
@@ -160,96 +290,176 @@ def get_sorted_intervals(
             )
         previous_end = end
 
-    return intervals
-
-
-def split_interval_for_rows(
-    start: int,
-    end: int,
-    line_length: int,
-) -> Iterable[tuple[int, int, int, bool, bool]]:
-    """
-    Split a single interval across wrapped rows while preserving true boundaries.
-
-    Parameters
-    ----------
-    start : int
-        Start coordinate of the interval.
-    end : int
-        End coordinate of the interval.
-    line_length : int
-        Number of genome bases shown in one wrapped row.
-
-    Yields
-    ------
-    tuple[int, int, int, bool, bool]
-        Tuples of the form (row_index, x_start, x_end, is_true_start, is_true_end),
-        where x_start and x_end are row-local coordinates and the boolean values
-        indicate whether the fragment contains the true interval start or end.
-
-    Returns
-    -------
-    Iterable[tuple[int, int, int, bool, bool]]
-        Iterable of wrapped interval fragments for plotting.
-    """
-    current = start
-    while current < end:
-        row_index = current // line_length
-        row_start = row_index * line_length
-        row_end = row_start + line_length
-        fragment_end = min(end, row_end)
-        yield (
-            row_index,
-            current - row_start,
-            fragment_end - row_start,
-            current == start,
-            fragment_end == end,
+        atoms.append(
+            AtomRecord(
+                genome_name=genome_name,
+                source=source,
+                class_id=class_id,
+                atom_number=atom_number,
+                match_number=match_number,
+                atom_id=f"{class_id}:{atom_number}",
+                start=start,
+                end=end,
+                length=end - start,
+            )
         )
-        current = fragment_end
+
+    return atoms
 
 
-def compute_gap_segments(
-    intervals: list[tuple[int, int]],
-    row: int,
-    line_length: int,
-    genome_length: int,
-) -> list[tuple[int, int]]:
+# --------------------------------------------------------------------------------------
+# Matching and Styling
+# --------------------------------------------------------------------------------------
+def build_class_color_map(classes: Iterable[str]) -> dict[str, str]:
     """
-    Compute uncovered baseline segments for one wrapped row.
+    Assign deterministic colors to a set of atom classes.
 
     Parameters
     ----------
-    intervals : list[tuple[int, int]]
-        Sorted atom intervals in genome coordinates.
-    row : int
-        Zero-based wrapped row index.
-    line_length : int
-        Number of genome bases shown in one wrapped row.
-    genome_length : int
-        Total length of the genome.
+    classes : Iterable[str]
+        Atom class identifiers.
 
     Returns
     -------
-    list[tuple[int, int]]
-        Uncovered segments in row-local coordinates for the selected wrapped row.
+    dict[str, str]
+        Mapping from class identifier to hex color.
     """
-    row_start = row * line_length
-    row_end = min(row_start + line_length, genome_length)
-    intervals_in_row = []
+    ordered_classes = sorted({str(class_id) for class_id in classes})
+    return {
+        class_id: CLASS_PALETTE[index % len(CLASS_PALETTE)]
+        for index, class_id in enumerate(ordered_classes)
+    }
 
-    for start, end in intervals:
-        if end <= row_start or start >= row_end:
-            continue
-        intervals_in_row.append((max(start, row_start), min(end, row_end)))
 
-    current = row_start
-    gaps = []
-    for start, end in intervals_in_row:
-        if start > current:
-            gaps.append((current - row_start, start - row_start))
-        current = max(current, end)
+def pair_atoms(
+    true_atoms: list[AtomRecord],
+    predicted_atoms: list[AtomRecord],
+) -> tuple[list[tuple[AtomRecord, AtomRecord]], list[AtomRecord], list[AtomRecord]]:
+    """
+    Match true and predicted atoms by class and interval overlap.
 
-    if current < row_end:
-        gaps.append((current - row_start, row_end - row_start))
+    Parameters
+    ----------
+    true_atoms : list[AtomRecord]
+        True atoms for one genome.
+    predicted_atoms : list[AtomRecord]
+        Predicted atoms for one genome.
 
-    return gaps
+    Returns
+    -------
+    tuple[list[tuple[AtomRecord, AtomRecord]], list[AtomRecord], list[AtomRecord]]
+        Matched true/predicted pairs, unmatched true atoms, unmatched predicted atoms.
+    """
+    matched_pairs = []
+    matched_true_signatures = set()
+    matched_predicted_signatures = set()
+
+    true_by_class = defaultdict(list)
+    predicted_by_class = defaultdict(list)
+
+    for atom in true_atoms:
+        true_by_class[atom["class_id"]].append(atom)
+    for atom in predicted_atoms:
+        predicted_by_class[atom["class_id"]].append(atom)
+
+    for class_id in sorted(set(true_by_class) | set(predicted_by_class)):
+        class_true_atoms = sorted(
+            true_by_class.get(class_id, []),
+            key=lambda atom: (atom["start"], atom["end"]),
+        )
+        class_predicted_atoms = sorted(
+            predicted_by_class.get(class_id, []),
+            key=lambda atom: (atom["start"], atom["end"]),
+        )
+
+        predicted_start_index = 0
+        for true_atom in class_true_atoms:
+            while (
+                predicted_start_index < len(class_predicted_atoms)
+                and class_predicted_atoms[predicted_start_index]["end"] <= true_atom["start"]
+            ):
+                predicted_start_index += 1
+
+            predicted_index = predicted_start_index
+            while (
+                predicted_index < len(class_predicted_atoms)
+                and class_predicted_atoms[predicted_index]["start"] < true_atom["end"]
+            ):
+                predicted_atom = class_predicted_atoms[predicted_index]
+                if true_atom["start"] < predicted_atom["end"] and predicted_atom["start"] < true_atom["end"]:
+                    matched_pairs.append((true_atom, predicted_atom))
+                    matched_true_signatures.add(
+                        (
+                            true_atom["class_id"],
+                            true_atom["atom_number"],
+                            true_atom["start"],
+                            true_atom["end"],
+                            true_atom["source"],
+                        )
+                    )
+                    matched_predicted_signatures.add(
+                        (
+                            predicted_atom["class_id"],
+                            predicted_atom["atom_number"],
+                            predicted_atom["start"],
+                            predicted_atom["end"],
+                            predicted_atom["source"],
+                        )
+                    )
+                predicted_index += 1
+
+    unmatched_true = [
+        atom for atom in true_atoms
+        if (
+            atom["class_id"],
+            atom["atom_number"],
+            atom["start"],
+            atom["end"],
+            atom["source"],
+        ) not in matched_true_signatures
+    ]
+    unmatched_predicted = [
+        atom for atom in predicted_atoms
+        if (
+            atom["class_id"],
+            atom["atom_number"],
+            atom["start"],
+            atom["end"],
+            atom["source"],
+        ) not in matched_predicted_signatures
+    ]
+
+    matched_pairs.sort(key=lambda pair: (pair[0]["start"], pair[0]["end"], pair[0]["class_id"]))
+    unmatched_true.sort(key=lambda atom: (atom["start"], atom["end"], atom["class_id"]))
+    unmatched_predicted.sort(key=lambda atom: (atom["start"], atom["end"], atom["class_id"]))
+    return matched_pairs, unmatched_true, unmatched_predicted
+
+
+# --------------------------------------------------------------------------------------
+# Output Naming
+# --------------------------------------------------------------------------------------
+def sanitize_output_stem(value: str) -> str:
+    """
+    Convert an arbitrary genome identifier into a filesystem-safe HTML stem.
+
+    Parameters
+    ----------
+    value : str
+        Genome name or identifier.
+
+    Returns
+    -------
+    str
+        Filesystem-safe stem.
+    """
+    safe_characters = {"-", "_", "."}
+    sanitized = "".join(
+        character if character.isalnum() or character in safe_characters else "_"
+        for character in value
+    ).strip("_")
+
+    if sanitized:
+        return sanitized
+
+    digest = hashlib.sha1(value.encode("utf-8")).hexdigest()[:8]
+    return f"genome_{digest}"

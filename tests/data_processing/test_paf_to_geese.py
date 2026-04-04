@@ -47,21 +47,23 @@ def test_paf_to_geese_basic(tmp_path: Path):
 
     lines = output_file.read_text().splitlines()
     assert len(lines) == 3
-    assert lines[0] == "#name\tclass\tstart\tend"
+    assert lines[0] == "#name\tatom_nr\tclass\tstart\tend"
 
     # Check the first data line
     first_fields = lines[1].split("\t")
     assert first_fields[0] == "query1"
     assert first_fields[1] == "1"
-    assert first_fields[2] == "0"
-    assert first_fields[3] == "1000"
+    assert first_fields[2] == "1"
+    assert first_fields[3] == "0"
+    assert first_fields[4] == "1000"
 
     # Check the second data line
     second_fields = lines[2].split("\t")
     assert second_fields[0] == "query2"
     assert second_fields[1] == "2"
-    assert second_fields[2] == "0"
-    assert second_fields[3] == "2000"
+    assert second_fields[2] == "2"
+    assert second_fields[3] == "0"
+    assert second_fields[4] == "2000"
 
 
 # --------------------------------------------------------------------------------------
@@ -81,7 +83,34 @@ def test_paf_to_geese_empty_file(tmp_path: Path):
 
     lines = output_file.read_text().splitlines()
     assert len(lines) == 1
-    assert lines[0] == "#name\tclass\tstart\tend"
+    assert lines[0] == "#name\tatom_nr\tclass\tstart\tend"
+
+
+# --------------------------------------------------------------------------------------
+# Test: atom_nr is assigned globally after deterministic row sorting
+# --------------------------------------------------------------------------------------
+def test_paf_to_geese_assigns_global_atom_nr_after_sorting(tmp_path: Path):
+    """paf_to_geese should assign one global atom_nr sequence after sorting by genome and interval."""
+    paf_file = create_custom_paf(
+        tmp_path,
+        (
+            "query2\t2000\t30\t60\t+\ttarget2|class_2\t2000\t100\t130\t30\t30\t50\n"
+            "query1\t1000\t80\t120\t+\ttarget3|class_3\t1000\t0\t40\t40\t40\t60\n"
+            "query1\t1000\t10\t40\t+\ttarget1|class_1\t1000\t0\t30\t30\t30\t60\n"
+        ),
+        filename="sorted_output.paf",
+    )
+    output_file = tmp_path / "sorted_output.geese"
+
+    paf_to_geese(paf_file=paf_file, output_file=output_file)
+
+    lines = output_file.read_text().splitlines()
+    assert lines == [
+        "#name\tatom_nr\tclass\tstart\tend",
+        "query1\t1\t1\t10\t40",
+        "query1\t2\t3\t80\t120",
+        "query2\t3\t2\t30\t60",
+    ]
 
 
 # --------------------------------------------------------------------------------------

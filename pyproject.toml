@@ -32,7 +32,7 @@ dependencies = [
   "pandas>=2.2,<3",
   "biopython>=1.83,<2",
   "intervaltree>=3.1,<4",
-  "matplotlib>=3.10.8",
+  "bokeh>=3.4,<4",
 ]
 
 [project.optional-dependencies]
