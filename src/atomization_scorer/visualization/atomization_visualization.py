@@ -15,6 +15,7 @@ plot_atomization          : Generate one interactive HTML visualization per geno
 # Imports
 # --------------------------------------------------------------------------------------
 from __future__ import annotations
+import json
 import logging
 import hashlib
 from pathlib import Path
@@ -108,6 +109,92 @@ body {
 .bk-DataTable {
     border-radius: 12px;
     overflow: hidden;
+}
+.selection-panel {
+    margin: 18px auto 0 auto;
+    max-width: 1280px;
+    padding: 22px 24px 26px 24px;
+    border: 1px solid #d8e2ec;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 18px 50px rgba(30, 55, 90, 0.08);
+}
+.selection-table-scroll {
+    overflow-x: auto;
+    border: 1px solid #d8e2ec;
+    border-radius: 14px;
+    background: #ffffff;
+}
+.selection-html-table {
+    width: 100%;
+    min-width: 1080px;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+.selection-html-table th,
+.selection-html-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e6edf4;
+    text-align: left;
+    vertical-align: top;
+}
+.selection-html-table thead th {
+    background: #f5f9fc;
+    color: #314558;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+}
+.selection-html-table tbody tr {
+    cursor: pointer;
+}
+.selection-html-table tbody tr:hover {
+    background: #f8fbfd;
+}
+.selection-html-table tbody tr.is-selected {
+    background: #e8f2fb;
+}
+.selection-html-table tbody tr:last-child td {
+    border-bottom: none;
+}
+.selection-checkbox-cell {
+    width: 44px;
+    text-align: center;
+}
+.selection-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+.selection-table-empty {
+    padding: 18px 16px;
+    color: #52667b;
+}
+.selection-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+}
+.selection-button {
+    appearance: none;
+    border: 1px solid #bfd0e0;
+    border-radius: 12px;
+    background: #f6f9fc;
+    color: #213244;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+    padding: 11px 16px;
+    transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+}
+.selection-button:hover {
+    background: #edf4fa;
+    border-color: #a8bfd4;
+}
+.selection-button:active {
+    transform: translateY(1px);
 }
 """
 
@@ -393,6 +480,30 @@ def _build_selection_row_source_data(
     return data
 
 
+def _build_empty_selection_table_data() -> dict[str, list[Any]]:
+    """
+    Build an empty selection-table data payload.
+
+    Returns
+    -------
+    dict[str, list[Any]]
+        Empty ColumnDataSource-compatible dictionary for the selected-atoms table.
+    """
+    return {
+        "row_key": [],
+        "status": [],
+        "class_id": [],
+        "predicted_atom_nr": [],
+        "predicted_start": [],
+        "predicted_end": [],
+        "predicted_length": [],
+        "true_atom_nr": [],
+        "true_start": [],
+        "true_end": [],
+        "true_length": [],
+    }
+
+
 def _build_ribbon_source_data(
     matched_pairs: list[tuple[AtomRecord, AtomRecord]],
     class_colors: dict[str, str],
@@ -580,6 +691,37 @@ def _render_genome_html(
     matched_predicted_signatures = {
         _atom_signature(predicted_atom) for _, predicted_atom in matched_pairs
     }
+    empty_selection_table_data = _build_empty_selection_table_data()
+    empty_selection_table_data_json = json.dumps(empty_selection_table_data)
+    default_selection_summary_html = (
+        "<div style='padding:14px 16px;border:1px solid #d8e2ec;border-radius:14px;"
+        "background:#f8fbfd;'>"
+        "<b>Selected Atoms</b><br>"
+        "Use Box Select on the main plot to collect atoms touched by the selected genome interval."
+        "</div>"
+    )
+    default_atom_details_html = (
+        "<div style='padding:14px 16px;border:1px solid #d8e2ec;border-radius:14px;background:#f8fbfd;'>"
+        "<b>Atom details</b><br>"
+        "Click a true or predicted atom to inspect its sequence and coordinates."
+        "</div>"
+    )
+    remove_selection_help_html = (
+        "<div style='padding:14px 16px;border:1px solid #d8e2ec;border-radius:14px;"
+        "background:#f8fbfd;'><b>Selected Atoms</b><br>"
+        "Choose one or more rows in the table, then use Remove Selected Rows."
+        "</div>"
+    )
+    cleared_selection_summary_html = (
+        "<div style='padding:14px 16px;border:1px solid #d8e2ec;border-radius:14px;"
+        "background:#f8fbfd;'><b>Selected Atoms</b><br>"
+        "Selection table cleared.</div>"
+    )
+    empty_selection_table_html = (
+        "<div class='selection-table-empty'>"
+        "No atoms added yet. Use Box Select on the main plot to add atoms to the table."
+        "</div>"
+    )
 
     true_status = {
         _atom_signature(atom): ("matched" if _atom_signature(atom) in matched_true_signatures else "missing")
@@ -638,27 +780,14 @@ def _render_genome_html(
             unmatched_predicted=unmatched_predicted,
         )
     )
-    selected_atoms_source = bokeh["ColumnDataSource"](
-        {
-            "row_key": [],
-            "status": [],
-            "class_id": [],
-            "predicted_atom_nr": [],
-            "predicted_start": [],
-            "predicted_end": [],
-            "predicted_length": [],
-            "true_atom_nr": [],
-            "true_start": [],
-            "true_end": [],
-            "true_length": [],
-        }
-    )
+    selected_atoms_source = bokeh["ColumnDataSource"](empty_selection_table_data)
 
     pan_tool = bokeh["PanTool"](dimensions="width")
     wheel_zoom_tool = bokeh["WheelZoomTool"](dimensions="width")
     hover_tool = bokeh["HoverTool"]()
     box_select_tool = bokeh["BoxSelectTool"](dimensions="width")
     tap_tool = bokeh["TapTool"]()
+    tap_tool.mode = "replace"
     reset_tool = bokeh["ResetTool"]()
     save_tool = bokeh["SaveTool"]()
     plot = bokeh["figure"](
@@ -761,6 +890,7 @@ def _render_genome_html(
         ("Length", "@length{0,0}"),
         ("Status", "@status"),
     ]
+    box_select_tool.renderers = [true_renderer, predicted_renderer]
     tap_tool.renderers = [true_renderer, predicted_renderer]
 
     overview_plot = bokeh["figure"](
@@ -871,140 +1001,17 @@ def _render_genome_html(
     plot.x_range.js_on_change("end", range_sync_callback)
 
     selection_summary = bokeh["Div"](
-        text=(
-            "<div style='padding:14px 16px;border:1px solid #d8e2ec;border-radius:14px;"
-            "background:#f8fbfd;'>"
-            "<b>Selected Atoms</b><br>"
-            "Use Box Select on the main plot to collect atoms touched by the selected genome interval."
-            "</div>"
-        ),
+        text=default_selection_summary_html,
         width=viewport_width,
     )
     atom_details = bokeh["Div"](
-        text=(
-            "<div style='padding:14px 16px;border:1px solid #d8e2ec;border-radius:14px;background:#f8fbfd;'>"
-            "<b>Atom details</b><br>"
-            "Click a true or predicted atom to inspect its sequence and coordinates."
-            "</div>"
-        ),
+        text=default_atom_details_html,
         width=viewport_width,
     )
-    selection_table = bokeh["DataTable"](
-        source=selected_atoms_source,
-        columns=[
-            bokeh["TableColumn"](
-                field="status",
-                title="Status",
-            ),
-            bokeh["TableColumn"](
-                field="class_id",
-                title="Class",
-            ),
-            bokeh["TableColumn"](
-                field="predicted_atom_nr",
-                title="Pred Atom",
-                formatter=bokeh["NumberFormatter"](format="0,0"),
-            ),
-            bokeh["TableColumn"](
-                field="predicted_start",
-                title="Pred Start",
-                formatter=bokeh["NumberFormatter"](format="0,0"),
-            ),
-            bokeh["TableColumn"](
-                field="predicted_end",
-                title="Pred End",
-                formatter=bokeh["NumberFormatter"](format="0,0"),
-            ),
-            bokeh["TableColumn"](
-                field="predicted_length",
-                title="Pred Length",
-                formatter=bokeh["NumberFormatter"](format="0,0"),
-            ),
-            bokeh["TableColumn"](
-                field="true_atom_nr",
-                title="True Atom",
-                formatter=bokeh["NumberFormatter"](format="0,0"),
-            ),
-            bokeh["TableColumn"](
-                field="true_start",
-                title="True Start",
-                formatter=bokeh["NumberFormatter"](format="0,0"),
-            ),
-            bokeh["TableColumn"](
-                field="true_end",
-                title="True End",
-                formatter=bokeh["NumberFormatter"](format="0,0"),
-            ),
-            bokeh["TableColumn"](
-                field="true_length",
-                title="True Length",
-                formatter=bokeh["NumberFormatter"](format="0,0"),
-            ),
-        ],
-        width=viewport_width,
-        height=260,
-        autosize_mode="fit_columns",
-        sortable=True,
-        index_position=None,
-    )
-    remove_button = bokeh["Button"](label="Remove Selected Rows", button_type="default", width=220)
-    remove_button.js_on_click(
-        bokeh["CustomJS"](
-            args={"source": selected_atoms_source, "summary": selection_summary},
-            code="""
-                const selected = [...source.selected.indices].sort((a, b) => b - a)
-                if (selected.length === 0) {
-                    summary.text = (
-                        "<div style='padding:14px 16px;border:1px solid #d8e2ec;border-radius:14px;"
-                        + "background:#f8fbfd;'><b>Selected Atoms</b><br>"
-                        + "Choose one or more rows in the table, then use Remove Selected Rows."
-                        + "</div>"
-                    )
-                    return
-                }
-                for (const key of Object.keys(source.data)) {
-                    for (const index of selected) {
-                        source.data[key].splice(index, 1)
-                    }
-                }
-                source.selected.indices = []
-                source.change.emit()
-                summary.text = (
-                    "<div style='padding:14px 16px;border:1px solid #d8e2ec;border-radius:14px;"
-                    + "background:#f8fbfd;'><b>Selected Atoms</b><br>"
-                    + "Removed " + selected.length + " row(s). " + source.data.row_key.length
-                    + " row(s) remain in the table.</div>"
-                )
-            """,
-        )
-    )
-    clear_button = bokeh["Button"](label="Clear Selected Atoms", button_type="default", width=220)
-    clear_button.js_on_click(
-        bokeh["CustomJS"](
-            args={"source": selected_atoms_source, "summary": selection_summary},
-            code="""
-                source.data = {
-                    row_key: [],
-                    status: [],
-                    class_id: [],
-                    predicted_atom_nr: [],
-                    predicted_start: [],
-                    predicted_end: [],
-                    predicted_length: [],
-                    true_atom_nr: [],
-                    true_start: [],
-                    true_end: [],
-                    true_length: [],
-                }
-                source.selected.indices = []
-                summary.text = (
-                    "<div style='padding:14px 16px;border:1px solid #d8e2ec;border-radius:14px;"
-                    + "background:#f8fbfd;'><b>Selected Atoms</b><br>"
-                    + "Selection table cleared.</div>"
-                )
-            """,
-        )
-    )
+    selection_table_container_id = f"selected-atoms-table-{selected_atoms_source.id}"
+    remove_button_id = f"remove-selected-atoms-{selected_atoms_source.id}"
+    clear_button_id = f"clear-selected-atoms-{selected_atoms_source.id}"
+    selection_table_render_function = f"renderSelectedAtomsTable_{selected_atoms_source.id}"
 
     plot.js_on_event(
         bokeh["SelectionGeometry"],
@@ -1013,10 +1020,12 @@ def _render_genome_html(
                 "all_rows": all_selection_rows_source,
                 "source": selected_atoms_source,
                 "summary": selection_summary,
+                "true_source": true_source,
+                "predicted_source": predicted_source,
             },
             code=f"""
                 const geometry = cb_obj.geometry
-                if (!geometry) {{
+                if (!geometry || geometry.x0 == null || geometry.x1 == null || cb_obj.final !== true) {{
                     return
                 }}
                 const raw_start = Math.floor(Math.min(geometry.x0, geometry.x1))
@@ -1026,7 +1035,11 @@ def _render_genome_html(
                 if (!(end > start)) {{
                     return
                 }}
-                const existingKeys = new Set(source.data.row_key)
+                const nextData = {{}}
+                for (const [field, values] of Object.entries(source.data)) {{
+                    nextData[field] = [...values]
+                }}
+                const existingKeys = new Set(nextData.row_key)
                 let added = 0
                 for (let index = 0; index < all_rows.data.row_key.length; index += 1) {{
                     const key = all_rows.data.row_key[index]
@@ -1046,12 +1059,15 @@ def _render_genome_html(
                     if (!(predictedIntersects || trueIntersects)) {{
                         continue
                     }}
-                    for (const field of Object.keys(source.data)) {{
-                        source.data[field].push(all_rows.data[field][index])
+                    for (const field of Object.keys(nextData)) {{
+                        nextData[field].push(all_rows.data[field][index])
                     }}
                     existingKeys.add(key)
                     added += 1
                 }}
+                source.data = nextData
+                true_source.selected.indices = []
+                predicted_source.selected.indices = []
                 source.change.emit()
                 summary.text = (
                     "<div style='padding:14px 16px;border:1px solid #d8e2ec;border-radius:14px;"
@@ -1063,63 +1079,69 @@ def _render_genome_html(
             """,
         ),
     )
+    tap_tool.callback = bokeh["CustomJS"](
+        args={"details": atom_details},
+        code="""
+            const source = cb_data.source
+            if (!source) {
+                return
+            }
+            const escapeHtml = (value) => String(value)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+            const indices = [...source.selected.indices]
+            if (indices.length === 0) {
+                return
+            }
+            const index = indices[indices.length - 1]
+            const track = source.data.source[index]
+            const classId = source.data.class_id[index]
+            const atomNumber = source.data.atom_number[index]
+            const start = source.data.start[index]
+            const end = source.data.end[index]
+            const length = source.data.length[index]
+            const status = source.data.status[index]
+            const sequence = escapeHtml(source.data.sequence[index])
+            details.text = (
+                "<div style='padding:14px 16px;border:1px solid #d8e2ec;border-radius:14px;background:#f8fbfd;'>"
+                + "<b>Atom details</b><br>"
+                + "<span><b>Track:</b> " + escapeHtml(track) + "</span><br>"
+                + "<span><b>Class:</b> " + escapeHtml(classId) + "</span><br>"
+                + "<span><b>Atom number:</b> " + Number(atomNumber).toLocaleString() + "</span><br>"
+                + "<span><b>Start:</b> " + Number(start).toLocaleString() + "</span><br>"
+                + "<span><b>End:</b> " + Number(end).toLocaleString() + "</span><br>"
+                + "<span><b>Length:</b> " + Number(length).toLocaleString() + "</span><br>"
+                + "<span><b>Status:</b> " + escapeHtml(status) + "</span><br>"
+                + "<div style='margin-top:10px;'><b>Sequence</b></div>"
+                + "<pre style='margin:8px 0 0 0;max-height:180px;overflow:auto;white-space:pre-wrap;word-break:break-all;"
+                + "padding:10px 12px;border:1px solid #d8e2ec;border-radius:10px;background:#ffffff;'>"
+                + sequence + "</pre></div>"
+            )
+        """,
+    )
     plot.js_on_event(
         bokeh["Tap"],
         bokeh["CustomJS"](
-            args={"true_source": true_source, "predicted_source": predicted_source, "details": atom_details},
+            args={
+                "true_source": true_source,
+                "predicted_source": predicted_source,
+                "details": atom_details,
+                "default_html": default_atom_details_html,
+            },
             code="""
-                const x = cb_obj.x
-                const y = cb_obj.y
-                const escapeHtml = (value) => String(value)
-                    .replaceAll('&', '&amp;')
-                    .replaceAll('<', '&lt;')
-                    .replaceAll('>', '&gt;')
-                const renderDetails = (source, index) => {
-                    const track = source.data.source[index]
-                    const classId = source.data.class_id[index]
-                    const atomNumber = source.data.atom_number[index]
-                    const start = source.data.start[index]
-                    const end = source.data.end[index]
-                    const length = source.data.length[index]
-                    const status = source.data.status[index]
-                    const sequence = escapeHtml(source.data.sequence[index])
-                    details.text = (
-                        "<div style='padding:14px 16px;border:1px solid #d8e2ec;border-radius:14px;background:#f8fbfd;'>"
-                        + "<b>Atom details</b><br>"
-                        + "<span><b>Track:</b> " + escapeHtml(track) + "</span><br>"
-                        + "<span><b>Class:</b> " + escapeHtml(classId) + "</span><br>"
-                        + "<span><b>Atom number:</b> " + Number(atomNumber).toLocaleString() + "</span><br>"
-                        + "<span><b>Start:</b> " + Number(start).toLocaleString() + "</span><br>"
-                        + "<span><b>End:</b> " + Number(end).toLocaleString() + "</span><br>"
-                        + "<span><b>Length:</b> " + Number(length).toLocaleString() + "</span><br>"
-                        + "<span><b>Status:</b> " + escapeHtml(status) + "</span><br>"
-                        + "<div style='margin-top:10px;'><b>Sequence</b></div>"
-                        + "<pre style='margin:8px 0 0 0;max-height:180px;overflow:auto;white-space:pre-wrap;word-break:break-all;"
-                        + "padding:10px 12px;border:1px solid #d8e2ec;border-radius:10px;background:#ffffff;'>"
-                        + sequence + "</pre></div>"
-                    )
-                }
-                const findAtom = (source) => {
-                    for (let index = 0; index < source.data.start.length; index += 1) {
-                        if (
-                            source.data.start[index] <= x && x <= source.data.end[index]
-                            && source.data.bottom[index] <= y && y <= source.data.top[index]
-                        ) {
-                            return index
-                        }
+                setTimeout(() => {
+                    if (true_source.selected.indices.length === 0 && predicted_source.selected.indices.length === 0) {
+                        details.text = default_html
                     }
-                    return -1
-                }
-                const trueIndex = findAtom(true_source)
-                if (trueIndex >= 0) {
-                    renderDetails(true_source, trueIndex)
-                    return
-                }
-                const predictedIndex = findAtom(predicted_source)
-                if (predictedIndex >= 0) {
-                    renderDetails(predicted_source, predictedIndex)
-                }
+                }, 0)
             """,
+        ),
+    )
+    selected_atoms_source.js_on_change(
+        "data",
+        bokeh["CustomJS"](
+            code=f"window.{selection_table_render_function} && window.{selection_table_render_function}()",
         ),
     )
 
@@ -1129,12 +1151,235 @@ def _render_genome_html(
         overview_plot,
         atom_details,
         selection_summary,
-        selection_table,
-        bokeh["row"](remove_button, clear_button),
     )
     script, div = bokeh["components"](layout)
     resources = bokeh["INLINE"]
     resources_html = resources.render()
+    selection_table_controls_html = f"""
+    <section class="selection-panel">
+      <div id="{selection_table_container_id}" class="selection-table-scroll">
+        {empty_selection_table_html}
+      </div>
+      <div class="selection-actions">
+        <button id="{remove_button_id}" class="selection-button" type="button">Remove Selected Rows</button>
+        <button id="{clear_button_id}" class="selection-button" type="button">Clear Selected Atoms</button>
+      </div>
+    </section>
+    """
+    selection_table_controls_script = f"""
+  <script>
+  (() => {{
+    const tableContainerId = {json.dumps(selection_table_container_id)};
+    const removeButtonId = {json.dumps(remove_button_id)};
+    const clearButtonId = {json.dumps(clear_button_id)};
+    const selectedSourceId = {json.dumps(selected_atoms_source.id)};
+    const summaryId = {json.dumps(selection_summary.id)};
+    const emptyData = {empty_selection_table_data_json};
+    const emptyTableHtml = {json.dumps(empty_selection_table_html)};
+    const removeSelectionHelpHtml = {json.dumps(remove_selection_help_html)};
+    const clearedSelectionSummaryHtml = {json.dumps(cleared_selection_summary_html)};
+    const selectedRowKeys = new Set();
+
+    const escapeHtml = (value) => String(value)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;');
+
+    const formatText = (value) => value == null ? '' : escapeHtml(value);
+    const formatNumber = (value) => value == null ? '' : Number(value).toLocaleString();
+
+    const cloneData = (data) => {{
+      const nextData = {{}};
+      for (const [field, values] of Object.entries(data)) {{
+        nextData[field] = [...values];
+      }}
+      return nextData;
+    }};
+
+    const getDocument = () => window.Bokeh?.documents?.[0] ?? null;
+    const getSelectedSource = () => getDocument()?.get_model_by_id(selectedSourceId) ?? null;
+
+    const updateSummary = (html) => {{
+      const summary = getDocument()?.get_model_by_id(summaryId);
+      if (summary) {{
+        summary.text = html;
+      }}
+    }};
+
+    const syncSelectedRowKeys = (rowKeys) => {{
+      const activeKeys = new Set(rowKeys);
+      for (const rowKey of [...selectedRowKeys]) {{
+        if (!activeKeys.has(rowKey)) {{
+          selectedRowKeys.delete(rowKey);
+        }}
+      }}
+    }};
+
+    const renderTable = () => {{
+      const container = document.getElementById(tableContainerId);
+      const source = getSelectedSource();
+      if (!container || !source) {{
+        return;
+      }}
+      const rowKeys = source.data.row_key ?? [];
+      syncSelectedRowKeys(rowKeys);
+      if (rowKeys.length === 0) {{
+        container.innerHTML = emptyTableHtml;
+        return;
+      }}
+      const rows = rowKeys.map((rowKey, index) => {{
+        const encodedKey = encodeURIComponent(rowKey);
+        const checked = selectedRowKeys.has(rowKey);
+        return (
+          `<tr class="${{checked ? 'is-selected' : ''}}" data-row-key="${{encodedKey}}">`
+          + `<td class="selection-checkbox-cell"><input class="selection-checkbox" type="checkbox" data-row-key="${{encodedKey}}" ${{checked ? 'checked' : ''}}></td>`
+          + `<td>${{formatText(source.data.status[index])}}</td>`
+          + `<td>${{formatText(source.data.class_id[index])}}</td>`
+          + `<td>${{formatNumber(source.data.predicted_atom_nr[index])}}</td>`
+          + `<td>${{formatNumber(source.data.predicted_start[index])}}</td>`
+          + `<td>${{formatNumber(source.data.predicted_end[index])}}</td>`
+          + `<td>${{formatNumber(source.data.predicted_length[index])}}</td>`
+          + `<td>${{formatNumber(source.data.true_atom_nr[index])}}</td>`
+          + `<td>${{formatNumber(source.data.true_start[index])}}</td>`
+          + `<td>${{formatNumber(source.data.true_end[index])}}</td>`
+          + `<td>${{formatNumber(source.data.true_length[index])}}</td>`
+          + `</tr>`
+        );
+      }}).join('');
+      container.innerHTML = (
+        `<table class="selection-html-table">`
+        + `<thead><tr>`
+        + `<th class="selection-checkbox-cell">Pick</th>`
+        + `<th>Status</th>`
+        + `<th>Class</th>`
+        + `<th>Pred Atom</th>`
+        + `<th>Pred Start</th>`
+        + `<th>Pred End</th>`
+        + `<th>Pred Length</th>`
+        + `<th>True Atom</th>`
+        + `<th>True Start</th>`
+        + `<th>True End</th>`
+        + `<th>True Length</th>`
+        + `</tr></thead>`
+        + `<tbody>${{rows}}</tbody>`
+        + `</table>`
+      );
+    }};
+
+    const bindControls = () => {{
+      const container = document.getElementById(tableContainerId);
+      const removeButton = document.getElementById(removeButtonId);
+      const clearButton = document.getElementById(clearButtonId);
+      if (!container || !removeButton || !clearButton || container.dataset.bound === 'true') {{
+        return;
+      }}
+      container.dataset.bound = 'true';
+
+      container.addEventListener('change', (event) => {{
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement) || !target.classList.contains('selection-checkbox')) {{
+          return;
+        }}
+        const rowKey = decodeURIComponent(target.dataset.rowKey || '');
+        if (!rowKey) {{
+          return;
+        }}
+        if (target.checked) {{
+          selectedRowKeys.add(rowKey);
+        }} else {{
+          selectedRowKeys.delete(rowKey);
+        }}
+        renderTable();
+      }});
+
+      container.addEventListener('click', (event) => {{
+        const target = event.target;
+        if (target instanceof HTMLInputElement) {{
+          return;
+        }}
+        const row = target instanceof Element ? target.closest('tr[data-row-key]') : null;
+        if (!row) {{
+          return;
+        }}
+        const rowKey = decodeURIComponent(row.dataset.rowKey || '');
+        if (!rowKey) {{
+          return;
+        }}
+        if (selectedRowKeys.has(rowKey)) {{
+          selectedRowKeys.delete(rowKey);
+        }} else {{
+          selectedRowKeys.add(rowKey);
+        }}
+        renderTable();
+      }});
+
+      removeButton.addEventListener('click', () => {{
+        const source = getSelectedSource();
+        if (!source) {{
+          return;
+        }}
+        if (selectedRowKeys.size === 0) {{
+          updateSummary(removeSelectionHelpHtml);
+          return;
+        }}
+        const currentData = source.data;
+        const nextData = {{}};
+        for (const field of Object.keys(currentData)) {{
+          nextData[field] = [];
+        }}
+        const previousCount = currentData.row_key.length;
+        for (let index = 0; index < currentData.row_key.length; index += 1) {{
+          const rowKey = currentData.row_key[index];
+          if (selectedRowKeys.has(rowKey)) {{
+            continue;
+          }}
+          for (const field of Object.keys(nextData)) {{
+            nextData[field].push(currentData[field][index]);
+          }}
+        }}
+        selectedRowKeys.clear();
+        source.data = nextData;
+        source.selected.indices = [];
+        source.change.emit();
+        updateSummary(
+          "<div style='padding:14px 16px;border:1px solid #d8e2ec;border-radius:14px;"
+          + "background:#f8fbfd;'><b>Selected Atoms</b><br>"
+          + "Removed " + (previousCount - nextData.row_key.length) + " row(s). "
+          + nextData.row_key.length + " row(s) remain in the table.</div>"
+        );
+      }});
+
+      clearButton.addEventListener('click', () => {{
+        const source = getSelectedSource();
+        if (!source) {{
+          return;
+        }}
+        selectedRowKeys.clear();
+        source.data = cloneData(emptyData);
+        source.selected.indices = [];
+        source.change.emit();
+        updateSummary(clearedSelectionSummaryHtml);
+      }});
+    }};
+
+    const initialize = () => {{
+      if (!getSelectedSource() || !document.getElementById(tableContainerId)) {{
+        window.setTimeout(initialize, 100);
+        return;
+      }}
+      bindControls();
+      renderTable();
+    }};
+
+    window.{selection_table_render_function} = renderTable;
+    if (document.readyState === 'loading') {{
+      document.addEventListener('DOMContentLoaded', initialize, {{ once: true }});
+    }} else {{
+      initialize();
+    }}
+  }})();
+  </script>
+    """
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1161,8 +1406,10 @@ def _render_genome_html(
       </p>
     </section>
     {div}
+    {selection_table_controls_html}
   </main>
   {script}
+  {selection_table_controls_script}
 </body>
 </html>"""
 

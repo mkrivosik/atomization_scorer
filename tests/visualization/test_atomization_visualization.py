@@ -441,6 +441,64 @@ def test_build_selection_row_source_data_captures_comparison_rows():
 
 
 # --------------------------------------------------------------------------------------
+# Test: empty selection-table payload stays aligned with the rendered DataTable schema
+# --------------------------------------------------------------------------------------
+def test_build_empty_selection_table_data_returns_all_expected_columns():
+    """_build_empty_selection_table_data should expose every selected-atoms table column."""
+    assert av._build_empty_selection_table_data() == {
+        "row_key": [],
+        "status": [],
+        "class_id": [],
+        "predicted_atom_nr": [],
+        "predicted_start": [],
+        "predicted_end": [],
+        "predicted_length": [],
+        "true_atom_nr": [],
+        "true_start": [],
+        "true_end": [],
+        "true_length": [],
+    }
+
+
+# --------------------------------------------------------------------------------------
+# Test: rendered HTML keeps the interaction callback guards for tap/table behavior
+# --------------------------------------------------------------------------------------
+def test_plot_atomization_real_html_contains_interaction_regression_guards(
+    output_dir: Path,
+    tmp_path: Path,
+):
+    """plot_atomization should embed the JS guards used for repeated tap and table interactions."""
+    sample_fasta, true_geese, predicted_geese = _write_atomization_inputs(
+        tmp_path=tmp_path,
+        genome_length=20_000,
+        true_rows=[
+            {"name": "test_genome", "class": "A", "start": 0, "end": 4900},
+            {"name": "test_genome", "class": "B", "start": 5400, "end": 9999},
+        ],
+        predicted_rows=[
+            {"name": "test_genome", "class": "A", "start": 500, "end": 5400},
+            {"name": "test_genome", "class": "B", "start": 5400, "end": 10100},
+        ],
+    )
+
+    plot_atomization(
+        genomes_file=sample_fasta,
+        true_atoms_file=true_geese,
+        predicted_atoms_file=predicted_geese,
+        output_directory=output_dir,
+    )
+
+    html = (output_dir / "test_genome.html").read_text(encoding="utf-8")
+    assert "geometry.x0 == null || geometry.x1 == null || cb_obj.final !== true" in html
+    assert "const indices = [...source.selected.indices]" in html
+    assert "source.data = nextData" in html
+    assert "true_source.selected.indices = []" in html
+    assert '"mode":"replace"' in html
+    assert "selectedRowKeys.clear()" in html
+    assert "renderSelectedAtomsTable_" in html
+
+
+# --------------------------------------------------------------------------------------
 # Test: sanitized filename collisions still produce one HTML per genome
 # --------------------------------------------------------------------------------------
 def test_plot_atomization_avoids_output_filename_collisions(tmp_path: Path):
