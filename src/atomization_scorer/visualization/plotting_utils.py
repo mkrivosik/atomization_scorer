@@ -5,12 +5,12 @@ Shared helper functions for the interactive atomization visualization.
 
 Functions
 ---------
-normalize_output_format    : Validate and normalize the interactive output format.
-compute_initial_window     : Compute the initial visible genome window for one plot.
-get_atoms_for_genome       : Extract validated atom metadata for one genome.
-build_class_color_map      : Assign deterministic colors to atom classes.
-pair_atoms                 : Match true and predicted atoms by class and interval overlap.
-sanitize_output_stem       : Convert a genome name into a filesystem-safe HTML stem.
+normalize_output_format : Validate and normalize the interactive output format.
+compute_initial_window  : Compute the initial visible genome window for one plot.
+get_atoms_for_genome    : Extract validated atom metadata for one genome.
+build_class_color_map   : Assign deterministic colors to atom classes.
+pair_atoms              : Match true and predicted atoms by class and interval overlap.
+sanitize_output_stem    : Convert a genome name into a filesystem-safe HTML stem.
 """
 
 # --------------------------------------------------------------------------------------
@@ -18,11 +18,12 @@ sanitize_output_stem       : Convert a genome name into a filesystem-safe HTML s
 # --------------------------------------------------------------------------------------
 from __future__ import annotations
 from collections import defaultdict
-import hashlib
 import logging
 from typing import Iterable, TypedDict
 
 import pandas as pd
+
+from atomization_scorer.data_processing.utils import sanitize_path_component
 
 # --------------------------------------------------------------------------------------
 # Logging
@@ -61,13 +62,32 @@ CLASS_PALETTE = [
 # Types
 # --------------------------------------------------------------------------------------
 class AtomRecord(TypedDict):
-    """Normalized atom metadata for one genome and one source."""
+    """
+    Normalized atom metadata for one genome and one source.
 
+    Attributes
+    ----------
+    genome_name : str
+        Name of the genome this atom belongs to.
+    source : str
+        Track origin of the atom, either "true" or "predicted".
+    class_id : str
+        Atom class identifier.
+    atom_number : int
+        Display atom number used for labeling and identity checks.
+    atom_id : str
+        Human-readable atom identifier combining class and atom number.
+    start : int
+        Half-open interval start position on the genome.
+    end : int
+        Half-open interval end position on the genome.
+    length : int
+        Length of the atom interval in bases.
+    """
     genome_name: str
     source: str
     class_id: str
     atom_number: int
-    match_number: int
     atom_id: str
     start: int
     end: int
@@ -141,6 +161,61 @@ def compute_initial_window(
 # --------------------------------------------------------------------------------------
 # Atom Extraction
 # --------------------------------------------------------------------------------------
+def _parse_column_as_int(df: pd.DataFrame, column: str) -> pd.Series | None:
+    """
+    Parse a DataFrame column as integers, or return None if the column is absent.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Table to read from.
+    column : str
+        Column name to parse.
+
+    Raises
+    ------
+    ValueError
+        Raised if the column exists but contains non-integer-compatible values.
+
+    Returns
+    -------
+    pd.Series or None
+        Integer Series if the column exists, None otherwise.
+    """
+    if column not in df.columns:
+        return None
+    try:
+        return pd.to_numeric(df[column], errors="raise").astype(int)
+    except (TypeError, ValueError) as error:
+        raise ValueError("Atom number column must contain integer-compatible values.") from error
+
+
+def _parse_atom_number_columns(genome_df: pd.DataFrame) -> pd.Series | None:
+    """
+    Try to resolve atom numbers from the atom_number or atom column.
+
+    Parameters
+    ----------
+    genome_df : pd.DataFrame
+        Genome-specific atom table.
+
+    Returns
+    -------
+    pd.Series or None
+        Integer Series if a usable column is found, None otherwise.
+    """
+    result = _parse_column_as_int(genome_df, "atom_number")
+    if result is not None:
+        return result
+
+    if "atom" in genome_df.columns:
+        parsed = pd.to_numeric(genome_df["atom"], errors="coerce")
+        if parsed.notna().all():
+            return parsed.astype(int)
+
+    return None
+
+
 def _resolve_display_atom_numbers(genome_df: pd.DataFrame) -> pd.Series:
     """
     Resolve genome-global atom numbers for display and lookup.
@@ -160,59 +235,15 @@ def _resolve_display_atom_numbers(genome_df: pd.DataFrame) -> pd.Series:
     pd.Series
         One-based atom number per row.
     """
-    if "atom_nr" in genome_df.columns:
-        try:
-            return pd.to_numeric(genome_df["atom_nr"], errors="raise").astype(int)
-        except (TypeError, ValueError) as error:
-            raise ValueError("Atom number column must contain integer-compatible values.") from error
+    result = _parse_column_as_int(genome_df, "atom_nr")
+    if result is not None:
+        return result
 
-    if "atom_number" in genome_df.columns:
-        try:
-            return pd.to_numeric(genome_df["atom_number"], errors="raise").astype(int)
-        except (TypeError, ValueError) as error:
-            raise ValueError("Atom number column must contain integer-compatible values.") from error
-
-    if "atom" in genome_df.columns:
-        parsed = pd.to_numeric(genome_df["atom"], errors="coerce")
-        if parsed.notna().all():
-            return parsed.astype(int)
+    result = _parse_atom_number_columns(genome_df)
+    if result is not None:
+        return result
 
     return pd.Series(range(1, len(genome_df) + 1), index=genome_df.index, dtype=int)
-
-
-def _resolve_match_numbers(genome_df: pd.DataFrame) -> pd.Series:
-    """
-    Resolve per-class atom numbers from explicit columns or infer them by genomic order.
-
-    Parameters
-    ----------
-    genome_df : pd.DataFrame
-        Genome-specific atom table.
-
-    Raises
-    ------
-    ValueError
-        Raised if an explicit atom number column is present but not numeric.
-
-    Returns
-    -------
-    pd.Series
-        One-based atom number per row.
-    """
-    if "atom_number" in genome_df.columns:
-        try:
-            return pd.to_numeric(genome_df["atom_number"], errors="raise").astype(int)
-        except (TypeError, ValueError) as error:
-            raise ValueError("Atom number column must contain integer-compatible values.") from error
-
-    if "atom" in genome_df.columns:
-        parsed = pd.to_numeric(genome_df["atom"], errors="coerce")
-        if parsed.notna().all():
-            return parsed.astype(int)
-
-    sorted_df = genome_df.sort_values(["class", "start", "end"], kind="stable")
-    inferred = sorted_df.groupby("class").cumcount() + 1
-    return inferred.sort_index()
 
 
 def get_atoms_for_genome(
@@ -256,7 +287,6 @@ def get_atoms_for_genome(
     genome_df["start"] = pd.to_numeric(genome_df["start"], errors="raise").astype(int)
     genome_df["end"] = pd.to_numeric(genome_df["end"], errors="raise").astype(int)
     genome_df["class"] = genome_df["class"].astype(str)
-    genome_df["match_number"] = _resolve_match_numbers(genome_df)
     genome_df["atom_number"] = _resolve_display_atom_numbers(genome_df)
 
     display_df = genome_df.sort_values(["start", "end", "class", "atom_number"], kind="stable")
@@ -267,7 +297,6 @@ def get_atoms_for_genome(
         start = int(row["start"])
         end = int(row["end"])
         atom_number = int(row["atom_number"])
-        match_number = int(row["match_number"])
         class_id = str(row["class"])
 
         if start < 0 or end < 0:
@@ -296,7 +325,6 @@ def get_atoms_for_genome(
                 source=source,
                 class_id=class_id,
                 atom_number=atom_number,
-                match_number=match_number,
                 atom_id=f"{class_id}:{atom_number}",
                 start=start,
                 end=end,
@@ -365,11 +393,11 @@ def pair_atoms(
     for class_id in sorted(set(true_by_class) | set(predicted_by_class)):
         class_true_atoms = sorted(
             true_by_class.get(class_id, []),
-            key=lambda atom: (atom["start"], atom["end"]),
+            key=lambda a: (a["start"], a["end"]),
         )
         class_predicted_atoms = sorted(
             predicted_by_class.get(class_id, []),
-            key=lambda atom: (atom["start"], atom["end"]),
+            key=lambda a: (a["start"], a["end"]),
         )
 
         predicted_start_index = 0
@@ -430,8 +458,8 @@ def pair_atoms(
     ]
 
     matched_pairs.sort(key=lambda pair: (pair[0]["start"], pair[0]["end"], pair[0]["class_id"]))
-    unmatched_true.sort(key=lambda atom: (atom["start"], atom["end"], atom["class_id"]))
-    unmatched_predicted.sort(key=lambda atom: (atom["start"], atom["end"], atom["class_id"]))
+    unmatched_true.sort(key=lambda a: (a["start"], a["end"], a["class_id"]))
+    unmatched_predicted.sort(key=lambda a: (a["start"], a["end"], a["class_id"]))
     return matched_pairs, unmatched_true, unmatched_predicted
 
 
@@ -452,14 +480,4 @@ def sanitize_output_stem(value: str) -> str:
     str
         Filesystem-safe stem.
     """
-    safe_characters = {"-", "_", "."}
-    sanitized = "".join(
-        character if character.isalnum() or character in safe_characters else "_"
-        for character in value
-    ).strip("_")
-
-    if sanitized:
-        return sanitized
-
-    digest = hashlib.sha1(value.encode("utf-8")).hexdigest()[:8]
-    return f"genome_{digest}"
+    return sanitize_path_component(value, fallback_prefix="genome")

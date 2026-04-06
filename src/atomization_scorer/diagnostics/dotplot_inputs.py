@@ -17,10 +17,10 @@ write_anchor_dotplot_fastas : Generate per-anchor FASTA inputs for plottable ove
 from __future__ import annotations
 import csv
 from collections import defaultdict
-import hashlib
 from pathlib import Path
 
 from atomization_scorer.data_processing import read_fasta, write_fasta
+from atomization_scorer.data_processing.utils import sanitize_path_component
 from atomization_scorer.diagnostics.overlap_diagnostics import OVERLAP_FIELDNAMES
 
 # --------------------------------------------------------------------------------------
@@ -46,17 +46,7 @@ def _sanitize_path_component(value: str) -> str:
     str
         Sanitized path component safe for use as a directory name.
     """
-    safe_characters = {"-", "_", "."}
-    sanitized = "".join(
-        character if character.isalnum() or character in safe_characters else "_"
-        for character in value
-    ).strip("_")
-
-    if sanitized:
-        return sanitized
-
-    digest = hashlib.sha1(value.encode("utf-8")).hexdigest()[:8]
-    return f"anchor_{digest}"
+    return sanitize_path_component(value, fallback_prefix="anchor")
 
 
 # --------------------------------------------------------------------------------------

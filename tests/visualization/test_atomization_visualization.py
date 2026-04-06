@@ -3,6 +3,7 @@ Tests for the interactive plot_atomization() function.
 """
 
 from pathlib import Path
+from typing import cast
 
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -12,6 +13,7 @@ import pytest
 
 from atomization_scorer import plot_atomization
 from atomization_scorer.visualization import atomization_visualization as av
+from atomization_scorer.visualization.plotting_utils import AtomRecord
 
 
 # --------------------------------------------------------------------------------------
@@ -54,7 +56,7 @@ def test_plot_atomization_writes_html(output_dir: Path, tmp_path: Path, monkeypa
             {"name": "test_genome", "class": "C", "start": 10_800, "end": 17_000},
         ],
     )
-    captured: dict[str, object] = {}
+    captured = {}
 
     def fake_render_genome_html(**kwargs):
         captured.update(kwargs)
@@ -74,10 +76,10 @@ def test_plot_atomization_writes_html(output_dir: Path, tmp_path: Path, monkeypa
     assert html_files[0].read_text(encoding="utf-8") == "<html><body>interactive-plot</body></html>"
     assert captured["genome_name"] == "test_genome"
     assert captured["genome_length"] == 20_000
-    assert len(captured["matched_pairs"]) == 1
-    assert len(captured["unmatched_true"]) == 1
-    assert len(captured["unmatched_predicted"]) == 1
-    assert set(captured["class_colors"]) == {"A", "B", "C"}
+    assert len(cast(list, captured["matched_pairs"])) == 1
+    assert len(cast(list, captured["unmatched_true"])) == 1
+    assert len(cast(list, captured["unmatched_predicted"])) == 1
+    assert set(cast(dict, captured["class_colors"])) == {"A", "B", "C"}
 
 
 # --------------------------------------------------------------------------------------
@@ -146,7 +148,7 @@ def test_plot_atomization_forwards_initial_window_configuration(
         true_rows=[{"name": "test_genome", "class": "A", "start": 0, "end": min(500, genome_length)}],
         predicted_rows=[{"name": "test_genome", "class": "A", "start": 0, "end": min(500, genome_length)}],
     )
-    calls: list[int] = []
+    calls = []
 
     def fake_render_genome_html(**kwargs):
         calls.append(int(kwargs["initial_window_bases"]))
@@ -278,7 +280,6 @@ def test_load_bokeh_returns_required_components():
     assert "ColumnDataSource" in components
     assert "CustomJS" in components
     assert "components" in components
-    assert "NumberFormatter" in components
     assert "NumeralTickFormatter" in components
     assert "TapTool" in components
     assert "Tap" in components
@@ -289,20 +290,20 @@ def test_load_bokeh_returns_required_components():
 # --------------------------------------------------------------------------------------
 def test_build_connector_polygon_uses_straight_edges():
     """_build_connector_polygon should connect matched atoms with one straight-sided quadrilateral."""
-    true_atom = {
+    true_atom = cast(AtomRecord, cast(object, {
         "start": 100,
         "end": 220,
         "class_id": "A",
         "atom_number": 1,
         "source": "true",
-    }
-    predicted_atom = {
+    }))
+    predicted_atom = cast(AtomRecord, cast(object, {
         "start": 140,
         "end": 280,
         "class_id": "A",
         "atom_number": 1,
         "source": "predicted",
-    }
+    }))
 
     xs, ys = av._build_connector_polygon(true_atom=true_atom, predicted_atom=predicted_atom)
 
@@ -321,27 +322,9 @@ def test_build_connector_polygon_uses_straight_edges():
 def test_build_gap_source_data_returns_uncovered_segments():
     """_build_gap_source_data should emit merged uncovered intervals for one track."""
     atoms = [
-        {
-            "start": 10,
-            "end": 20,
-            "class_id": "A",
-            "atom_number": 1,
-            "source": "true",
-        },
-        {
-            "start": 18,
-            "end": 30,
-            "class_id": "B",
-            "atom_number": 1,
-            "source": "true",
-        },
-        {
-            "start": 40,
-            "end": 45,
-            "class_id": "C",
-            "atom_number": 1,
-            "source": "true",
-        },
+        cast(AtomRecord, cast(object, {"start": 10, "end": 20, "class_id": "A", "atom_number": 1, "source": "true"})),
+        cast(AtomRecord, cast(object, {"start": 18, "end": 30, "class_id": "B", "atom_number": 1, "source": "true"})),
+        cast(AtomRecord, cast(object, {"start": 40, "end": 45, "class_id": "C", "atom_number": 1, "source": "true"})),
     ]
 
     gap_data = av._build_gap_source_data(
@@ -367,15 +350,7 @@ def test_build_gap_source_data_returns_uncovered_segments():
 def test_build_atom_source_data_includes_atom_sequence():
     """_build_atom_source_data should carry the genome subsequence for each atom."""
     atoms = [
-        {
-            "start": 2,
-            "end": 6,
-            "class_id": "A",
-            "atom_number": 9,
-            "atom_id": "A:9",
-            "length": 4,
-            "source": "true",
-        },
+        cast(AtomRecord, cast(object, {"start": 2, "end": 6, "class_id": "A", "atom_number": 9, "atom_id": "A:9", "length": 4, "source": "true"})),
     ]
 
     atom_data = av._build_atom_source_data(
@@ -395,38 +370,10 @@ def test_build_atom_source_data_includes_atom_sequence():
 # --------------------------------------------------------------------------------------
 def test_build_selection_row_source_data_captures_comparison_rows():
     """_build_selection_row_source_data should emit rows for matched and unmatched atom comparisons."""
-    matched_true = {
-        "class_id": "A",
-        "atom_number": 1,
-        "start": 10,
-        "end": 20,
-        "length": 10,
-        "source": "true",
-    }
-    matched_predicted = {
-        "class_id": "A",
-        "atom_number": 7,
-        "start": 12,
-        "end": 22,
-        "length": 10,
-        "source": "predicted",
-    }
-    unmatched_true = {
-        "class_id": "B",
-        "atom_number": 2,
-        "start": 30,
-        "end": 40,
-        "length": 10,
-        "source": "true",
-    }
-    unmatched_predicted = {
-        "class_id": "C",
-        "atom_number": 8,
-        "start": 50,
-        "end": 70,
-        "length": 20,
-        "source": "predicted",
-    }
+    matched_true = cast(AtomRecord, cast(object, {"class_id": "A", "atom_number": 1, "start": 10, "end": 20, "length": 10, "source": "true"}))
+    matched_predicted = cast(AtomRecord, cast(object, {"class_id": "A", "atom_number": 7, "start": 12, "end": 22, "length": 10, "source": "predicted"}))
+    unmatched_true = cast(AtomRecord, cast(object, {"class_id": "B", "atom_number": 2, "start": 30, "end": 40, "length": 10, "source": "true"}))
+    unmatched_predicted = cast(AtomRecord, cast(object, {"class_id": "C", "atom_number": 8, "start": 50, "end": 70, "length": 20, "source": "predicted"}))
 
     row_data = av._build_selection_row_source_data(
         matched_pairs=[(matched_true, matched_predicted)],

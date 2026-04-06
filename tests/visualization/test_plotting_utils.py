@@ -2,8 +2,6 @@
 Tests for interactive visualization helper functions.
 """
 
-from pathlib import Path
-
 import pandas as pd
 import pytest
 
@@ -54,10 +52,10 @@ def test_compute_initial_window(
 
 
 # --------------------------------------------------------------------------------------
-# Test: atom extraction infers genome-global display numbers and per-class match numbers
+# Test: atom extraction infers genome-global display numbers
 # --------------------------------------------------------------------------------------
-def test_get_atoms_for_genome_infers_global_display_numbers_and_per_class_match_numbers():
-    """get_atoms_for_genome should expose genome-global display numbers while keeping per-class match numbers."""
+def test_get_atoms_for_genome_infers_global_display_numbers():
+    """get_atoms_for_genome should assign genome-global display numbers in start order."""
     df = pd.DataFrame(
         {
             "name": ["genome1", "genome1", "genome1"],
@@ -81,7 +79,6 @@ def test_get_atoms_for_genome_infers_global_display_numbers_and_per_class_match_
             "source": "true",
             "class_id": "A",
             "atom_number": 1,
-            "match_number": 1,
             "atom_id": "A:1",
             "start": 100,
             "end": 200,
@@ -92,7 +89,6 @@ def test_get_atoms_for_genome_infers_global_display_numbers_and_per_class_match_
             "source": "true",
             "class_id": "B",
             "atom_number": 3,
-            "match_number": 1,
             "atom_id": "B:3",
             "start": 250,
             "end": 350,
@@ -103,7 +99,6 @@ def test_get_atoms_for_genome_infers_global_display_numbers_and_per_class_match_
             "source": "true",
             "class_id": "A",
             "atom_number": 2,
-            "match_number": 2,
             "atom_id": "A:2",
             "start": 400,
             "end": 500,
@@ -136,7 +131,6 @@ def test_get_atoms_for_genome_preserves_explicit_atom_numbers():
     )
 
     assert [atom["atom_number"] for atom in atoms] == [3, 7]
-    assert [atom["match_number"] for atom in atoms] == [3, 7]
 
 
 # --------------------------------------------------------------------------------------
@@ -163,7 +157,6 @@ def test_get_atoms_for_genome_prefers_atom_nr_for_display_numbers():
     )
 
     assert [atom["atom_number"] for atom in atoms] == [11, 42]
-    assert [atom["match_number"] for atom in atoms] == [1, 1]
 
 
 # --------------------------------------------------------------------------------------
@@ -241,7 +234,6 @@ def test_pair_atoms_matches_same_class_atoms_that_overlap():
             source="true",
             class_id="A",
             atom_number=1,
-            match_number=1,
             atom_id="A:1",
             start=10,
             end=20,
@@ -252,7 +244,6 @@ def test_pair_atoms_matches_same_class_atoms_that_overlap():
             source="true",
             class_id="A",
             atom_number=2,
-            match_number=2,
             atom_id="A:2",
             start=30,
             end=40,
@@ -265,7 +256,6 @@ def test_pair_atoms_matches_same_class_atoms_that_overlap():
             source="predicted",
             class_id="A",
             atom_number=1,
-            match_number=1,
             atom_id="A:1",
             start=12,
             end=22,
@@ -276,7 +266,6 @@ def test_pair_atoms_matches_same_class_atoms_that_overlap():
             source="predicted",
             class_id="A",
             atom_number=2,
-            match_number=1,
             atom_id="A:2",
             start=34,
             end=44,
@@ -287,7 +276,6 @@ def test_pair_atoms_matches_same_class_atoms_that_overlap():
             source="predicted",
             class_id="B",
             atom_number=3,
-            match_number=1,
             atom_id="B:3",
             start=30,
             end=40,
@@ -313,7 +301,6 @@ def test_pair_atoms_emits_all_same_class_overlaps_for_visualization():
             source="true",
             class_id="A",
             atom_number=1,
-            match_number=1,
             atom_id="A:1",
             start=10,
             end=50,
@@ -326,7 +313,6 @@ def test_pair_atoms_emits_all_same_class_overlaps_for_visualization():
             source="predicted",
             class_id="A",
             atom_number=1,
-            match_number=1,
             atom_id="A:1",
             start=12,
             end=20,
@@ -337,7 +323,6 @@ def test_pair_atoms_emits_all_same_class_overlaps_for_visualization():
             source="predicted",
             class_id="A",
             atom_number=2,
-            match_number=2,
             atom_id="A:2",
             start=30,
             end=40,

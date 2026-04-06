@@ -10,7 +10,7 @@ data_processing : Subpackage providing data readers and writers for PSL and GEES
 diagnostics     : Subpackage providing diagnostic functions for PAF overlaps.
 pipeline        : Subpackage providing predicted and true alignment pipelines.
 scoring_system  : Subpackage providing scoring functions.
-visualization   : Subpackage providing a genome atomization plotting function.
+visualization   : Subpackage providing an interactive genome atomization plotting function.
 """
 
 # --------------------------------------------------------------------------------------
