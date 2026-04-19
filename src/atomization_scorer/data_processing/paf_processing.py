@@ -18,12 +18,12 @@ from pathlib import Path
 # --------------------------------------------------------------------------------------
 # Logging
 # --------------------------------------------------------------------------------------
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
+
 
 # --------------------------------------------------------------------------------------
 # PAF Processing
 # --------------------------------------------------------------------------------------
-
 def filter_paf(
     paf_file: Path,
     output_file: Path,
@@ -64,7 +64,7 @@ def filter_paf(
     filtered_lines = []
     total_lines = 0
 
-    logger.info(
+    log.info(
         "Filtering PAF file %s into %s with minimum_similarity=%s and minimum_alignment_length=%s",
         paf_file,
         output_file,
@@ -76,7 +76,7 @@ def filter_paf(
         for line in file:
             total_lines += 1
             fields = line.strip().split("\t")
-            if len(fields) < 11:
+            if len(fields) < 12:
                 raise ValueError(f"Malformed PAF line: {line.strip()}")
 
             try:
@@ -99,7 +99,7 @@ def filter_paf(
     with output_file.open("w") as out:
         out.writelines(filtered_lines)
 
-    logger.info(
+    log.info(
         "Filtered PAF saved to %s with %s kept alignments out of %s total alignments",
         output_file,
         len(filtered_lines),

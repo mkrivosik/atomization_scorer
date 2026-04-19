@@ -20,12 +20,12 @@ from atomization_scorer.scoring_system import compute_alignment_score, compute_c
 # --------------------------------------------------------------------------------------
 # Logging
 # --------------------------------------------------------------------------------------
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
+
 
 # --------------------------------------------------------------------------------------
 # Overall Score Function
 # --------------------------------------------------------------------------------------
-
 def compute_overall_score(
     genomes_file: Path,
     atomization_file: Path,
@@ -81,7 +81,7 @@ def compute_overall_score(
 
     output_directory.mkdir(parents=True, exist_ok=True)
 
-    logger.info(
+    log.info(
         "Computing overall score for genomes=%s, atomization=%s, level=%s, per_class=%s, "
         "min_overlap_ratio=%s, alignment_weight=%s, coverage_weight=%s",
         genomes_file,
@@ -93,7 +93,8 @@ def compute_overall_score(
         coverage_weight,
     )
 
-    logger.info("Computing alignment score")
+    log.info("=" * 60)
+    log.info("Computing alignment score")
     alignment_score = compute_alignment_score(
         genomes_file=genomes_file,
         atomization_file=atomization_file,
@@ -102,18 +103,21 @@ def compute_overall_score(
         per_class=per_class,
         min_overlap_ratio=min_overlap_ratio
     )
-    logger.info("Alignment score: %s", alignment_score)
+    log.info("Alignment score: %s", alignment_score)
 
-    logger.info("Computing coverage score")
+    log.info("=" * 60)
+    log.info("Computing coverage score")
     coverage_score = compute_coverage_score(
         genomes_file=genomes_file,
         atomization_file=atomization_file
     )
-    logger.info("Coverage score: %s", coverage_score)
+    log.info("Coverage score: %s", coverage_score)
 
+    log.info("=" * 60)
+    log.info("Computing overall score")
     # Weighted geometric mean
     overall_score = (alignment_score ** alignment_weight) * (coverage_score ** coverage_weight)
     overall_score = min(max(overall_score, 0.0), 1.0)
 
-    logger.info("Overall score: %s", overall_score)
+    log.info("Overall score: %s", overall_score)
     return overall_score

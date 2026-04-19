@@ -17,10 +17,10 @@ from pathlib import Path
 from Bio.Seq import Seq
 from Bio.SeqIO.FastaIO import SimpleFastaParser
 
+
 # --------------------------------------------------------------------------------------
 # FASTA Reader
 # --------------------------------------------------------------------------------------
-
 def read_fasta(fasta_file: Path) -> dict[str, Seq]:
     """
     Load a FASTA file and return its records as a dictionary.

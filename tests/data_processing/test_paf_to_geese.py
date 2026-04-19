@@ -126,10 +126,10 @@ def test_paf_to_geese_missing_file(tmp_path: Path):
 
 
 # --------------------------------------------------------------------------------------
-# Test: malformed row with fewer than 6 fields is rejected
+# Test: malformed row with fewer than 12 fields is rejected
 # --------------------------------------------------------------------------------------
 def test_paf_to_geese_malformed_row_raises_value_error(tmp_path: Path):
-    """paf_to_geese should raise ValueError for a PAF row with fewer than 6 fields."""
+    """paf_to_geese should raise ValueError for a PAF row with fewer than 12 fields."""
     paf_file = create_custom_paf(
         tmp_path,
         "query1\t1000\t0\n",
@@ -137,7 +137,7 @@ def test_paf_to_geese_malformed_row_raises_value_error(tmp_path: Path):
     )
     output_file = tmp_path / "malformed.geese"
 
-    with pytest.raises(ValueError, match="expected at least 6 tab-separated fields"):
+    with pytest.raises(ValueError, match="expected at least 12 tab-separated fields"):
         paf_to_geese(paf_file=paf_file, output_file=output_file)
 
 

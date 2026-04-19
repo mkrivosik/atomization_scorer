@@ -28,7 +28,7 @@ from atomization_scorer.data_processing.utils import sanitize_path_component
 # --------------------------------------------------------------------------------------
 # Logging
 # --------------------------------------------------------------------------------------
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------------------
 # Constants
@@ -310,7 +310,7 @@ def get_atoms_for_genome(
                 f"{label} interval for genome '{genome_name}' ends outside genome length {genome_length}: ({start}, {end})."
             )
         if previous_end is not None and start < previous_end:
-            logger.warning(
+            log.warning(
                 "%s intervals for genome '%s' overlap near (%s, %s); visualization will continue.",
                 label,
                 genome_name,

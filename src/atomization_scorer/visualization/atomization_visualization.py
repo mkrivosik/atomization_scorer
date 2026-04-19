@@ -36,7 +36,7 @@ from .plotting_utils import (
 # --------------------------------------------------------------------------------------
 # Logging
 # --------------------------------------------------------------------------------------
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------------------
 # Layout Constants
@@ -1483,7 +1483,7 @@ def plot_atomization(
     normalized_format = normalize_output_format(output_format)
     output_directory.mkdir(parents=True, exist_ok=True)
 
-    logger.info(
+    log.info(
         (
             "Generating interactive atomization visualizations from "
             "genomes=%s true_atoms=%s predicted_atoms=%s into %s as %s"
@@ -1531,7 +1531,7 @@ def plot_atomization(
             [atom["class_id"] for atom in true_atoms + predicted_atoms]
         )
 
-        logger.info(
+        log.info(
             (
                 "Rendering interactive atomization visualization for genome=%s "
                 "length=%s true_atoms=%s predicted_atoms=%s matched=%s "
@@ -1571,7 +1571,7 @@ def plot_atomization(
         output_path = output_directory / output_stem
         output_path.with_suffix(f".{normalized_format}").write_text(html, encoding="utf-8")
 
-        logger.info(
+        log.info(
             "Saved interactive atomization visualization for genome=%s to %s.%s",
             genome_name,
             output_path,

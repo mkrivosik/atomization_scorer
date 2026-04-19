@@ -19,12 +19,12 @@ from pathlib import Path
 # --------------------------------------------------------------------------------------
 # Logging
 # --------------------------------------------------------------------------------------
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
+
 
 # --------------------------------------------------------------------------------------
 # Minimap2 Alignment
 # --------------------------------------------------------------------------------------
-
 def align_with_minimap2(
     target: Path,
     query: Path,
@@ -89,7 +89,7 @@ def align_with_minimap2(
         str(query),
     ])
 
-    logger.info("Running Minimap2 alignment:\n%s", " ".join(command))
+    log.info("Running Minimap2 alignment:\n%s", " ".join(command))
     with output_path.open("w") as paf_file:
         try:
             subprocess.run(command, check=True, stdout=paf_file)
@@ -99,5 +99,5 @@ def align_with_minimap2(
     if not output_path.is_file() or output_path.stat().st_size == 0:
         raise ValueError("Minimap2 did not produce a non-empty PAF output file.")
 
-    logger.info("PAF alignment saved to %s", output_path)
+    log.info("PAF alignment saved to %s", output_path)
     return output_path

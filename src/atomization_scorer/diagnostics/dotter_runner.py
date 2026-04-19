@@ -24,15 +24,15 @@ from pathlib import Path
 # --------------------------------------------------------------------------------------
 # Logging
 # --------------------------------------------------------------------------------------
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------------------
 # Constants
 # --------------------------------------------------------------------------------------
-DOTTER_IMAGE = "nathanhaigh/seqtools:4.44.1"
-CONTAINER_WORKDIR = Path("/work")
-SUPPORTED_OUTPUT_FORMATS = {"png", "svg", "pdf"}
-X11_SOCKET_DIRECTORY = Path("/tmp/.X11-unix")
+DOTTER_IMAGE                = "nathanhaigh/seqtools:4.44.1"
+CONTAINER_WORKDIR           = Path("/work")
+SUPPORTED_OUTPUT_FORMATS    = {"png", "svg", "pdf"}
+X11_SOCKET_DIRECTORY        = Path("/tmp/.X11-unix")
 
 
 # --------------------------------------------------------------------------------------
@@ -192,7 +192,7 @@ def run_dotter_for_anchor(
         output_file=output_file,
         extra_args=extra_args,
     )
-    logger.info("Running Dotter for anchor directory %s:\n%s", anchor_directory, " ".join(command))
+    log.info("Running Dotter for anchor directory %s:\n%s", anchor_directory, " ".join(command))
 
     try:
         subprocess.run(

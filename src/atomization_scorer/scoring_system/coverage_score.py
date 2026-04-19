@@ -19,10 +19,10 @@ from Bio import SeqIO
 
 from atomization_scorer.data_processing import read_geese
 
+
 # --------------------------------------------------------------------------------------
 # Coverage Score Function
 # --------------------------------------------------------------------------------------
-
 def compute_coverage_score(
     genomes_file: Path,
     atomization_file: Path

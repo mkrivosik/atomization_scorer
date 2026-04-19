@@ -29,12 +29,12 @@ from .representatives_selector import extract_representatives
 # --------------------------------------------------------------------------------------
 # Logging
 # --------------------------------------------------------------------------------------
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
+
 
 # --------------------------------------------------------------------------------------
 # True (Gold Standard) Alignment Pipeline
 # --------------------------------------------------------------------------------------
-
 def compute_true_alignment(
     genomes_file: Path,
     atomization_file: Path,
@@ -89,7 +89,8 @@ def compute_true_alignment(
         raise FileNotFoundError(f"Atomization file not found: {atomization_file}")
 
     output_directory.mkdir(parents=True, exist_ok=True)
-    logger.info(
+    log.info("=" * 60)
+    log.info(
         "Computing true alignment with mode=%s for genomes=%s atomization=%s into output=%s",
         mode,
         genomes_file,
@@ -98,8 +99,9 @@ def compute_true_alignment(
     )
 
     # Extract representatives
+    log.info("=" * 60)
     representatives_fasta = output_directory / f"{mode}_representatives.fa"
-    logger.info("Extracting representatives to %s", representatives_fasta)
+    log.info("Extracting representatives to %s", representatives_fasta)
     extract_representatives(
         genomes_file=genomes_file,
         atomization_file=atomization_file,
@@ -108,8 +110,9 @@ def compute_true_alignment(
     )
 
     # Minimap2 alignment
+    log.info("=" * 60)
     paf_file = output_directory / "minimap2_alignments.paf"
-    logger.info("Running minimap2 alignment to %s", paf_file)
+    log.info("Running minimap2 alignment to %s", paf_file)
     align_with_minimap2(
         query=genomes_file,
         target=representatives_fasta,
@@ -117,8 +120,9 @@ def compute_true_alignment(
     )
 
     # Filter PAF
+    log.info("=" * 60)
     filtered_paf = output_directory / "minimap2_alignment_filtered.paf"
-    logger.info(
+    log.info(
         "Filtering PAF into %s with minimum_similarity=%s and minimum_alignment_length=%s",
         filtered_paf,
         minimum_similarity,
@@ -133,8 +137,9 @@ def compute_true_alignment(
 
     # Run Diagnostics
     if run_overlap_diagnostics:
+        log.info("=" * 60)
         overlap_diagnostics_directory = output_directory / "overlap_diagnostics"
-        logger.info(
+        log.info(
             "Generating overlap diagnostics into %s with report_min_len=%s and plot_min_len=%s",
             overlap_diagnostics_directory,
             overlap_report_min_len,
@@ -149,24 +154,28 @@ def compute_true_alignment(
         )
 
     # Resolve PAF overlaps
+    log.info("=" * 60)
     resolved_paf = output_directory / "minimap2_alignment_resolved.paf"
-    logger.info("Resolving overlapping PAF alignments into %s", resolved_paf)
+    log.info("Resolving overlapping PAF alignments into %s", resolved_paf)
     resolve_paf_overlaps(
         paf_file=filtered_paf,
         output_file=resolved_paf,
     )
 
     # Convert PAF to GEESE
+    log.info("=" * 60)
     geese_file = output_directory / "true_atomization.geese"
-    logger.info("Converting resolved PAF to GEESE at %s", geese_file)
+    log.info("Converting resolved PAF to GEESE at %s", geese_file)
     paf_to_geese(
         paf_file=resolved_paf,
         output_file=geese_file
     )
 
     # Validate true atomization
-    logger.info("Validating true atomization non-overlap at %s", geese_file)
+    log.info("=" * 60)
+    log.info("Validating true atomization non-overlap at %s", geese_file)
     validate_non_overlapping_geese(geese_file)
 
-    logger.info("True alignment pipeline finished with output %s", geese_file)
+    log.info("=" * 60)
+    log.info("True alignment pipeline finished with output %s", geese_file)
     return geese_file

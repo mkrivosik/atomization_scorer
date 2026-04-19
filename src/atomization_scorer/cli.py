@@ -20,15 +20,21 @@ main                : CLI entry point, parses arguments, validates inputs, calls
 # --------------------------------------------------------------------------------------
 from __future__ import annotations
 import argparse
+import logging
 import sys
 from pathlib import Path
 
 from atomization_scorer import compute_overall_score
 
 # --------------------------------------------------------------------------------------
+# Logging
+# --------------------------------------------------------------------------------------
+log = logging.getLogger(__name__)
+
+
+# --------------------------------------------------------------------------------------
 # Validation Functions
 # --------------------------------------------------------------------------------------
-
 def validate_file(path: Path, description: str, extension: str | tuple[str, ...]) -> None:
     """
     Validates that the input file exists and optionally has the required extension.
@@ -48,7 +54,7 @@ def validate_file(path: Path, description: str, extension: str | tuple[str, ...]
         Exits program with sys.exit(1) if a file does not exist or the extension is incorrect.
     """
     if not path.is_file():
-        print(f"Error: {description} file not found: {path}", file=sys.stderr)
+        log.error("%s file not found: %s", description, path)
         sys.exit(1)
 
     if extension:
@@ -58,7 +64,7 @@ def validate_file(path: Path, description: str, extension: str | tuple[str, ...]
             extensions = extension
         if path.suffix not in extensions:
             allowed = ", ".join(extensions)
-            print(f"Error: {description} file must have one of the following extensions {allowed}: {path}", file=sys.stderr)
+            log.error("%s file must have one of the following extensions %s: %s", description, allowed, path)
             sys.exit(1)
 
 
@@ -76,14 +82,14 @@ def validate_directory(path: Path) -> None:
     Prints a warning if the directory does not exist and creates it automatically.
     """
     if not path.is_dir():
-        print(f"Warning: Output directory '{path}' does not exist. Creating directory...", file=sys.stderr)
+        log.warning("Output directory '%s' does not exist. Creating directory...", path)
         path.mkdir(parents=True, exist_ok=True)
-        print(f"Directory '{path}' created.", file=sys.stderr)
+        log.info("Directory '%s' created.", path)
+
 
 # --------------------------------------------------------------------------------------
 # CLI Entry Point
 # --------------------------------------------------------------------------------------
-
 def main() -> None:
     """
     Parses command-line arguments, validates files/directories, and computes overall score.
@@ -107,6 +113,12 @@ def main() -> None:
     # Parse CLI arguments
     args = parser.parse_args()
 
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s  %(levelname)-8s  %(message)s",
+        datefmt="%H:%M:%S",
+    )
+
     # ---------------------------
     # Validate inputs
     # ---------------------------
@@ -117,26 +129,30 @@ def main() -> None:
     # ---------------------------
     # Info to user
     # ---------------------------
-    print("Processing files:")
-    print(f"  Genomes FASTA:        {args.genomes_sequence}")
-    print(f"  GEESE atomization:    {args.geese_atomization}")
-    print(f"  Output directory:     {args.output_directory}")
+    log.info(
+        "Processing files: genomes=%s atomization=%s output=%s",
+        args.genomes_sequence,
+        args.geese_atomization,
+        args.output_directory,
+    )
 
     # ---------------------------
     # Compute overall score
     # ---------------------------
-    print("\nComputing overall score...")
+    log.info("=" * 60)
+    log.info("Computing overall score...")
     result = compute_overall_score(
         genomes_file=args.genomes_sequence,
         atomization_file=args.geese_atomization,
         output_directory=args.output_directory
     )
 
-    print("Overall score result: ", result)
+    log.info("=" * 60)
+    log.info("Overall score result: %s", result)
+
 
 # --------------------------------------------------------------------------------------
 # Execute CLI if script is run directly
 # --------------------------------------------------------------------------------------
-
 if __name__ == "__main__":
     main()

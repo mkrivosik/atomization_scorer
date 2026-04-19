@@ -23,10 +23,10 @@ from .utils import (
     check_required_columns,
 )
 
+
 # --------------------------------------------------------------------------------------
 # GEESE Reader
 # --------------------------------------------------------------------------------------
-
 def read_geese(geese_file: Path) -> pd.DataFrame:
     """
     Load a GEESE tabular file into a pandas DataFrame.

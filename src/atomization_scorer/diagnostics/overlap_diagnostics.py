@@ -27,7 +27,7 @@ from pathlib import Path
 # --------------------------------------------------------------------------------------
 # Logging
 # --------------------------------------------------------------------------------------
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------------------
 # Constants
@@ -654,7 +654,7 @@ def diagnose_paf_overlaps(
     if run_dotter:
         from .dotter_runner import run_dotter_for_anchors
 
-        logger.info(
+        log.info(
             "Running Dotter for anchor FASTA inputs in %s",
             anchors_directory,
         )
@@ -663,7 +663,7 @@ def diagnose_paf_overlaps(
             extra_args=dotter_extra_args,
         )
 
-    logger.info(
+    log.info(
         "Generated overlap diagnostics at %s with %s reported overlaps",
         output_directory,
         len(reported_overlaps),

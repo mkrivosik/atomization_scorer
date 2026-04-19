@@ -25,12 +25,12 @@ from .interval_metrics import compute_interval_level_metrics
 # --------------------------------------------------------------------------------------
 # Logging
 # --------------------------------------------------------------------------------------
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
+
 
 # --------------------------------------------------------------------------------------
 # Alignment Score Function
 # --------------------------------------------------------------------------------------
-
 def compute_alignment_score(
     genomes_file: Path,
     atomization_file: Path,
@@ -81,14 +81,15 @@ def compute_alignment_score(
         raise ValueError("Level must be 'base' or 'interval'.")
 
     output_directory.mkdir(parents=True, exist_ok=True)
-    logger.info(
+    log.info(
         "Computing alignment score with level=%s per_class=%s min_overlap_ratio=%s",
         level,
         per_class,
         min_overlap_ratio,
     )
 
-    logger.info("Computing gold standard (true) alignment")
+    log.info("=" * 60)
+    log.info("Computing gold standard (true) alignment")
     true_geese = compute_true_alignment(
         genomes_file=genomes_file,
         atomization_file=atomization_file,
@@ -96,8 +97,9 @@ def compute_alignment_score(
     )
 
     visualization_directory = output_directory / "atomization_visualizations"
+    log.info("=" * 60)
     if level == "base":
-        logger.info("Computing base-level metrics")
+        log.info("Computing base-level metrics")
         score = compute_base_level_metrics(
             predicted_geese=atomization_file,
             true_geese=Path(true_geese),
@@ -105,7 +107,7 @@ def compute_alignment_score(
             per_class=per_class
         )
     else:
-        logger.info("Computing interval-level metrics")
+        log.info("Computing interval-level metrics")
         score = compute_interval_level_metrics(
             predicted_geese=atomization_file,
             true_geese=Path(true_geese),
@@ -114,7 +116,8 @@ def compute_alignment_score(
             min_overlap_ratio=min_overlap_ratio
         )
 
-    logger.info("Generating atomization visualization into %s", visualization_directory)
+    log.info("=" * 60)
+    log.info("Generating atomization visualization into %s", visualization_directory)
     plot_atomization(
         genomes_file=genomes_file,
         true_atoms_file=Path(true_geese),
@@ -122,5 +125,6 @@ def compute_alignment_score(
         output_directory=visualization_directory,
     )
 
-    logger.info("Alignment score result: %s", score)
+    log.info("=" * 60)
+    log.info("Alignment score result: %s", score)
     return score

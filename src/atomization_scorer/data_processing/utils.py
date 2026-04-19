@@ -16,10 +16,10 @@ from __future__ import annotations
 import hashlib
 import pandas as pd
 
+
 # --------------------------------------------------------------------------------------
 # Utils Functions
 # --------------------------------------------------------------------------------------
-
 def check_required_columns(df: pd.DataFrame, required_columns: list[str]) -> None:
     """
     Check that all required columns are present in a DataFrame.

@@ -27,7 +27,7 @@ from .geese_reader import read_geese
 # --------------------------------------------------------------------------------------
 # Logging
 # --------------------------------------------------------------------------------------
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 # --------------------------------------------------------------------------------------
@@ -240,7 +240,7 @@ def resolve_paf_overlaps(
     if not paf_file.is_file():
         raise FileNotFoundError(f"PAF file not found: {paf_file}")
 
-    logger.info("Resolving PAF overlaps from %s into %s", paf_file, output_file)
+    log.info("Resolving PAF overlaps from %s into %s", paf_file, output_file)
 
     grouped_alignments = {}
     total_alignments = 0
@@ -262,7 +262,7 @@ def resolve_paf_overlaps(
         for alignment in sorted(alignments, key=_rank_alignment):
             if _overlaps_existing(alignment.query_start, alignment.query_end, accepted_intervals):
                 discarded_alignments += 1
-                logger.debug(
+                log.debug(
                     "Discarding overlapping alignment for query=%s target=%s interval=[%s,%s)",
                     alignment.query_name,
                     alignment.target_name,
@@ -275,14 +275,14 @@ def resolve_paf_overlaps(
             accepted_lines.append("\t".join(alignment.fields) + "\n")
             kept_alignments += 1
 
-        logger.debug(
+        log.debug(
             "Resolved query=%s to %s non-overlapping alignments",
             query_name,
             len(accepted_intervals),
         )
 
     if discarded_alignments > 0:
-        logger.warning(
+        log.warning(
             "Discarded %s overlapping PAF alignments while resolving true-atom segmentation",
             discarded_alignments,
         )
@@ -291,7 +291,7 @@ def resolve_paf_overlaps(
     with output_file.open("w") as file:
         file.writelines(accepted_lines)
 
-    logger.info(
+    log.info(
         "Resolved PAF overlaps into %s with %s kept alignments out of %s total alignments",
         output_file,
         kept_alignments,

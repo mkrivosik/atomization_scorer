@@ -22,7 +22,7 @@ from atomization_scorer.data_processing import read_geese, write_geese
 # --------------------------------------------------------------------------------------
 # Logging
 # --------------------------------------------------------------------------------------
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 # --------------------------------------------------------------------------------------
@@ -63,7 +63,7 @@ def degrade_atomization(
         raise ValueError("degradation_fraction must be between 0.0 and 1.0.")
 
     output_file = output_directory / "degraded_atomization.geese"
-    logger.info(
+    log.info(
         "Generating degraded atomization from %s into %s with fraction=%s seed=%s",
         atomization_file,
         output_file,
@@ -86,7 +86,7 @@ def degrade_atomization(
             candidate_classes = [atom_class for atom_class in distinct_classes if atom_class != original_class]
             df_atoms.at[index, "class"] = rng.choice(candidate_classes)
 
-    logger.info(
+    log.info(
         "Changed classes for %s of %s atoms in degraded atomization",
         n_atoms_to_change,
         len(df_atoms),

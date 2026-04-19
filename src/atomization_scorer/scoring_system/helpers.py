@@ -21,10 +21,10 @@ from pathlib import Path
 
 import pandas as pd
 
+
 # --------------------------------------------------------------------------------------
 # Helpers
 # --------------------------------------------------------------------------------------
-
 def _compute_and_write_metrics(
     tp: dict[int, int],
     fp: dict[int, int],

@@ -23,12 +23,12 @@ from atomization_scorer.data_processing import read_fasta, read_geese, write_fas
 # --------------------------------------------------------------------------------------
 # Logging
 # --------------------------------------------------------------------------------------
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
+
 
 # --------------------------------------------------------------------------------------
 # Representative Extraction
 # --------------------------------------------------------------------------------------
-
 def _extract_atom_sequence(
     row,
     genomes,
@@ -123,7 +123,7 @@ def extract_representatives(
     df_atoms = read_geese(geese_file=atomization_file)
     representatives = {}
 
-    logger.info(
+    log.info(
         "Extracting representatives with mode=%s from genomes=%s atomization=%s into output=%s",
         mode,
         genomes_file,
@@ -133,12 +133,12 @@ def extract_representatives(
 
     for class_id, group in df_atoms.groupby("class"):
         row = None
-        logger.debug("Selecting representative for class=%s with %s candidate atoms", class_id, len(group))
-
+        log.debug("Selecting representative for class=%s with %s candidate atoms", class_id, len(group))
         if mode == "first":
+            log.info("Selecting representative for class=%s using first atom", class_id)
             row = group.iloc[0]
         elif mode == "mash":
-            logger.info("Selecting representative for class=%s using Mash distances", class_id)
+            log.info("Selecting representative for class=%s using Mash distances", class_id)
             # Create temporary FASTA for mash
             with tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".fa") as temporary_file:
                 distances = {}
@@ -208,7 +208,7 @@ def extract_representatives(
                     if distance == distances[selected_header]
                 ]
                 if len(tied_headers) > 1:
-                    logger.debug(
+                    log.debug(
                         "Tie detected for class=%s among headers=%s; selected lowest atom_nr header=%s",
                         class_id,
                         tied_headers,
@@ -229,7 +229,7 @@ def extract_representatives(
             class_id=class_id,
         )
         representatives[f"{sequence_name}|class_{class_id}"] = subsequence
-        logger.debug(
+        log.debug(
             "Selected representative for class=%s: genome=%s atom_nr=%s start=%s end=%s",
             class_id,
             sequence_name,
@@ -239,6 +239,5 @@ def extract_representatives(
         )
 
     output_fasta = write_fasta(sequences=representatives, output_path=output_path)
-    logger.info("Representative FASTA saved to %s", output_fasta)
-    print(f"Representative FASTA saved to {output_fasta}")
+    log.info("Representative FASTA saved to %s", output_fasta)
     return output_fasta

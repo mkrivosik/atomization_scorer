@@ -22,7 +22,7 @@ from atomization_scorer.data_processing import read_geese
 from .helpers import _compute_and_write_metrics, _create_new_row, _write_metrics_tsv
 
 # --------------------------------------------------------------------------------------
-# Base-Level Metrics
+# Constants
 # --------------------------------------------------------------------------------------
 EVENT_PRIORITY = {
     "predicted_end": 0,
@@ -32,6 +32,9 @@ EVENT_PRIORITY = {
 }
 
 
+# --------------------------------------------------------------------------------------
+# Base-Level Metrics
+# --------------------------------------------------------------------------------------
 def compute_base_level_metrics(
     predicted_geese: Path,
     true_geese: Path,

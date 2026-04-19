@@ -101,3 +101,8 @@ Thumbs.db
 # =========================
 .env.local
 .env.*.local
+
+# =========================
+# Ignore all analysis results
+# =========================
+experiments/**/results**

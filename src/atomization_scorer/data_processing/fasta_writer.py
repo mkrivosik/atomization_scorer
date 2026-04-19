@@ -16,10 +16,10 @@ from pathlib import Path
 
 from Bio.Seq import Seq
 
+
 # --------------------------------------------------------------------------------------
 # FASTA Writer
 # --------------------------------------------------------------------------------------
-
 def write_fasta(sequences: dict[str, Seq], output_path: Path) -> Path:
     """
     Write sequences into a FASTA file.

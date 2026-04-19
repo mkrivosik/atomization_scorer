@@ -18,12 +18,12 @@ from pathlib import Path
 # --------------------------------------------------------------------------------------
 # Logging
 # --------------------------------------------------------------------------------------
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
+
 
 # --------------------------------------------------------------------------------------
 # Converting PAF To GEESE
 # --------------------------------------------------------------------------------------
-
 def paf_to_geese(paf_file: Path, output_file: Path) -> Path:
     """
     Convert a PAF file to a GEESE file.
@@ -50,7 +50,7 @@ def paf_to_geese(paf_file: Path, output_file: Path) -> Path:
     if not paf_file.is_file():
         raise FileNotFoundError(f"PAF file {paf_file} not found.")
 
-    logger.info("Converting PAF file %s to GEESE file %s", paf_file, output_file)
+    log.info("Converting PAF file %s to GEESE file %s", paf_file, output_file)
 
     converted_rows = 0
     converted_entries = []
@@ -59,10 +59,10 @@ def paf_to_geese(paf_file: Path, output_file: Path) -> Path:
         for line_number, line in enumerate(paf, start=1):
             fields = line.strip().split("\t")
 
-            if len(fields) < 6:
+            if len(fields) < 12:
                 raise ValueError(
                     f"Malformed PAF row at line {line_number}: "
-                    "expected at least 6 tab-separated fields."
+                    "expected at least 12 tab-separated fields."
                 )
 
             query_name = fields[0]
@@ -102,6 +102,6 @@ def paf_to_geese(paf_file: Path, output_file: Path) -> Path:
         for atom_nr, (query_name, class_id, query_start, query_end) in enumerate(converted_entries, start=1):
             geese.write(f"{query_name}\t{atom_nr}\t{class_id}\t{query_start}\t{query_end}\n")
 
-    logger.info("GEESE file saved to %s with %s converted rows", output_file, converted_rows)
+    log.info("GEESE file saved to %s with %s converted rows", output_file, converted_rows)
 
     return output_file
