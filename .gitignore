@@ -105,4 +105,5 @@ Thumbs.db
 # =========================
 # Ignore all analysis results
 # =========================
-experiments/**/results**
+experiments/score_progression/outputs/
+experiments/score_progression/results_*/

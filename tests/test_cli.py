@@ -27,11 +27,10 @@ def test_cli_valid(mini_fasta: Path, mini_geese: Path, output_dir: Path):
 
     print(f"Output directory: {output_dir}")
     assert result.returncode == 0
-    assert "Processing files:" in result.stdout
-    assert f"  Genomes FASTA:        {mini_fasta}" in result.stdout
-    assert f"  GEESE atomization:    {mini_geese}" in result.stdout
-    assert f"  Output directory:     {output_dir}" in result.stdout
-    assert "Overall score result:" in result.stdout
+    assert f"Processing files: genomes={mini_fasta}" in result.stderr
+    assert f"atomization={mini_geese}" in result.stderr
+    assert f"output={output_dir}" in result.stderr
+    assert "Overall score result:" in result.stderr
     assert output_dir.exists()
 
 

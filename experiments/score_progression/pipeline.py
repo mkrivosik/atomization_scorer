@@ -10,9 +10,9 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-import analyse
-import extract_scores
-import plot_scores
+from analysis import analyse
+from experiments.score_progression.data import extract_scores
+from plots import plot_scores
 
 # ---------------------------------------------------------------------------
 # Logging

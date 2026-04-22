@@ -54,11 +54,10 @@ def create_subset_fasta(
 ) -> Path:
     """Remove sequences by 1-based position and write a versioned FASTA file."""
     output_dir.mkdir(parents=True, exist_ok=True)
-    if exclude_indices is None:
-        exclude_indices = DEFAULT_EXCLUDE_INDICES
+    resolved = exclude_indices if exclude_indices is not None else DEFAULT_EXCLUDE_INDICES
 
     records = list(SeqIO.parse(input_fasta, "fasta"))
-    exclude_set = set(exclude_indices)
+    exclude_set = set(resolved)
 
     kept = []
     deleted = []

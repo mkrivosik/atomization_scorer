@@ -13,6 +13,7 @@ import logging
 import subprocess
 import sys
 from pathlib import Path
+from typing import cast
 
 from atomization_scorer import (
     compute_alignment_score,
@@ -30,14 +31,14 @@ log = logging.getLogger(__name__)
 # Constants
 # ---------------------------------------------------------------------------
 _HERE        = Path(__file__).parent
-FASTA        = _HERE / "../../tests/fixtures/mini.fa"
+FASTA        = _HERE.parent.parent.parent / "tests" / "fixtures" / "mini.fa"
 GEESE_BIN    = Path.home() / "bin/geese"
 
 START_N      = 2    # first genome count to score (must be >= 2)
 END_N        = 596
 STEP         = 20
 
-OUTPUT_DIR   = _HERE / f"results_genomes{START_N}_to{END_N}_step{STEP}"
+OUTPUT_DIR   = _HERE.parent / f"results_genomes{START_N}_to{END_N}_step{STEP}"
 
 CSV_FIELDS = [
     "n_genomes",
@@ -117,14 +118,14 @@ def run_scorer(fasta: Path, geese: Path, output_dir: Path) -> dict[str, float | 
     coverage = None
 
     try:
-        alignment = compute_alignment_score(
+        alignment = cast(float, compute_alignment_score(
             genomes_file=fasta,
             atomization_file=geese,
             output_directory=output_dir,
             level="interval",
             per_class=False,
             min_overlap_ratio=0.8,
-        )
+        ))
     except Exception as alignment_exc:
         log.exception("  Alignment score failed: %s", alignment_exc)
 
