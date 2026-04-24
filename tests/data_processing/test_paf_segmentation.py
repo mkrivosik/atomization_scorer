@@ -1,5 +1,5 @@
 """
-Tests for the paf_segmentation() function.
+Tests for the resolve_paf_overlaps() and validate_non_overlapping_geese() functions.
 """
 
 # --------------------------------------------------------------------------------------

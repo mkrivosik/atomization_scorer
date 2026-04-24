@@ -1,5 +1,5 @@
 """
-Tests for the paf_to_geese () function.
+Tests for the paf_to_geese() function.
 """
 
 # --------------------------------------------------------------------------------------

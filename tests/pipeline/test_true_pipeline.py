@@ -80,6 +80,7 @@ def test_compute_true_alignment_pipeline(
     mock_resolve_paf.assert_called_once_with(
         paf_file=filtered_paf,
         output_file=resolved_paf,
+        minimum_alignment_length=500,
     )
 
     mock_paf_to_geese.assert_called_once_with(
