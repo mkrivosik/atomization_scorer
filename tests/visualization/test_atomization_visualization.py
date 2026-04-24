@@ -2,6 +2,9 @@
 Tests for the interactive plot_atomization() function.
 """
 
+# --------------------------------------------------------------------------------------
+# Imports
+# --------------------------------------------------------------------------------------
 from pathlib import Path
 from typing import cast
 
@@ -71,9 +74,9 @@ def test_plot_atomization_writes_html(output_dir: Path, tmp_path: Path, monkeypa
         output_directory=output_dir,
     )
 
-    html_files = sorted(output_dir.glob("*.html"))
-    assert len(html_files) == 1
-    assert html_files[0].read_text(encoding="utf-8") == "<html><body>interactive-plot</body></html>"
+    genome_html_files = sorted((output_dir / "genomes_visualization").glob("*.html"))
+    assert len(genome_html_files) == 1
+    assert genome_html_files[0].read_text(encoding="utf-8") == "<html><body>interactive-plot</body></html>"
     assert captured["genome_name"] == "test_genome"
     assert captured["genome_length"] == 20_000
     assert len(cast(list, captured["matched_pairs"])) == 1
@@ -107,7 +110,7 @@ def test_plot_atomization_real_html_contains_inline_resources_and_controls(outpu
         output_directory=output_dir,
     )
 
-    html_path = output_dir / "test_genome.html"
+    html_path = output_dir / "genomes_visualization" / "test_genome.html"
     html = html_path.read_text(encoding="utf-8")
     assert "Interactive Genome View" in html
     assert "Visible genome window" in html
@@ -435,7 +438,7 @@ def test_plot_atomization_real_html_contains_interaction_regression_guards(
         output_directory=output_dir,
     )
 
-    html = (output_dir / "test_genome.html").read_text(encoding="utf-8")
+    html = (output_dir / "genomes_visualization" / "test_genome.html").read_text(encoding="utf-8")
     assert "geometry.x0 == null || geometry.x1 == null || cb_obj.final !== true" in html
     assert "const indices = [...source.selected.indices]" in html
     assert "source.data = nextData" in html
@@ -483,5 +486,5 @@ def test_plot_atomization_avoids_output_filename_collisions(tmp_path: Path):
         output_directory=tmp_path / "output",
     )
 
-    html_files = sorted((tmp_path / "output").glob("*.html"))
+    html_files = sorted((tmp_path / "output" / "genomes_visualization").glob("*.html"))
     assert len(html_files) == 2

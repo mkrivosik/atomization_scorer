@@ -2,6 +2,9 @@
 Tests for the helper.py functions.
 """
 
+# --------------------------------------------------------------------------------------
+# Imports
+# --------------------------------------------------------------------------------------
 from pathlib import Path
 
 import pandas as pd
@@ -248,7 +251,7 @@ def test_write_metrics_tsv_creates_file(output_dir: Path):
     """_write_metrics_tsv should create a TSV file."""
     df = pd.DataFrame(
         [[1, 2, 3]],
-        columns=["TP", "FP", "FN"]
+        columns=pd.Index(["TP", "FP", "FN"])
     )
 
     output_file = output_dir / "metrics.tsv"
@@ -262,7 +265,7 @@ def test_write_metrics_tsv_creates_parent_directory(tmp_path: Path):
     """_write_metrics_tsv should create parent directories if they do not exist."""
     df = pd.DataFrame(
         [[1, 2]],
-        columns=["Precision", "Recall"]
+        columns=pd.Index(["Precision", "Recall"])
     )
 
     output_file = tmp_path / "nested" / "directory" / "metrics.tsv"
@@ -275,7 +278,7 @@ def test_write_metrics_tsv_creates_parent_directory(tmp_path: Path):
 
 def test_write_metrics_tsv_empty_dataframe(output_dir: Path):
     """_write_metrics_tsv should correctly write an empty DataFrame."""
-    df = pd.DataFrame(columns=["A", "B", "C"])
+    df = pd.DataFrame(columns=pd.Index(["A", "B", "C"]))
 
     output_file = output_dir / "empty.tsv"
     _write_metrics_tsv(df=df, output_path=output_file)
@@ -291,8 +294,8 @@ def test_write_metrics_tsv_overwrites_existing_file(output_dir: Path):
     """_write_metrics_tsv should overwrite an existing file."""
     output_file = output_dir / "overwrite.tsv"
 
-    df1 = pd.DataFrame([[1]], columns=["A"])
-    df2 = pd.DataFrame([[2]], columns=["A"])
+    df1 = pd.DataFrame([[1]], columns=pd.Index(["A"]))
+    df2 = pd.DataFrame([[2]], columns=pd.Index(["A"]))
 
     _write_metrics_tsv(df=df1, output_path=output_file)
     _write_metrics_tsv(df=df2, output_path=output_file)

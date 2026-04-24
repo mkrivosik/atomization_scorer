@@ -497,14 +497,9 @@ def diagnose_paf_overlaps(
         overlaps=reported_overlaps,
     )
 
-    anchor_genome_stats = defaultdict(
-        lambda: {
-            "partners": set(),
-            "count": 0,
-            "max_overlap_length": 0,
-            "both_edge": 0,
-            "mixed_edge_internal": 0,
-        }
+    anchor_partners = defaultdict(set)
+    anchor_counts = defaultdict(
+        lambda: {"count": 0, "max_overlap_length": 0, "both_edge": 0, "mixed_edge_internal": 0}
     )
     for overlap in reported_overlaps:
         overlap_length = int(overlap["overlap_length"])
@@ -513,23 +508,24 @@ def diagnose_paf_overlaps(
         if include_reverse:
             anchor_partner_pairs.append((overlap["partner_atom"], overlap["anchor_atom"]))
         for anchor_atom, partner_atom in anchor_partner_pairs:
-            stats = anchor_genome_stats[(overlap["query_name"], anchor_atom)]
-            stats["partners"].add(partner_atom)
-            stats["count"] += 1
-            stats["max_overlap_length"] = max(int(stats["max_overlap_length"]), overlap_length)
-            stats[overlap_class] += 1
+            key = (overlap["query_name"], anchor_atom)
+            anchor_partners[key].add(partner_atom)
+            counts = anchor_counts[key]
+            counts["count"] += 1
+            counts["max_overlap_length"] = max(counts["max_overlap_length"], overlap_length)
+            counts[overlap_class] += 1
 
     anchor_genome_summary_rows = [
         {
             "query_name": query_name,
             "anchor_atom": anchor_atom,
-            "n_partners": str(len(stats["partners"])),
-            "n_overlaps": str(int(stats["count"])),
-            "max_overlap_length": str(int(stats["max_overlap_length"])),
-            "n_both_edge": str(int(stats["both_edge"])),
-            "n_one_eaten": str(int(stats["mixed_edge_internal"])),
+            "n_partners": str(len(anchor_partners[(query_name, anchor_atom)])),
+            "n_overlaps": str(counts["count"]),
+            "max_overlap_length": str(counts["max_overlap_length"]),
+            "n_both_edge": str(counts["both_edge"]),
+            "n_one_eaten": str(counts["mixed_edge_internal"]),
         }
-        for (query_name, anchor_atom), stats in sorted(anchor_genome_stats.items())
+        for (query_name, anchor_atom), counts in sorted(anchor_counts.items())
     ]
     _write_tsv(
         output_file=output_directory / "anchor_genome_summary.tsv",

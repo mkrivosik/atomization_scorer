@@ -2,6 +2,9 @@
 Tests for the base_metrics.py functions.
 """
 
+# --------------------------------------------------------------------------------------
+# Imports
+# --------------------------------------------------------------------------------------
 from pathlib import Path
 
 import pandas as pd
@@ -343,7 +346,7 @@ def test_full_class_overlap(tmp_path: Path, output_dir: Path):
 # --------------------------------------------------------------------------------------
 def test_empty_geese(tmp_path: Path, output_dir: Path):
     """compute_base_level_metrics should correctly calculate 0.0 TP, FP, FN."""
-    empty_df = pd.DataFrame(columns=["name", "atom_nr", "class", "strand", "start", "end"])
+    empty_df = pd.DataFrame(columns=pd.Index(["name", "atom_nr", "class", "strand", "start", "end"]))
 
     predicted_geese = tmp_path / "predicted_empty.geese"
     true_geese = tmp_path / "true_empty.geese"

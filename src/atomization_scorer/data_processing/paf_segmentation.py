@@ -7,9 +7,11 @@ Functions
 ---------
 _parse_paf_alignment            : Parse one PAF line into a validated alignment record.
 _rank_alignment                 : Build a sorting key for prioritizing candidate alignments.
-_overlaps_existing              : Check whether an alignment overlaps already accepted query segments.
+_compute_surviving_intervals    : Subtract accepted intervals from a candidate interval and
+                                  return the remaining sub-intervals.
 resolve_paf_overlaps            : Resolve overlapping filtered PAF alignments into valid
-                                  non-overlapping query segmentation.
+                                  non-overlapping query segmentation, trimming candidates
+                                  at overlap boundaries before applying a minimum length threshold.
 validate_non_overlapping_geese  : Validate that a GEESE file contains non-overlapping
                                   half-open intervals per genome.
 """
@@ -178,34 +180,46 @@ def _rank_alignment(alignment: PafAlignment) -> tuple[int, int, float, int, int,
 
 
 # --------------------------------------------------------------------------------------
-# Interval Overlap Check
+# Interval Subtraction
 # --------------------------------------------------------------------------------------
-def _overlaps_existing(
+def _compute_surviving_intervals(
     query_start: int,
     query_end: int,
     accepted_intervals: list[tuple[int, int]],
-) -> bool:
+) -> list[tuple[int, int]]:
     """
-    Check whether a half-open query interval overlaps any previously accepted interval.
+    Return the portions of [query_start, query_end) not covered by any accepted interval.
 
     Parameters
     ----------
     query_start : int
-        Start position of the candidate query interval.
+        Start position of the candidate half-open interval.
     query_end : int
-        End position of the candidate query interval.
-    accepted_intervals : List[Tuple[int, int]]
-        List of previously accepted half-open query intervals.
+        End position of the candidate half-open interval.
+    accepted_intervals : list[tuple[int, int]]
+        Already-accepted half-open intervals to subtract from the candidate.
 
     Returns
     -------
-    bool
-        True if the candidate interval overlaps any accepted interval, otherwise False.
+    list[tuple[int, int]]
+        Remaining sub-intervals after removing all accepted coverage. Empty when the
+        candidate is fully contained within accepted intervals.
     """
+    free_regions = [(query_start, query_end)]
     for accepted_start, accepted_end in accepted_intervals:
-        if query_start < accepted_end and accepted_start < query_end:
-            return True
-    return False
+        if accepted_start >= query_end or accepted_end <= query_start:
+            continue
+        next_free = []
+        for free_start, free_end in free_regions:
+            if accepted_start >= free_end or accepted_end <= free_start:
+                next_free.append((free_start, free_end))
+            else:
+                if free_start < accepted_start:
+                    next_free.append((free_start, accepted_start))
+                if accepted_end < free_end:
+                    next_free.append((accepted_end, free_end))
+        free_regions = next_free
+    return free_regions
 
 
 # --------------------------------------------------------------------------------------
@@ -214,6 +228,7 @@ def _overlaps_existing(
 def resolve_paf_overlaps(
     paf_file: Path,
     output_file: Path,
+    minimum_alignment_length: int = 1,
 ) -> Path:
     """
     Resolve overlapping filtered PAF alignments into non-overlapping query segmentation.
@@ -224,6 +239,8 @@ def resolve_paf_overlaps(
         Path to the filtered input PAF file.
     output_file : Path
         Path where the resolved non-overlapping PAF file will be written.
+    minimum_alignment_length : int, optional, default=1
+        Minimum length in bases that a trimmed sub-interval must reach to be kept.
 
     Raises
     ------
@@ -236,6 +253,13 @@ def resolve_paf_overlaps(
     -------
     Path
         Written resolved PAF file path.
+
+    Notes
+    -----
+    Trimmed rows only update fields[2] (query_start) and fields[3] (query_end).
+    Alignment length, match count, and target coordinates retain the original values
+    and no longer describe the surviving sub-interval (because that information will
+    not be needed downstream).
     """
     if not paf_file.is_file():
         raise FileNotFoundError(f"PAF file not found: {paf_file}")
@@ -260,20 +284,43 @@ def resolve_paf_overlaps(
     for query_name, alignments in grouped_alignments.items():
         accepted_intervals = []
         for alignment in sorted(alignments, key=_rank_alignment):
-            if _overlaps_existing(alignment.query_start, alignment.query_end, accepted_intervals):
+            surviving = _compute_surviving_intervals(
+                alignment.query_start,
+                alignment.query_end,
+                accepted_intervals,
+            )
+            kept_any = False
+            for trim_start, trim_end in surviving:
+                if trim_end - trim_start >= minimum_alignment_length:
+                    trimmed_fields = list(alignment.fields)
+                    trimmed_fields[2] = str(trim_start)
+                    trimmed_fields[3] = str(trim_end)
+                    accepted_intervals.append((trim_start, trim_end))
+                    accepted_lines.append("\t".join(trimmed_fields) + "\n")
+                    kept_alignments += 1
+                    kept_any = True
+                else:
+                    log.debug(
+                        "Discarding trimmed interval [%s, %s) for query=%s target=%s: "
+                        "length %s < minimum_alignment_length %s",
+                        trim_start,
+                        trim_end,
+                        alignment.query_name,
+                        alignment.target_name,
+                        trim_end - trim_start,
+                        minimum_alignment_length,
+                    )
+            if not kept_any:
                 discarded_alignments += 1
                 log.debug(
-                    "Discarding overlapping alignment for query=%s target=%s interval=[%s,%s)",
+                    "Fully discarding alignment for query=%s target=%s interval=[%s,%s): "
+                    "no surviving portion >= minimum_alignment_length=%s",
                     alignment.query_name,
                     alignment.target_name,
                     alignment.query_start,
                     alignment.query_end,
+                    minimum_alignment_length,
                 )
-                continue
-
-            accepted_intervals.append((alignment.query_start, alignment.query_end))
-            accepted_lines.append("\t".join(alignment.fields) + "\n")
-            kept_alignments += 1
 
         log.debug(
             "Resolved query=%s to %s non-overlapping alignments",
@@ -283,8 +330,10 @@ def resolve_paf_overlaps(
 
     if discarded_alignments > 0:
         log.warning(
-            "Discarded %s overlapping PAF alignments while resolving true-atom segmentation",
+            "Fully discarded %s PAF alignments during overlap resolution "
+            "(no surviving portion >= minimum_alignment_length=%s)",
             discarded_alignments,
+            minimum_alignment_length,
         )
 
     output_file.parent.mkdir(parents=True, exist_ok=True)
@@ -330,15 +379,11 @@ def validate_non_overlapping_geese(geese_file: Path) -> None:
     df = read_geese(geese_file)
     for genome_name, group in df.groupby("name", sort=False):
         sorted_group = group.sort_values(["start", "end"]).reset_index(drop=True)
-        previous_end = None
-        previous_start = None
-        for _, row in sorted_group.iterrows():
-            start = int(row["start"])
-            end = int(row["end"])
-            if previous_end is not None and start < previous_end:
+        starts = [int(value) for value in sorted_group["start"]]
+        ends = [int(value) for value in sorted_group["end"]]
+        for (previous_start, previous_end), (start, end) in zip(zip(starts, ends), zip(starts[1:], ends[1:])):
+            if start < previous_end:
                 raise ValueError(
                     "Overlapping true atoms detected for "
                     f"genome '{genome_name}': [{previous_start}, {previous_end}) and [{start}, {end})."
                 )
-            previous_start = start
-            previous_end = end

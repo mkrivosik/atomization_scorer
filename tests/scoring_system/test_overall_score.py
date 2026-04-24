@@ -2,6 +2,9 @@
 Tests for the compute_overall_score() function.
 """
 
+# --------------------------------------------------------------------------------------
+# Imports
+# --------------------------------------------------------------------------------------
 from pathlib import Path
 from unittest.mock import Mock
 

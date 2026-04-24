@@ -2,6 +2,9 @@
 Tests for the cli.py command-line interface of Atomization Scorer.
 """
 
+# --------------------------------------------------------------------------------------
+# Imports
+# --------------------------------------------------------------------------------------
 import subprocess
 import sys
 from pathlib import Path

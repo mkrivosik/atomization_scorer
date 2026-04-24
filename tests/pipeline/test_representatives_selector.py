@@ -2,6 +2,9 @@
 Tests for the extract_representatives() function.
 """
 
+# --------------------------------------------------------------------------------------
+# Imports
+# --------------------------------------------------------------------------------------
 import subprocess
 from pathlib import Path
 

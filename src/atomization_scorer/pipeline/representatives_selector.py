@@ -132,7 +132,7 @@ def extract_representatives(
     )
 
     for class_id, group in df_atoms.groupby("class"):
-        row = None
+        row = group.iloc[0]
         log.debug("Selecting representative for class=%s with %s candidate atoms", class_id, len(group))
         if mode == "first":
             log.info("Selecting representative for class=%s using first atom", class_id)

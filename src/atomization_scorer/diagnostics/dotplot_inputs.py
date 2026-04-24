@@ -143,13 +143,13 @@ def write_anchor_dotplot_fastas(
         if anchor_atom not in representatives:
             raise ValueError(f"Representative FASTA is missing anchor atom: {anchor_atom}")
 
-        anchor_directory = output_directory / _sanitize_path_component(anchor_atom)
+        anchor_directory = output_directory.joinpath(_sanitize_path_component(anchor_atom))
         anchor_directory.mkdir(parents=True, exist_ok=True)
 
         anchor_sequence = representatives[anchor_atom]
         write_fasta(
             sequences={f"anchor={anchor_atom}": anchor_sequence},
-            output_path=anchor_directory / "Y.fasta",
+            output_path=anchor_directory.joinpath("Y.fasta"),
         )
 
         partner_sequences = {}
@@ -175,9 +175,9 @@ def write_anchor_dotplot_fastas(
             pair_rows.append(entry)
 
         if partner_sequences:
-            write_fasta(sequences=partner_sequences, output_path=anchor_directory / "X.fasta")
+            write_fasta(sequences=partner_sequences, output_path=anchor_directory.joinpath("X.fasta"))
 
-        with (anchor_directory / "pairs.tsv").open("w", newline="") as file:
+        with anchor_directory.joinpath("pairs.tsv").open("w", newline="") as file:
             writer = csv.DictWriter(file, fieldnames=PAIR_FIELDNAMES, delimiter="\t")
             writer.writeheader()
             writer.writerows(pair_rows)

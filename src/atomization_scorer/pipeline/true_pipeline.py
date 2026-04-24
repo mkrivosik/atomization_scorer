@@ -160,6 +160,7 @@ def compute_true_alignment(
     resolve_paf_overlaps(
         paf_file=filtered_paf,
         output_file=resolved_paf,
+        minimum_alignment_length=minimum_alignment_length,
     )
 
     # Convert PAF to GEESE

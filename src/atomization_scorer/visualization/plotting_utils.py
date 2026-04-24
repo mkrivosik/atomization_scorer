@@ -309,7 +309,7 @@ def get_atoms_for_genome(
             raise ValueError(
                 f"{label} interval for genome '{genome_name}' ends outside genome length {genome_length}: ({start}, {end})."
             )
-        if previous_end is not None and start < previous_end:
+        if previous_end is not None and start < int(previous_end):
             log.warning(
                 "%s intervals for genome '%s' overlap near (%s, %s); visualization will continue.",
                 label,

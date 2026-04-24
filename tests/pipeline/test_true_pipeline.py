@@ -2,6 +2,9 @@
 Tests for the compute_true_alignment() function.
 """
 
+# --------------------------------------------------------------------------------------
+# Imports
+# --------------------------------------------------------------------------------------
 from pathlib import Path
 from unittest.mock import patch
 
@@ -398,13 +401,13 @@ def test_compute_true_alignment_finishes_after_geese_conversion(
 @patch("atomization_scorer.pipeline.true_pipeline.align_with_minimap2")
 @patch("atomization_scorer.pipeline.true_pipeline.extract_representatives")
 def test_compute_true_alignment_optionally_runs_overlap_diagnostics(
-    mock_extract,
-    mock_minimap2,
-    mock_filter_paf,
+    _mock_extract,
+    _mock_minimap2,
+    _mock_filter_paf,
     mock_diagnose,
     mock_resolve_paf,
-    mock_validate_geese,
-    mock_paf_to_geese,
+    _mock_validate_geese,
+    _mock_paf_to_geese,
     mini_fasta: Path,
     mini_geese: Path,
     output_dir: Path,

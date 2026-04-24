@@ -617,6 +617,42 @@ def _load_bokeh() -> dict[str, Any]:
     }
 
 
+def _filter_source_data_to_window(
+    data: dict[str, list],
+    window_start: int,
+    window_end: int,
+) -> dict[str, list]:
+    """Return a copy of atom/gap source data filtered to rows overlapping [window_start, window_end)."""
+    out: dict[str, list] = {key: [] for key in data}
+    starts = data.get("start", [])
+    ends = data.get("end", [])
+    for i in range(len(starts)):
+        if starts[i] < window_end and ends[i] > window_start:
+            for key in data:
+                out[key].append(data[key][i])
+    return out
+
+
+def _filter_ribbon_data_to_window(
+    data: dict[str, list],
+    window_start: int,
+    window_end: int,
+) -> dict[str, list]:
+    """Return a copy of ribbon source data filtered to pairs where either atom overlaps [window_start, window_end)."""
+    out = {key: [] for key in data}
+    true_starts = data.get("true_start", [])
+    true_ends = data.get("true_end", [])
+    pred_starts = data.get("predicted_start", [])
+    pred_ends = data.get("predicted_end", [])
+    for i in range(len(true_starts)):
+        true_overlaps = true_starts[i] < window_end and true_ends[i] > window_start
+        pred_overlaps = pred_starts[i] < window_end and pred_ends[i] > window_start
+        if true_overlaps or pred_overlaps:
+            for key in data:
+                out[key].append(data[key][i])
+    return out
+
+
 def _render_genome_html(
     genome_name: str,
     genome_length: int,
@@ -713,44 +749,56 @@ def _render_genome_html(
         for atom in predicted_atoms
     }
 
-    true_source = bokeh["ColumnDataSource"](
-        _build_atom_source_data(
-            atoms=true_atoms,
-            class_colors=class_colors,
-            outline_color=true_color,
-            status_by_signature=true_status,
-            track_y=TRUE_TRACK_Y,
-            genome_sequence=genome_sequence,
-        )
+    true_atom_data = _build_atom_source_data(
+        atoms=true_atoms,
+        class_colors=class_colors,
+        outline_color=true_color,
+        status_by_signature=true_status,
+        track_y=TRUE_TRACK_Y,
+        genome_sequence=genome_sequence,
     )
-    true_gap_source = bokeh["ColumnDataSource"](
-        _build_gap_source_data(
-            atoms=true_atoms,
-            genome_length=genome_length,
-            track_y=TRUE_TRACK_Y,
-            source_label="true_gap",
-        )
+    true_gap_data = _build_gap_source_data(
+        atoms=true_atoms,
+        genome_length=genome_length,
+        track_y=TRUE_TRACK_Y,
+        source_label="true_gap",
     )
-    predicted_source = bokeh["ColumnDataSource"](
-        _build_atom_source_data(
-            atoms=predicted_atoms,
-            class_colors=class_colors,
-            outline_color=predicted_color,
-            status_by_signature=predicted_status,
-            track_y=PREDICTED_TRACK_Y,
-            genome_sequence=genome_sequence,
-        )
+    predicted_atom_data = _build_atom_source_data(
+        atoms=predicted_atoms,
+        class_colors=class_colors,
+        outline_color=predicted_color,
+        status_by_signature=predicted_status,
+        track_y=PREDICTED_TRACK_Y,
+        genome_sequence=genome_sequence,
     )
-    predicted_gap_source = bokeh["ColumnDataSource"](
-        _build_gap_source_data(
-            atoms=predicted_atoms,
-            genome_length=genome_length,
-            track_y=PREDICTED_TRACK_Y,
-            source_label="predicted_gap",
-        )
+    predicted_gap_data = _build_gap_source_data(
+        atoms=predicted_atoms,
+        genome_length=genome_length,
+        track_y=PREDICTED_TRACK_Y,
+        source_label="predicted_gap",
     )
-    ribbon_source = bokeh["ColumnDataSource"](
-        _build_ribbon_source_data(matched_pairs=matched_pairs, class_colors=class_colors)
+    ribbon_data = _build_ribbon_source_data(matched_pairs=matched_pairs, class_colors=class_colors)
+
+    full_true_source = bokeh["ColumnDataSource"](true_atom_data)
+    full_true_gap_source = bokeh["ColumnDataSource"](true_gap_data)
+    full_predicted_source = bokeh["ColumnDataSource"](predicted_atom_data)
+    full_predicted_gap_source = bokeh["ColumnDataSource"](predicted_gap_data)
+    full_ribbon_source = bokeh["ColumnDataSource"](ribbon_data)
+
+    display_true_source = bokeh["ColumnDataSource"](
+        _filter_source_data_to_window(true_atom_data, 0, initial_window_end)
+    )
+    display_true_gap_source = bokeh["ColumnDataSource"](
+        _filter_source_data_to_window(true_gap_data, 0, initial_window_end)
+    )
+    display_predicted_source = bokeh["ColumnDataSource"](
+        _filter_source_data_to_window(predicted_atom_data, 0, initial_window_end)
+    )
+    display_predicted_gap_source = bokeh["ColumnDataSource"](
+        _filter_source_data_to_window(predicted_gap_data, 0, initial_window_end)
+    )
+    display_ribbon_source = bokeh["ColumnDataSource"](
+        _filter_ribbon_data_to_window(ribbon_data, 0, initial_window_end)
     )
     all_selection_rows_source = bokeh["ColumnDataSource"](
         _build_selection_row_source_data(
@@ -805,7 +853,7 @@ def _render_genome_html(
         right="end",
         bottom="bottom",
         top="top",
-        source=true_gap_source,
+        source=display_true_gap_source,
         fill_color="fill_color",
         fill_alpha=0.95,
         line_color="line_color",
@@ -817,7 +865,7 @@ def _render_genome_html(
         right="end",
         bottom="bottom",
         top="top",
-        source=predicted_gap_source,
+        source=display_predicted_gap_source,
         fill_color="fill_color",
         fill_alpha=0.95,
         line_color="line_color",
@@ -827,7 +875,7 @@ def _render_genome_html(
     plot.patches(
         xs="xs",
         ys="ys",
-        source=ribbon_source,
+        source=display_ribbon_source,
         fill_color="fill_color",
         fill_alpha=0.15,
         line_color="line_color",
@@ -842,7 +890,7 @@ def _render_genome_html(
         right="end",
         bottom="bottom",
         top="top",
-        source=true_source,
+        source=display_true_source,
         fill_color="fill_color",
         fill_alpha="fill_alpha",
         line_color="line_color",
@@ -853,7 +901,7 @@ def _render_genome_html(
         right="end",
         bottom="bottom",
         top="top",
-        source=predicted_source,
+        source=display_predicted_source,
         fill_color="fill_color",
         fill_alpha="fill_alpha",
         line_color="line_color",
@@ -899,7 +947,7 @@ def _render_genome_html(
         right="end",
         bottom="bottom",
         top="top",
-        source=true_gap_source,
+        source=full_true_gap_source,
         fill_color="fill_color",
         fill_alpha=0.55,
         line_color=None,
@@ -909,7 +957,7 @@ def _render_genome_html(
         right="end",
         bottom="bottom",
         top="top",
-        source=predicted_gap_source,
+        source=full_predicted_gap_source,
         fill_color="fill_color",
         fill_alpha=0.55,
         line_color=None,
@@ -919,7 +967,7 @@ def _render_genome_html(
         right="end",
         bottom="bottom",
         top="top",
-        source=true_source,
+        source=full_true_source,
         fill_color="fill_color",
         fill_alpha=0.35,
         line_color=None,
@@ -929,7 +977,7 @@ def _render_genome_html(
         right="end",
         bottom="bottom",
         top="top",
-        source=predicted_source,
+        source=full_predicted_source,
         fill_color="fill_color",
         fill_alpha=0.35,
         line_color=None,
@@ -979,6 +1027,67 @@ def _render_genome_html(
     plot.x_range.js_on_change("start", range_sync_callback)
     plot.x_range.js_on_change("end", range_sync_callback)
 
+    viewport_cull_callback = bokeh["CustomJS"](
+        args={
+            "x_range": plot.x_range,
+            "full_true_source": full_true_source,
+            "full_predicted_source": full_predicted_source,
+            "full_ribbon_source": full_ribbon_source,
+            "full_true_gap_source": full_true_gap_source,
+            "full_predicted_gap_source": full_predicted_gap_source,
+            "display_true_source": display_true_source,
+            "display_predicted_source": display_predicted_source,
+            "display_ribbon_source": display_ribbon_source,
+            "display_true_gap_source": display_true_gap_source,
+            "display_predicted_gap_source": display_predicted_gap_source,
+        },
+        code="""
+            const rafKey = '__viewport_cull__' + display_true_source.id
+            if (window[rafKey]) return
+            window[rafKey] = true
+            requestAnimationFrame(() => {
+                window[rafKey] = false
+                const vs = x_range.start
+                const ve = x_range.end
+                const cull = (fullData) => {
+                    const starts = fullData.start
+                    const ends = fullData.end
+                    const n = starts.length
+                    const out = {}
+                    for (const key of Object.keys(fullData)) out[key] = []
+                    for (let i = 0; i < n; i++) {
+                        if (starts[i] < ve && ends[i] > vs) {
+                            for (const key of Object.keys(fullData)) out[key].push(fullData[key][i])
+                        }
+                    }
+                    return out
+                }
+                const cullRibbons = (fullData) => {
+                    const true_start = fullData.true_start
+                    const true_end = fullData.true_end
+                    const predicted_start = fullData.predicted_start
+                    const predicted_end = fullData.predicted_end
+                    const n = true_start.length
+                    const out = {}
+                    for (const key of Object.keys(fullData)) out[key] = []
+                    for (let i = 0; i < n; i++) {
+                        if ((true_start[i] < ve && true_end[i] > vs) || (predicted_start[i] < ve && predicted_end[i] > vs)) {
+                            for (const key of Object.keys(fullData)) out[key].push(fullData[key][i])
+                        }
+                    }
+                    return out
+                }
+                display_true_source.data = cull(full_true_source.data)
+                display_predicted_source.data = cull(full_predicted_source.data)
+                display_ribbon_source.data = cullRibbons(full_ribbon_source.data)
+                display_true_gap_source.data = cull(full_true_gap_source.data)
+                display_predicted_gap_source.data = cull(full_predicted_gap_source.data)
+            })
+        """,
+    )
+    plot.x_range.js_on_change("start", viewport_cull_callback)
+    plot.x_range.js_on_change("end", viewport_cull_callback)
+
     atom_details_div_id = f"atom-details-{selected_atoms_source.id}"
     selection_table_container_id = f"selected-atoms-table-{selected_atoms_source.id}"
     selection_status_div_id = f"selection-status-{selected_atoms_source.id}"
@@ -992,8 +1101,8 @@ def _render_genome_html(
             args={
                 "all_rows": all_selection_rows_source,
                 "source": selected_atoms_source,
-                "true_source": true_source,
-                "predicted_source": predicted_source,
+                "true_source": display_true_source,
+                "predicted_source": display_predicted_source,
             },
             code=f"""
                 const geometry = cb_obj.geometry
@@ -1110,8 +1219,8 @@ def _render_genome_html(
         bokeh["Tap"],
         bokeh["CustomJS"](
             args={
-                "true_source": true_source,
-                "predicted_source": predicted_source,
+                "true_source": display_true_source,
+                "predicted_source": display_predicted_source,
             },
             code=f"""
                 setTimeout(() => {{
@@ -1380,23 +1489,45 @@ def _render_genome_html(
   <style>{PAGE_STYLE}</style>
   <style>
     .app-header, .viz-box {{ max-width: {viewport_width}px; }}
+    .genome-header-row {{ display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }}
+    .genome-header-content {{ min-width: 0; flex: 1; }}
+    .back-button {{
+      display: inline-block;
+      padding: 8px 18px;
+      background: #ffffff;
+      color: #1d4f91;
+      border: 1.5px solid #1d4f91;
+      text-decoration: none;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 13px;
+      white-space: nowrap;
+      transition: background 120ms ease;
+      flex-shrink: 0;
+    }}
+    .back-button:hover {{ background: #eef3fb; }}
   </style>
 </head>
 <body>
   <main class="app-shell">
     <section class="app-header">
-      <div class="app-kicker">Interactive Genome View</div>
-      <h1>Genome: {genome_name}</h1>
-      <p class="app-meta">
-        Length: {genome_length} bp | Matching overlaps: {len(matched_pairs)} |
-        Missing predicted atoms: {len(unmatched_true)} |
-        Unexpected predicted atoms: {len(unmatched_predicted)}
-      </p>
-      <p class="app-note">
-        Compare predicted and true atoms along the genome. Atoms of the same class that overlap are connected.
-        Hover over a bar to inspect metadata. Drag horizontally to move across the genome, use the mouse wheel to
-        zoom, or use the bottom range slider as a bounded left-right navigator.
-      </p>
+      <div class="genome-header-row">
+        <div class="genome-header-content">
+          <div class="app-kicker">Interactive Genome View</div>
+          <h1>Genome: {genome_name}</h1>
+          <p class="app-meta">
+            Length: {genome_length} bp | Matching overlaps: {len(matched_pairs)} |
+            Missing predicted atoms: {len(unmatched_true)} |
+            Unexpected predicted atoms: {len(unmatched_predicted)}
+          </p>
+          <p class="app-note">
+            Compare predicted and true atoms along the genome. Atoms of the same class that overlap are connected.
+            Hover over a bar to inspect metadata. Drag horizontally to move across the genome, use the mouse wheel to
+            zoom, or use the bottom range slider as a bounded left-right navigator.
+          </p>
+        </div>
+        <a href="../atomization_visualization.html" class="back-button">&#8592;&nbsp;Overview</a>
+      </div>
     </section>
     <div class="viz-box">
       {div}
@@ -1406,6 +1537,609 @@ def _render_genome_html(
   </main>
   {script}
   {selection_table_controls_script}
+</body>
+</html>"""
+
+
+# --------------------------------------------------------------------------------------
+# Index Page
+# --------------------------------------------------------------------------------------
+def _build_index_html(
+    genome_stats: list[dict],
+) -> str:
+    """Build a standalone HTML index listing all genomes with coverage stats and links."""
+    def _format(bp: int) -> str:
+        if bp >= 1_000_000:
+            return f"{bp / 1_000_000:.2f} Mb"
+        if bp >= 1_000:
+            return f"{bp / 1_000:.1f} kb"
+        return f"{bp:,} bp"
+
+    total_sequences = len(genome_stats)
+    total_genome_bp = sum(stat["length"] for stat in genome_stats)
+    total_predicted_atoms = sum(stat["predicted_atom_count"] for stat in genome_stats)
+    total_covered_bp = sum(stat["covered_bp"] for stat in genome_stats)
+    overall_pct = (total_covered_bp / total_genome_bp * 100) if total_genome_bp > 0 else 0.0
+
+    cards = []
+    for stat in genome_stats:
+        covered_pct = (stat["covered_bp"] / stat["length"] * 100) if stat["length"] > 0 else 0.0
+        uncovered_bp = max(0, stat["length"] - stat["covered_bp"])
+        uncovered_pct = 100.0 - covered_pct
+        link = f"genomes_visualization/{stat['filename']}"
+        name_attr = stat["name"].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
+        cards.append(f"""    <div class="genome-card" data-name="{name_attr}" data-length="{stat['length']}" data-predicted-atoms="{stat['predicted_atom_count']}" data-covered-pct="{covered_pct:.4f}" data-covered-bp="{stat['covered_bp']}">
+      <div class="genome-card-header">
+        <span class="genome-name">{stat['name']}</span>
+        <a href="{link}" class="view-button">View &#8594;</a>
+      </div>
+      <div class="coverage-bar-bg">
+        <div class="coverage-bar-fill" style="width:{min(covered_pct, 100):.2f}%"></div>
+      </div>
+      <div class="genome-stats">
+        <div class="stat-item">
+          <span class="stat-label">Length</span>
+          <span class="stat-value">{_format(stat['length'])}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Predicted atoms</span>
+          <span class="stat-value">{stat['predicted_atom_count']:,}</span>
+        </div>
+        <div class="stat-item stat-covered">
+          <span class="stat-label">Covered</span>
+          <span class="stat-value">{stat['covered_bp']:,} bp &nbsp;({covered_pct:.1f}%)</span>
+        </div>
+        <div class="stat-item stat-uncovered">
+          <span class="stat-label">Uncovered</span>
+          <span class="stat-value">{uncovered_bp:,} bp &nbsp;({uncovered_pct:.1f}%)</span>
+        </div>
+      </div>
+    </div>""")
+
+    cards_html = "\n".join(cards)
+
+    _total_label = f"Showing all {total_sequences:,} genome{'s' if total_sequences != 1 else ''}"
+
+    filter_panel_html = f"""<section class="filter-panel" id="filter-panel">
+  <div class="filter-panel-header">
+    <span class="filter-panel-title">Filter &amp; Sort</span>
+    <div class="filter-panel-actions">
+      <span id="filter-count-label" class="filter-count-label">{_total_label}</span>
+      <button id="filter-reset-btn" class="filter-reset-btn" type="button">Reset</button>
+      <button id="filter-toggle-btn" class="filter-toggle-btn" type="button" aria-expanded="true" title="Collapse filters">&#9660;</button>
+    </div>
+  </div>
+  <div class="filter-panel-body" id="filter-panel-body">
+    <div class="filter-row">
+      <div style="flex:1;min-width:220px;">
+        <label class="filter-label" for="filter-search">Search by name</label>
+        <input type="search" id="filter-search" class="filter-input" placeholder="Type genome name…" autocomplete="off" spellcheck="false">
+      </div>
+    </div>
+    <div class="filter-row">
+      <div>
+        <span class="filter-label">Quick coverage filter</span>
+        <div class="filter-pills">
+          <button class="filter-pill active" data-status="all" type="button">All</button>
+          <button class="filter-pill" data-status="high" type="button">&#8805;90% covered</button>
+          <button class="filter-pill" data-status="medium" type="button">50–90%</button>
+          <button class="filter-pill" data-status="low" type="button">&lt;50% covered</button>
+          <button class="filter-pill" data-status="full" type="button">100% covered</button>
+        </div>
+      </div>
+    </div>
+    <div class="filter-row-grid">
+      <div class="filter-range-group">
+        <label class="filter-label">Coverage % range</label>
+        <div class="filter-range-inputs">
+          <input type="number" id="filter-cov-min" class="filter-number-input" min="0" max="100" step="0.1" placeholder="0">
+          <span class="filter-range-sep">–</span>
+          <input type="number" id="filter-cov-max" class="filter-number-input" min="0" max="100" step="0.1" placeholder="100">
+          <span class="filter-range-unit">%</span>
+        </div>
+      </div>
+      <div class="filter-range-group">
+        <label class="filter-label">Genome length range</label>
+        <div class="filter-range-inputs">
+          <input type="number" id="filter-len-min" class="filter-number-input" min="0" step="1" placeholder="0">
+          <span class="filter-range-sep">–</span>
+          <input type="number" id="filter-len-max" class="filter-number-input" min="0" step="1" placeholder="∞">
+          <span class="filter-range-unit">bp</span>
+        </div>
+      </div>
+      <div class="filter-range-group">
+        <label class="filter-label">Predicted atom count</label>
+        <div class="filter-range-inputs">
+          <input type="number" id="filter-atom-min" class="filter-number-input" min="0" step="1" placeholder="0">
+          <span class="filter-range-sep">–</span>
+          <input type="number" id="filter-atom-max" class="filter-number-input" min="0" step="1" placeholder="∞">
+          <span class="filter-range-unit">atoms</span>
+        </div>
+      </div>
+      <div class="filter-sort-group">
+        <label class="filter-label" for="filter-sort-by">Sort by</label>
+        <div class="filter-sort-inputs">
+          <select id="filter-sort-by" class="filter-select">
+            <option value="default">Default order</option>
+            <option value="name">Name</option>
+            <option value="length">Genome length</option>
+            <option value="coverage">Coverage %</option>
+            <option value="atoms">Predicted atoms</option>
+            <option value="uncovered">Uncovered bp</option>
+          </select>
+          <button id="filter-sort-order" class="filter-sort-order-btn" type="button" data-asc="true" title="Toggle sort direction">&#8593;&nbsp;Asc</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>"""
+
+    _filter_js_init = f"const TOTAL_COUNT = {total_sequences};"
+    _filter_js_body = """
+const panelBody = document.getElementById('filter-panel-body');
+const toggleBtn = document.getElementById('filter-toggle-btn');
+const resetBtn = document.getElementById('filter-reset-btn');
+const searchInput = document.getElementById('filter-search');
+const covMinInput = document.getElementById('filter-cov-min');
+const covMaxInput = document.getElementById('filter-cov-max');
+const lenMinInput = document.getElementById('filter-len-min');
+const lenMaxInput = document.getElementById('filter-len-max');
+const atomMinInput = document.getElementById('filter-atom-min');
+const atomMaxInput = document.getElementById('filter-atom-max');
+const sortBySelect = document.getElementById('filter-sort-by');
+const sortOrderBtn = document.getElementById('filter-sort-order');
+const countLabel = document.getElementById('filter-count-label');
+const noResultsDiv = document.getElementById('filter-no-results');
+const cardsList = document.getElementById('genome-cards-list');
+const statusPills = document.querySelectorAll('.filter-pill[data-status]');
+let activeStatus = 'all';
+let sortAsc = true;
+
+toggleBtn.addEventListener('click', () => {
+  const collapsed = panelBody.classList.toggle('is-collapsed');
+  toggleBtn.setAttribute('aria-expanded', String(!collapsed));
+  toggleBtn.innerHTML = collapsed ? '&#9650;' : '&#9660;';
+  toggleBtn.title = collapsed ? 'Expand filters' : 'Collapse filters';
+});
+
+statusPills.forEach(pill => {
+  pill.addEventListener('click', () => {
+    statusPills.forEach(otherPill => otherPill.classList.remove('active'));
+    pill.classList.add('active');
+    activeStatus = pill.dataset.status;
+    applyFilters();
+  });
+});
+
+sortOrderBtn.addEventListener('click', () => {
+  sortAsc = !sortAsc;
+  sortOrderBtn.dataset.asc = String(sortAsc);
+  sortOrderBtn.innerHTML = sortAsc ? '&#8593;&nbsp;Asc' : '&#8595;&nbsp;Desc';
+  applyFilters();
+});
+
+[searchInput, covMinInput, covMaxInput, lenMinInput, lenMaxInput, atomMinInput, atomMaxInput, sortBySelect].forEach(filterInput => {
+  filterInput.addEventListener('input', applyFilters);
+});
+
+resetBtn.addEventListener('click', () => {
+  searchInput.value = '';
+  covMinInput.value = '';
+  covMaxInput.value = '';
+  lenMinInput.value = '';
+  lenMaxInput.value = '';
+  atomMinInput.value = '';
+  atomMaxInput.value = '';
+  sortBySelect.value = 'default';
+  sortAsc = true;
+  sortOrderBtn.innerHTML = '&#8593;&nbsp;Asc';
+  sortOrderBtn.dataset.asc = 'true';
+  activeStatus = 'all';
+  statusPills.forEach(pill => pill.classList.toggle('active', pill.dataset.status === 'all'));
+  applyFilters();
+});
+
+function applyFilters() {
+  const query = searchInput.value.trim().toLowerCase();
+  const covMin = covMinInput.value !== '' ? parseFloat(covMinInput.value) : null;
+  const covMax = covMaxInput.value !== '' ? parseFloat(covMaxInput.value) : null;
+  const lenMin = lenMinInput.value !== '' ? parseInt(lenMinInput.value, 10) : null;
+  const lenMax = lenMaxInput.value !== '' ? parseInt(lenMaxInput.value, 10) : null;
+  const atomMin = atomMinInput.value !== '' ? parseInt(atomMinInput.value, 10) : null;
+  const atomMax = atomMaxInput.value !== '' ? parseInt(atomMaxInput.value, 10) : null;
+  const sortBy = sortBySelect.value;
+  const allCards = Array.from(cardsList.querySelectorAll('.genome-card'));
+  const visibleCards = [];
+  const hiddenCards = [];
+
+  allCards.forEach(card => {
+    const name = (card.dataset.name || '').toLowerCase();
+    const covPct = parseFloat(card.dataset.coveredPct || '0');
+    const length = parseInt(card.dataset.length || '0', 10);
+    const atomCount = parseInt(card.dataset.predictedAtoms || '0', 10);
+    let visible = true;
+    if (query && !name.includes(query)) visible = false;
+    if (covMin !== null && !isNaN(covMin) && covPct < covMin) visible = false;
+    if (covMax !== null && !isNaN(covMax) && covPct > covMax) visible = false;
+    if (lenMin !== null && !isNaN(lenMin) && length < lenMin) visible = false;
+    if (lenMax !== null && !isNaN(lenMax) && length > lenMax) visible = false;
+    if (atomMin !== null && !isNaN(atomMin) && atomCount < atomMin) visible = false;
+    if (atomMax !== null && !isNaN(atomMax) && atomCount > atomMax) visible = false;
+    if (activeStatus === 'full' && covPct < 99.999) visible = false;
+    else if (activeStatus === 'high' && covPct < 90.0) visible = false;
+    else if (activeStatus === 'medium' && (covPct < 50.0 || covPct >= 90.0)) visible = false;
+    else if (activeStatus === 'low' && covPct >= 50.0) visible = false;
+    if (visible) { visibleCards.push(card); } else { hiddenCards.push(card); }
+  });
+
+  if (sortBy !== 'default') {
+    visibleCards.sort((a, b) => {
+      if (sortBy === 'name') {
+        const valueA = (a.dataset.name || '').toLowerCase();
+        const valueB = (b.dataset.name || '').toLowerCase();
+        return sortAsc ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
+      }
+      let valueA = 0;
+      let valueB = 0;
+      if (sortBy === 'length') {
+        valueA = parseInt(a.dataset.length || '0', 10);
+        valueB = parseInt(b.dataset.length || '0', 10);
+      } else if (sortBy === 'coverage') {
+        valueA = parseFloat(a.dataset.coveredPct || '0');
+        valueB = parseFloat(b.dataset.coveredPct || '0');
+      } else if (sortBy === 'atoms') {
+        valueA = parseInt(a.dataset.predictedAtoms || '0', 10);
+        valueB = parseInt(b.dataset.predictedAtoms || '0', 10);
+      } else if (sortBy === 'uncovered') {
+        valueA = parseInt(a.dataset.length || '0', 10) - parseInt(a.dataset.coveredBp || '0', 10);
+        valueB = parseInt(b.dataset.length || '0', 10) - parseInt(b.dataset.coveredBp || '0', 10);
+      }
+      return sortAsc ? valueA - valueB : valueB - valueA;
+    });
+  }
+
+  visibleCards.forEach(card => { card.style.display = ''; cardsList.appendChild(card); });
+  hiddenCards.forEach(card => { card.style.display = 'none'; cardsList.appendChild(card); });
+
+  const visibleCount = visibleCards.length;
+  const suffix = TOTAL_COUNT !== 1 ? 's' : '';
+  if (visibleCount === TOTAL_COUNT) {
+    countLabel.textContent = 'Showing all ' + TOTAL_COUNT.toLocaleString() + ' genome' + suffix;
+  } else {
+    countLabel.textContent = 'Showing ' + visibleCount.toLocaleString() + ' of ' + TOTAL_COUNT.toLocaleString() + ' genome' + suffix;
+  }
+  if (noResultsDiv) {
+    noResultsDiv.style.display = visibleCount === 0 ? 'block' : 'none';
+  }
+}
+
+applyFilters();
+"""
+    filter_script = "<script>(() => {\n" + _filter_js_init + _filter_js_body + "})();</script>"
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Atomization Overview</title>
+  <style>
+{PAGE_STYLE}
+    .filter-panel {{
+      margin: 0 auto 14px auto;
+      padding: 20px 24px;
+      border: 1px solid #d8e2ec;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.94);
+      box-shadow: 0 18px 50px rgba(30,55,90,0.08);
+    }}
+    .filter-panel-header {{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }}
+    .filter-panel-title {{
+      font-size: 15px;
+      font-weight: 700;
+      color: #182433;
+    }}
+    .filter-panel-actions {{
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }}
+    .filter-count-label {{
+      font-size: 13px;
+      color: #43566b;
+    }}
+    .filter-reset-btn, .filter-toggle-btn {{
+      appearance: none;
+      border: 1px solid #bfd0e0;
+      border-radius: 10px;
+      background: #f6f9fc;
+      color: #213244;
+      cursor: pointer;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 14px;
+      transition: background 120ms ease, border-color 120ms ease;
+    }}
+    .filter-reset-btn:hover, .filter-toggle-btn:hover {{ background: #edf4fa; border-color: #a8bfd4; }}
+    .filter-toggle-btn {{ padding: 6px 10px; }}
+    .filter-panel-body {{
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow: hidden;
+      transition: max-height 280ms ease, opacity 220ms ease;
+      max-height: 600px;
+      opacity: 1;
+    }}
+    .filter-panel-body.is-collapsed {{
+      max-height: 0;
+      opacity: 0;
+      pointer-events: none;
+    }}
+    .filter-row {{
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      flex-wrap: wrap;
+    }}
+    .filter-row-grid {{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }}
+    .filter-label {{
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #5a7390;
+      display: block;
+      margin-bottom: 6px;
+    }}
+    .filter-input {{
+      width: 100%;
+      box-sizing: border-box;
+      appearance: none;
+      border: 1px solid #c8d8e8;
+      border-radius: 10px;
+      background: #f8fbfd;
+      color: #182433;
+      font: inherit;
+      font-size: 14px;
+      padding: 8px 12px;
+      outline: none;
+      transition: border-color 120ms ease, box-shadow 120ms ease;
+    }}
+    .filter-input:focus {{
+      border-color: #4a90d9;
+      box-shadow: 0 0 0 3px rgba(74,144,217,0.15);
+    }}
+    .filter-pills {{
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      margin-top: 2px;
+    }}
+    .filter-pill {{
+      appearance: none;
+      border: 1px solid #c8d8e8;
+      border-radius: 999px;
+      background: #f6f9fc;
+      color: #43566b;
+      cursor: pointer;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 13px;
+      transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+    }}
+    .filter-pill:hover {{ background: #edf4fa; border-color: #a8bfd4; }}
+    .filter-pill.active {{ background: #1d4f91; border-color: #1d4f91; color: #ffffff; }}
+    .filter-range-group, .filter-sort-group {{ display: flex; flex-direction: column; }}
+    .filter-range-inputs, .filter-sort-inputs {{ display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }}
+    .filter-number-input {{
+      width: 88px;
+      appearance: none;
+      border: 1px solid #c8d8e8;
+      border-radius: 10px;
+      background: #f8fbfd;
+      color: #182433;
+      font: inherit;
+      font-size: 13px;
+      padding: 7px 10px;
+      outline: none;
+      transition: border-color 120ms ease, box-shadow 120ms ease;
+    }}
+    .filter-number-input:focus {{ border-color: #4a90d9; box-shadow: 0 0 0 3px rgba(74,144,217,0.15); }}
+    .filter-range-sep {{ color: #5a7390; font-weight: 600; font-size: 14px; }}
+    .filter-range-unit {{ color: #5a7390; font-size: 12px; font-weight: 600; }}
+    .filter-select {{
+      appearance: none;
+      -webkit-appearance: none;
+      border: 1px solid #c8d8e8;
+      border-radius: 10px;
+      background-color: #f8fbfd;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a7390' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 12px 8px;
+      color: #182433;
+      font: inherit;
+      font-size: 13px;
+      padding: 7px 32px 7px 12px;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 120ms ease;
+    }}
+    .filter-select:focus {{ border-color: #4a90d9; }}
+    .filter-sort-order-btn {{
+      appearance: none;
+      border: 1px solid #c8d8e8;
+      border-radius: 10px;
+      background: #f6f9fc;
+      color: #213244;
+      cursor: pointer;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 7px 12px;
+      white-space: nowrap;
+      min-width: 68px;
+      transition: background 120ms ease, border-color 120ms ease;
+    }}
+    .filter-sort-order-btn:hover {{ background: #edf4fa; border-color: #a8bfd4; }}
+    #filter-no-results {{
+      text-align: center;
+      padding: 32px 24px;
+      color: #52667b;
+      font-size: 14px;
+      display: none;
+      background: rgba(255,255,255,0.94);
+      border: 1px solid #d8e2ec;
+      border-radius: 18px;
+      box-shadow: 0 4px 18px rgba(30,55,90,0.06);
+      margin-bottom: 14px;
+    }}
+    .summary-grid {{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }}
+    .summary-tile {{
+      padding: 16px 18px;
+      background: #eef5ff;
+      border: 1px solid #c4d9f0;
+      border-radius: 14px;
+      text-align: center;
+    }}
+    .summary-tile .tile-val {{
+      font-size: 22px;
+      font-weight: 700;
+      color: #1d4f91;
+    }}
+    .summary-tile .tile-lbl {{
+      font-size: 11px;
+      color: #43566b;
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+    }}
+    .genome-card {{
+      background: rgba(255,255,255,0.96);
+      border: 1px solid #d8e2ec;
+      border-radius: 18px;
+      box-shadow: 0 4px 18px rgba(30,55,90,0.06);
+      padding: 20px 24px;
+      margin-bottom: 14px;
+    }}
+    .genome-card-header {{
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }}
+    .genome-name {{
+      font-size: 15px;
+      font-weight: 700;
+      color: #182433;
+      word-break: break-all;
+      flex: 1;
+    }}
+    .view-button {{
+      display: inline-block;
+      padding: 8px 18px;
+      background: #1d4f91;
+      color: #ffffff !important;
+      text-decoration: none;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 13px;
+      white-space: nowrap;
+      transition: background 120ms ease;
+      flex-shrink: 0;
+    }}
+    .view-button:hover {{ background: #174080; }}
+    .coverage-bar-bg {{
+      height: 6px;
+      background: #e6edf4;
+      border-radius: 4px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }}
+    .coverage-bar-fill {{
+      height: 100%;
+      background: linear-gradient(90deg, #2C7FB8, #41b3a3);
+      border-radius: 4px;
+    }}
+    .genome-stats {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+    }}
+    .stat-item {{
+      display: flex;
+      flex-direction: column;
+    }}
+    .stat-label {{
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #5a7390;
+      font-weight: 700;
+    }}
+    .stat-value {{
+      font-size: 13px;
+      font-weight: 600;
+      color: #182433;
+      margin-top: 3px;
+    }}
+    .stat-covered .stat-value {{ color: #1a7a4a; }}
+    .stat-uncovered .stat-value {{ color: #b03a2e; }}
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <section class="app-header">
+      <div class="app-kicker">Atomization Report</div>
+      <h1>Genome Atomization Overview</h1>
+      <p class="app-meta">Predicted vs true atomization across {total_sequences:,} sequence{'s' if total_sequences != 1 else ''}.</p>
+      <div class="summary-grid">
+        <div class="summary-tile">
+          <div class="tile-val">{total_sequences:,}</div>
+          <div class="tile-lbl">Sequences</div>
+        </div>
+        <div class="summary-tile">
+          <div class="tile-val">{_format(total_genome_bp)}</div>
+          <div class="tile-lbl">Total genome</div>
+        </div>
+        <div class="summary-tile">
+          <div class="tile-val">{total_predicted_atoms:,}</div>
+          <div class="tile-lbl">Predicted atoms</div>
+        </div>
+        <div class="summary-tile">
+          <div class="tile-val">{overall_pct:.1f}%</div>
+          <div class="tile-lbl">Overall coverage</div>
+        </div>
+      </div>
+    </section>
+    {filter_panel_html}
+    <section id="genome-cards-list">
+{cards_html}
+    </section>
+    <div id="filter-no-results">No genomes match the current filters.</div>
+  </main>
+  {filter_script}
 </body>
 </html>"""
 
@@ -1499,6 +2233,7 @@ def plot_atomization(
     df_true = read_geese(true_atoms_file)
     df_predicted = read_geese(predicted_atoms_file)
     used_output_stems = {}
+    genome_stats = []
 
     for genome_name, sequence in genome_dictionary.items():
         genome_length = len(sequence)
@@ -1568,12 +2303,26 @@ def plot_atomization(
             digest = hashlib.sha1(genome_name.encode("utf-8")).hexdigest()[:8]
             output_stem = f"{output_stem}_{digest}"
         used_output_stems[output_stem] = genome_name
-        output_path = output_directory / output_stem
-        output_path.with_suffix(f".{normalized_format}").write_text(html, encoding="utf-8")
+        covered_bp = sum(atom["length"] for atom in predicted_atoms)
+        genomes_dir = output_directory / "genomes_visualization"
+        genomes_dir.mkdir(parents=True, exist_ok=True)
+        output_file = genomes_dir / f"{output_stem}.{normalized_format}"
+        genome_stats.append({
+            "name": genome_name,
+            "length": genome_length,
+            "predicted_atom_count": len(predicted_atoms),
+            "covered_bp": covered_bp,
+            "filename": output_file.name,
+        })
+        output_file.write_text(html, encoding="utf-8")
 
         log.info(
-            "Saved interactive atomization visualization for genome=%s to %s.%s",
+            "Saved interactive atomization visualization for genome=%s to %s",
             genome_name,
-            output_path,
-            normalized_format,
+            output_file,
         )
+
+    index_html = _build_index_html(genome_stats)
+    index_path = output_directory / "atomization_visualization.html"
+    index_path.write_text(index_html, encoding="utf-8")
+    log.info("Saved atomization visualization index to %s", index_path)
