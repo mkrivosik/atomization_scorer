@@ -1,5 +1,5 @@
 """
-Tests for the compute_coverage_score() function.
+Tests for the coverage_score.py module.
 """
 
 # --------------------------------------------------------------------------------------

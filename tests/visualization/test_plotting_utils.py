@@ -1,5 +1,5 @@
 """
-Tests for interactive visualization helper functions.
+Tests for the plotting_utils module.
 """
 
 # --------------------------------------------------------------------------------------

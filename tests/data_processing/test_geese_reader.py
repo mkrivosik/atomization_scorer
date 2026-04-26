@@ -1,5 +1,5 @@
 """
-Tests for the read_geese() function.
+Tests for the geese_reader.py module.
 """
 
 # --------------------------------------------------------------------------------------

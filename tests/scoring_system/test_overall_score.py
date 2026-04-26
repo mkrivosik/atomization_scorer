@@ -1,5 +1,5 @@
 """
-Tests for the compute_overall_score() function.
+Tests for the overall_score.py module.
 """
 
 # --------------------------------------------------------------------------------------

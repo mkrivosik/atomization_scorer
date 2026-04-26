@@ -1,5 +1,5 @@
 """
-Tests for the write_geese() function.
+Tests for the geese_writer.py module.
 """
 
 # --------------------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 """
-Tests for the compute_true_alignment() function.
+Tests for the true_pipeline.py module.
 """
 
 # --------------------------------------------------------------------------------------
@@ -43,7 +43,8 @@ def test_compute_true_alignment_pipeline(
         output_directory=output_dir,
         mode="mash",
         minimum_similarity=0.95,
-        minimum_alignment_length=500
+        minimum_alignment_length=500,
+        run_overlap_diagnostics=False,
     )
 
     # Expected paths
@@ -121,7 +122,8 @@ def test_compute_true_alignment_first_mode(
         output_directory=output_dir,
         mode="first",
         minimum_similarity=0.95,
-        minimum_alignment_length=500
+        minimum_alignment_length=500,
+        run_overlap_diagnostics=False,
     )
 
     representatives_fasta = output_dir / "first_representatives.fa"
@@ -172,7 +174,8 @@ def test_compute_true_alignment_forwards_custom_filter_parameters(
         atomization_file=mini_geese,
         output_directory=output_dir,
         minimum_similarity=0.8,
-        minimum_alignment_length=1234
+        minimum_alignment_length=1234,
+        run_overlap_diagnostics=False,
     )
 
     filtered_paf = output_dir / "minimap2_alignment_filtered.paf"
@@ -222,7 +225,8 @@ def test_compute_true_alignment_creates_output_directory(
     compute_true_alignment(
         genomes_file=mini_fasta,
         atomization_file=mini_geese,
-        output_directory=output_dir
+        output_directory=output_dir,
+        run_overlap_diagnostics=False,
     )
 
     assert output_dir.is_dir()
@@ -378,7 +382,8 @@ def test_compute_true_alignment_finishes_after_geese_conversion(
     geese_path = compute_true_alignment(
         genomes_file=mini_fasta,
         atomization_file=mini_geese,
-        output_directory=output_dir
+        output_directory=output_dir,
+        run_overlap_diagnostics=False,
     )
 
     mock_extract.assert_called_once()

@@ -1,5 +1,5 @@
 """
-Tests for the compute_alignment_score() function.
+Tests for the alignment_score.py module.
 """
 
 # --------------------------------------------------------------------------------------

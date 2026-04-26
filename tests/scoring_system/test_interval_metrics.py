@@ -1,5 +1,5 @@
 """
-Tests for the interval_metrics.py functions.
+Tests for the interval_metrics.py module.
 """
 
 # --------------------------------------------------------------------------------------

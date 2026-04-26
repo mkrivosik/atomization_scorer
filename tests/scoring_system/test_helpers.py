@@ -1,5 +1,5 @@
 """
-Tests for the helper.py functions.
+Tests for the helpers.py module.
 """
 
 # --------------------------------------------------------------------------------------

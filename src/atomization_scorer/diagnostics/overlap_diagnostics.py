@@ -648,16 +648,20 @@ def diagnose_paf_overlaps(
     )
 
     if run_dotter:
+        import subprocess
         from .dotter_runner import run_dotter_for_anchors
 
         log.info(
             "Running Dotter for anchor FASTA inputs in %s",
             anchors_directory,
         )
-        run_dotter_for_anchors(
-            anchors_directory=anchors_directory,
-            extra_args=dotter_extra_args,
-        )
+        try:
+            run_dotter_for_anchors(
+                anchors_directory=anchors_directory,
+                extra_args=dotter_extra_args,
+            )
+        except (FileNotFoundError, subprocess.CalledProcessError) as error:
+            log.warning("Dotter skipped - Docker not available or Dotter failed: %s", error)
 
     log.info(
         "Generated overlap diagnostics at %s with %s reported overlaps",

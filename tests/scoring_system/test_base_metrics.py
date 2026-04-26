@@ -1,5 +1,5 @@
 """
-Tests for the base_metrics.py functions.
+Tests for the base_metrics.py module.
 """
 
 # --------------------------------------------------------------------------------------

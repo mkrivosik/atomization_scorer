@@ -14,6 +14,37 @@ from atomization_scorer.diagnostics import dotter_runner as dr
 
 
 # --------------------------------------------------------------------------------------
+# Test: _get_display returns platform-appropriate DISPLAY value
+# --------------------------------------------------------------------------------------
+def test_get_display_on_macos_with_display_set(monkeypatch: pytest.MonkeyPatch):
+    """_get_display should return host.docker.internal:<num> on macOS."""
+    monkeypatch.setattr(dr.platform, "system", lambda: "Darwin")
+    monkeypatch.setenv("DISPLAY", ":1")
+    assert dr._get_display() == "host.docker.internal:1"
+
+
+def test_get_display_on_macos_without_display_set(monkeypatch: pytest.MonkeyPatch):
+    """_get_display should default to :0 and return host.docker.internal:0 on macOS."""
+    monkeypatch.setattr(dr.platform, "system", lambda: "Darwin")
+    monkeypatch.delenv("DISPLAY", raising=False)
+    assert dr._get_display() == "host.docker.internal:0"
+
+
+def test_get_display_on_linux_with_display_set(monkeypatch: pytest.MonkeyPatch):
+    """_get_display should return the raw DISPLAY value on Linux."""
+    monkeypatch.setattr(dr.platform, "system", lambda: "Linux")
+    monkeypatch.setenv("DISPLAY", ":0")
+    assert dr._get_display() == ":0"
+
+
+def test_get_display_on_linux_without_display_set(monkeypatch: pytest.MonkeyPatch):
+    """_get_display should return None when DISPLAY is unset on Linux."""
+    monkeypatch.setattr(dr.platform, "system", lambda: "Linux")
+    monkeypatch.delenv("DISPLAY", raising=False)
+    assert dr._get_display() is None
+
+
+# --------------------------------------------------------------------------------------
 # Helpers
 # --------------------------------------------------------------------------------------
 def _create_anchor_directory(base_directory: Path, name: str = "rep_A") -> Path:
@@ -53,7 +84,7 @@ def test_to_container_path_maps_nested_files_under_mount_root(tmp_path: Path):
 # Test: files outside the mount root are rejected
 # --------------------------------------------------------------------------------------
 def test_to_container_path_rejects_paths_outside_mount_root(tmp_path: Path):
-    """_to_container_path should fail clearly for files outside the selected Docker mount root."""
+    """_to_container_path should raise ValueError for paths outside the Docker mount root."""
     anchor_directory = _create_anchor_directory(tmp_path / "anchors")
     external_file = tmp_path / "external" / "X.fasta"
     external_file.parent.mkdir(parents=True, exist_ok=True)
@@ -107,15 +138,15 @@ def test_run_dotter_for_anchor_missing_input(
 
 
 # --------------------------------------------------------------------------------------
-# Test: runs Dotter for one anchor with supported output formats
+# Test: runs Dotter for one anchor with supported output formats on Linux
 # --------------------------------------------------------------------------------------
 @pytest.mark.parametrize("output_format", ["png", "svg", "pdf"])
-def test_run_dotter_for_anchor(
+def test_run_dotter_for_anchor_on_linux(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     output_format: str,
 ):
-    """run_dotter_for_anchor should execute Dotter in Docker for one anchor directory."""
+    """On Linux without DISPLAY or X11 socket, run_dotter_for_anchor should build the minimal Docker command."""
     anchor_directory = _create_anchor_directory(tmp_path)
     calls = []
 
@@ -124,6 +155,7 @@ def test_run_dotter_for_anchor(
         return subprocess.CompletedProcess(args[0], 0, stdout="dotter-output\n", stderr="")
 
     monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(dr.platform, "system", lambda: "Linux")
     monkeypatch.delenv("DISPLAY", raising=False)
     monkeypatch.setattr(dr, "X11_SOCKET_DIRECTORY", tmp_path / "missing-x11")
 
@@ -155,13 +187,65 @@ def test_run_dotter_for_anchor(
 
 
 # --------------------------------------------------------------------------------------
-# Test: X11 settings are forwarded when present on the host
+# Test: on macOS DISPLAY is always injected even when unset, socket is never mounted
 # --------------------------------------------------------------------------------------
-def test_run_dotter_for_anchor_forwards_x11_runtime(
+@pytest.mark.parametrize("output_format", ["png", "svg", "pdf"])
+def test_run_dotter_for_anchor_on_macos(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    output_format: str,
+):
+    """On macOS without DISPLAY or X11 socket, run_dotter_for_anchor should always inject
+    DISPLAY=host.docker.internal:0."""
+    anchor_directory = _create_anchor_directory(tmp_path)
+    calls = []
+
+    def fake_run(*args, **kwargs):
+        calls.append((args[0], kwargs))
+        return subprocess.CompletedProcess(args[0], 0, stdout="dotter-output\n", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(dr.platform, "system", lambda: "Darwin")
+    monkeypatch.delenv("DISPLAY", raising=False)
+    monkeypatch.setattr(dr, "X11_SOCKET_DIRECTORY", tmp_path / "missing-x11")
+
+    dr.run_dotter_for_anchor(
+        anchor_directory=anchor_directory,
+        extra_args=["-v"],
+        output_format=output_format,
+    )
+
+    assert calls == [
+        (
+            [
+                "docker",
+                "run",
+                "--rm",
+                "--env",
+                "DISPLAY=host.docker.internal:0",
+                "-v",
+                f"{anchor_directory.resolve()}:/work",
+                dr.DOTTER_IMAGE,
+                "dotter",
+                "-e",
+                f"/work/dotter.{output_format}",
+                "-v",
+                "/work/Y.fasta",
+                "/work/X.fasta",
+            ],
+            {"check": True, "capture_output": True, "text": True},
+        )
+    ]
+
+
+# --------------------------------------------------------------------------------------
+# Test: X11 settings are forwarded on Linux (socket mounted, DISPLAY passed as-is)
+# --------------------------------------------------------------------------------------
+def test_run_dotter_for_anchor_forwards_x11_runtime_on_linux(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    """run_dotter_for_anchor should forward DISPLAY and mount the X11 socket when available."""
+    """On Linux, run_dotter_for_anchor should forward DISPLAY as-is and mount the X11 socket."""
     anchor_directory = _create_anchor_directory(tmp_path)
     x11_socket_directory = tmp_path / ".X11-unix"
     x11_socket_directory.mkdir()
@@ -172,6 +256,7 @@ def test_run_dotter_for_anchor_forwards_x11_runtime(
         return subprocess.CompletedProcess(args[0], 0, stdout="dotter-output\n", stderr="")
 
     monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(dr.platform, "system", lambda: "Linux")
     monkeypatch.setenv("DISPLAY", ":0")
     monkeypatch.setattr(dr, "X11_SOCKET_DIRECTORY", x11_socket_directory)
 
@@ -187,6 +272,52 @@ def test_run_dotter_for_anchor_forwards_x11_runtime(
                 "DISPLAY=:0",
                 "-v",
                 f"{x11_socket_directory}:{x11_socket_directory}",
+                "-v",
+                f"{anchor_directory.resolve()}:/work",
+                dr.DOTTER_IMAGE,
+                "dotter",
+                "-e",
+                "/work/dotter.pdf",
+                "/work/Y.fasta",
+                "/work/X.fasta",
+            ],
+            {"check": True, "capture_output": True, "text": True},
+        )
+    ]
+
+
+# --------------------------------------------------------------------------------------
+# Test: X11 settings on macOS use host.docker.internal and skip socket mount
+# --------------------------------------------------------------------------------------
+def test_run_dotter_for_anchor_forwards_x11_runtime_on_macos(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """On macOS, run_dotter_for_anchor should route DISPLAY via host.docker.internal and not mount the socket."""
+    anchor_directory = _create_anchor_directory(tmp_path)
+    x11_socket_directory = tmp_path / ".X11-unix"
+    x11_socket_directory.mkdir()
+    calls = []
+
+    def fake_run(*args, **kwargs):
+        calls.append((args[0], kwargs))
+        return subprocess.CompletedProcess(args[0], 0, stdout="dotter-output\n", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(dr.platform, "system", lambda: "Darwin")
+    monkeypatch.setenv("DISPLAY", ":0")
+    monkeypatch.setattr(dr, "X11_SOCKET_DIRECTORY", x11_socket_directory)
+
+    dr.run_dotter_for_anchor(anchor_directory=anchor_directory)
+
+    assert calls == [
+        (
+            [
+                "docker",
+                "run",
+                "--rm",
+                "--env",
+                "DISPLAY=host.docker.internal:0",
                 "-v",
                 f"{anchor_directory.resolve()}:/work",
                 dr.DOTTER_IMAGE,
@@ -240,7 +371,6 @@ def test_run_dotter_for_anchor_missing_dotter_executable(
 
 
 # --------------------------------------------------------------------------------------
-# --------------------------------------------------------------------------------------
 # Test: missing anchors directory is rejected
 # --------------------------------------------------------------------------------------
 def test_run_dotter_for_anchors_missing_directory(tmp_path: Path):
@@ -268,6 +398,7 @@ def test_run_dotter_for_anchors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
         return subprocess.CompletedProcess(args[0], 0, stdout="", stderr="")
 
     monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(dr.platform, "system", lambda: "Linux")
     monkeypatch.delenv("DISPLAY", raising=False)
     monkeypatch.setattr(dr, "X11_SOCKET_DIRECTORY", tmp_path / "missing-x11")
 

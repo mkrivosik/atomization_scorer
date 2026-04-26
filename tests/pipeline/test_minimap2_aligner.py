@@ -1,5 +1,5 @@
 """
-Tests for align_with_minimap2() function.
+Tests for minimap2_aligner.py module.
 """
 
 # --------------------------------------------------------------------------------------

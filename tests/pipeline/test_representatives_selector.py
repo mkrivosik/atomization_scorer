@@ -1,5 +1,5 @@
 """
-Tests for the extract_representatives() function.
+Tests for the representatives_selector.py module.
 """
 
 # --------------------------------------------------------------------------------------

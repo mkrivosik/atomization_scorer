@@ -1,5 +1,5 @@
 """
-Tests for the interactive plot_atomization() function.
+Tests for the atomization_visualization module.
 """
 
 # --------------------------------------------------------------------------------------

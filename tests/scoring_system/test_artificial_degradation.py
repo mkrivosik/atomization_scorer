@@ -1,5 +1,5 @@
 """
-Tests for the degrade_atomization() function.
+Tests for the artificial_degradation.py module.
 """
 
 # --------------------------------------------------------------------------------------

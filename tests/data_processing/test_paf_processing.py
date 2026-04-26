@@ -1,5 +1,5 @@
 """
-Tests for the filter_paf() function.
+Tests for the paf_processing.py module.
 """
 
 # --------------------------------------------------------------------------------------

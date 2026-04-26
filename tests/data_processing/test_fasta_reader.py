@@ -1,5 +1,5 @@
 """
-Tests for the read_fasta() function.
+Tests for the fasta_reader.py module.
 """
 
 # --------------------------------------------------------------------------------------

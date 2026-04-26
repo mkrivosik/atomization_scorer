@@ -18,6 +18,7 @@ run_dotter_for_anchors  : Run Dotter for all anchor directories and export plots
 from __future__ import annotations
 import logging
 import os
+import platform
 import subprocess
 from pathlib import Path
 
@@ -33,6 +34,31 @@ DOTTER_IMAGE                = "nathanhaigh/seqtools:4.44.1"
 CONTAINER_WORKDIR           = Path("/work")
 SUPPORTED_OUTPUT_FORMATS    = {"png", "svg", "pdf"}
 X11_SOCKET_DIRECTORY        = Path("/tmp/.X11-unix")
+
+
+# --------------------------------------------------------------------------------------
+# Display Helpers
+# --------------------------------------------------------------------------------------
+def _get_display() -> str | None:
+    """
+    Return the DISPLAY value to pass into the Docker container.
+
+    On macOS Docker runs inside a Linux VM and cannot reach the host Unix socket
+    at /tmp/.X11-unix; the display is routed via host.docker.internal instead.
+    On Linux the host DISPLAY value is returned as-is.
+
+    Returns
+    -------
+    str or None
+        On macOS, host.docker.internal:<display_num> derived from DISPLAY (defaults
+        to :0 if unset). On Linux, the raw DISPLAY environment variable, or None
+        if unset.
+    """
+    if platform.system() == "Darwin":
+        display = os.environ.get("DISPLAY", ":0")
+        display_num = display.lstrip(":")
+        return f"host.docker.internal:{display_num}"
+    return os.environ.get("DISPLAY")
 
 
 # --------------------------------------------------------------------------------------
@@ -113,10 +139,10 @@ def _build_dotter_command(
         "run",
         "--rm",
     ]
-    display = os.environ.get("DISPLAY")
+    display = _get_display()
     if display:
         command.extend(["--env", f"DISPLAY={display}"])
-    if X11_SOCKET_DIRECTORY.is_dir():
+    if platform.system() != "Darwin" and X11_SOCKET_DIRECTORY.is_dir():
         command.extend(["-v", f"{X11_SOCKET_DIRECTORY}:{X11_SOCKET_DIRECTORY}"])
     command.extend([
         "-v",

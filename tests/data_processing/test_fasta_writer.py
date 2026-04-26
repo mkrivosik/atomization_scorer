@@ -1,5 +1,5 @@
 """
-Tests for the write_fasta() function.
+Tests for the fasta_writer.py module.
 """
 
 # --------------------------------------------------------------------------------------

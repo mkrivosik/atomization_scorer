@@ -1,5 +1,5 @@
 """
-Tests for the utils.py functions.
+Tests for the utils.py module.
 """
 
 # --------------------------------------------------------------------------------------
