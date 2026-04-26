@@ -115,6 +115,7 @@ def compute_overall_score(
 
     log.info("=" * 60)
     log.info("Computing overall score")
+    assert isinstance(alignment_score, float)
     # Weighted geometric mean
     overall_score = (alignment_score ** alignment_weight) * (coverage_score ** coverage_weight)
     overall_score = min(max(overall_score, 0.0), 1.0)

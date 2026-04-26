@@ -142,6 +142,8 @@ def _scan_intervals_interval_level(
     for sequence in all_sequences:
         predicted_sequence = predicted_groups.get(sequence, predicted_df.iloc[0:0])
         true_sequence = true_groups.get(sequence, true_df.iloc[0:0])
+        assert isinstance(predicted_sequence, pd.DataFrame)
+        assert isinstance(true_sequence, pd.DataFrame)
 
         tree = IntervalTree()
         for true_index, row in true_sequence.iterrows():

@@ -145,6 +145,8 @@ def _scan_intervals_base_level(
     for sequence in all_sequences:
         predicted_sequence = predicted_groups.get(sequence, predicted_df.iloc[0:0])
         true_sequence = true_groups.get(sequence, true_df.iloc[0:0])
+        assert isinstance(predicted_sequence, pd.DataFrame)
+        assert isinstance(true_sequence, pd.DataFrame)
 
         interval_events = []
 
@@ -177,6 +179,7 @@ def _scan_intervals_base_level(
 
         for current_position, event_type, class_id, row_data in interval_events:
             if previous_position is not None and current_position > previous_position:
+                assert isinstance(previous_position, int)
                 interval_length = current_position - previous_position
 
                 common_classes = set(active_predicted_classes.keys()).intersection(active_true_classes.keys())

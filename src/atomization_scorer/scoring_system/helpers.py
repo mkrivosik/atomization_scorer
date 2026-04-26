@@ -67,7 +67,7 @@ def _compute_and_write_metrics(
 
         out_df = pd.DataFrame(
             [[total_tp, total_fp, total_fn, precision, recall, f1]],
-            columns=["TP", "FP", "FN", "Precision", "Recall", "F1-score"]
+            columns=pd.Index(["TP", "FP", "FN", "Precision", "Recall", "F1-score"])
         )
         _write_metrics_tsv(out_df, output_file)
         return f1
@@ -88,7 +88,7 @@ def _compute_and_write_metrics(
 
     out_df = pd.DataFrame(
         rows,
-        columns=("Class", "TP", "FP", "FN", "Precision", "Recall", "F1-score")
+        columns=pd.Index(["Class", "TP", "FP", "FN", "Precision", "Recall", "F1-score"])
     )
     _write_metrics_tsv(out_df, output_file)
     return class_f1_metrics
