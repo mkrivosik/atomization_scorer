@@ -274,7 +274,11 @@ def run(
         completed_genome_counts = set()
         results = []
 
-    for n_genomes in range(start_n, resolved_end_n + 1, step):
+    steps = list(range(start_n, resolved_end_n + 1, step))
+    if not steps or steps[-1] != resolved_end_n:
+        steps.append(resolved_end_n)
+
+    for n_genomes in steps:
         if n_genomes in completed_genome_counts:
             log.info("[n=%d] skipped (already completed)", n_genomes)
             continue
