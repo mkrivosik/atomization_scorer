@@ -38,7 +38,7 @@ START_N      = 2    # first genome count to score (must be >= 2)
 END_N        = 598
 STEP         = 20
 
-OUTPUT_DIR   = _HERE.parent / f"results_genomes{START_N}_to{END_N}_step{STEP}"
+OUTPUT_DIR   = _HERE.parent / "results_*" / f"results_genomes{START_N}_to{END_N}_step{STEP}"
 
 CSV_FIELDS = [
     "n_genomes",
