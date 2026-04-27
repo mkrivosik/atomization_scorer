@@ -29,7 +29,7 @@ log = logging.getLogger(__name__)
 HERE = Path(__file__).parent
 FIXTURES = HERE.parent.parent.parent / "tests" / "fixtures"
 
-DEFAULT_GEESE = FIXTURES / "mini.geese"
+DEFAULT_GEESE = FIXTURES / "big.geese"
 DEFAULT_OUTPUT = HERE.parent / "outputs" / "atom_length_distribution.png"
 DEFAULT_N_BINS = 60
 TAIL_START_BP = 20_000

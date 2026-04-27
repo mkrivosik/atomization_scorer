@@ -31,11 +31,11 @@ log = logging.getLogger(__name__)
 # Constants
 # ---------------------------------------------------------------------------
 _HERE        = Path(__file__).parent
-FASTA        = _HERE.parent.parent.parent / "tests" / "fixtures" / "mini.fa"
+FASTA        = _HERE.parent.parent.parent / "tests" / "fixtures" / "big.fa"
 GEESE_BIN    = Path.home() / "bin/geese"
 
 START_N      = 2    # first genome count to score (must be >= 2)
-END_N        = 596
+END_N        = 598
 STEP         = 20
 
 OUTPUT_DIR   = _HERE.parent / f"results_genomes{START_N}_to{END_N}_step{STEP}"
@@ -263,7 +263,7 @@ def run(
         raise ValueError(f"start_n ({start_n}) > end_n ({resolved_end_n}), nothing to do")
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    results_csv = output_dir / "results_genomes2_to582_step20.csv"
+    results_csv = output_dir / f"results_genomes{start_n}_to{resolved_end_n}_step{step}.csv"
 
     if resume:
         existing_results = read_results_csv(results_csv)

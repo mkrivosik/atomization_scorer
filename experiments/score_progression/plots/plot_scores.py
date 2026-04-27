@@ -57,14 +57,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--input",
         type=Path,
-        default=_HERE.parent / "results_genomes2_to582_step20" / "scores.tsv",
+        required=True,
         help="Path to the scores TSV produced by extract_scores",
     )
     parser.add_argument(
         "--output",
         type=Path,
-        default=_HERE.parent / "results_genomes2_to582_step20" / "score_progression.png",
-        help="Path where the PNG plot will be saved",
+        default=None,
+        help="Path where the PNG plot will be saved (default: score_progression.png next to --input)",
     )
     return parser.parse_args()
 
@@ -123,4 +123,5 @@ def plot_scores(scores_tsv: Path, output_path: Path) -> None:
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     args = parse_args()
-    plot_scores(args.input, args.output)
+    output = args.output or args.input.parent / "score_progression.png"
+    plot_scores(args.input, output)

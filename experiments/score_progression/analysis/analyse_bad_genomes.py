@@ -30,9 +30,9 @@ log = logging.getLogger(__name__)
 HERE = Path(__file__).parent
 FIXTURES = HERE.parent.parent.parent / "tests" / "fixtures"
 
-DEFAULT_FASTA = FIXTURES / "mini.fa"
-DEFAULT_GEESE = FIXTURES / "mini.geese"
-DEFAULT_DELETED = FIXTURES / "deleted_v1.fa"
+DEFAULT_FASTA = FIXTURES / "big.fa"
+DEFAULT_GEESE = FIXTURES / "big.geese"
+DEFAULT_DELETED = FIXTURES / "bad_genomes.fa"
 DEFAULT_OUTPUT = HERE.parent / "outputs" / "bad_genomes_report.json"
 
 

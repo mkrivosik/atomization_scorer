@@ -1,5 +1,5 @@
 """
-Create a versioned subset of a FASTA file by removing sequences at specified 1-based positions.
+Create a subset of a FASTA file by removing sequences at specified 1-based positions.
 """
 
 # ---------------------------------------------------------------------------
@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import argparse
 import logging
-import re
 from pathlib import Path
 
 from Bio import SeqIO
@@ -23,25 +22,9 @@ log = logging.getLogger(__name__)
 # Constants
 # ---------------------------------------------------------------------------
 _HERE                   = Path(__file__).parent
-FASTA                   = _HERE / "../../tests/fixtures/mini.fa"
+FASTA                   = _HERE / "../../tests/fixtures/big.fa"
 OUTPUT_DIR              = _HERE / "../../tests/fixtures"
-DEFAULT_EXCLUDE_INDICES = [230, 232]
-DELETED_STEM            = "deleted"
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-def _next_version(output_dir: Path, stem: str) -> int:
-    """Return the next version number for versioned FASTA files named <stem>_vX.fa."""
-    pattern = re.compile(rf"^{re.escape(stem)}_v(\d+)\.fa$")
-    existing = []
-    for file in output_dir.iterdir():
-        if file.is_file():
-            match = pattern.match(file.name)
-            if match:
-                existing.append(int(match.group(1)))
-    return max(existing, default=0) + 1
+DEFAULT_EXCLUDE_INDICES = [] # 230, 232
 
 
 # ---------------------------------------------------------------------------
@@ -52,7 +35,7 @@ def create_subset_fasta(
     output_dir: Path,
     exclude_indices: list[int] | None = None,
 ) -> Path:
-    """Remove sequences by 1-based position and write a versioned FASTA file."""
+    """Remove sequences by 1-based position and write the result to good_genomes.fa."""
     output_dir.mkdir(parents=True, exist_ok=True)
     resolved = exclude_indices if exclude_indices is not None else DEFAULT_EXCLUDE_INDICES
 
@@ -67,16 +50,12 @@ def create_subset_fasta(
         else:
             kept.append(record)
 
-    stem = input_fasta.stem
-    version = _next_version(output_dir, stem)
-    output_path = output_dir / f"{stem}_v{version}.fa"
-
+    output_path = output_dir / "good_genomes.fa"
     SeqIO.write(kept, output_path, "fasta")
     log.info("Wrote %d sequences (excluded %d) -> %s", len(kept), len(deleted), output_path)
 
     if deleted:
-        deleted_version = _next_version(output_dir, DELETED_STEM)
-        deleted_path = output_dir / f"{DELETED_STEM}_v{deleted_version}.fa"
+        deleted_path = output_dir / "bad_genomes.fa"
         SeqIO.write(deleted, deleted_path, "fasta")
         log.info("Wrote %d deleted sequences -> %s", len(deleted), deleted_path)
 
@@ -93,7 +72,7 @@ if __name__ == "__main__":
         datefmt="%H:%M:%S",
     )
     parser = argparse.ArgumentParser(
-        description="Create a versioned subset FASTA by dropping sequences at given 1-based positions."
+        description="Create a subset FASTA by dropping sequences at given 1-based positions."
     )
     parser.add_argument(
         "input_fasta",
