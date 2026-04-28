@@ -21,10 +21,10 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-_HERE                   = Path(__file__).parent
-FASTA                   = _HERE / "../../tests/fixtures/big.fa"
-OUTPUT_DIR              = _HERE / "../../tests/fixtures"
-DEFAULT_EXCLUDE_INDICES = [] # 230, 232
+_HERE                   = Path(__file__).resolve().parent
+FASTA                   = _HERE / "../../../tests/fixtures/big.fa"
+OUTPUT_DIR              = _HERE / "../../../tests/fixtures"
+DEFAULT_EXCLUDE_INDICES = [230, 232, 590] # 230, 232, 590
 
 
 # ---------------------------------------------------------------------------

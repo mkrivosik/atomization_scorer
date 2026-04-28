@@ -34,9 +34,9 @@ _HERE        = Path(__file__).parent
 FASTA        = _HERE.parent.parent.parent / "tests" / "fixtures" / "big.fa"
 GEESE_BIN    = Path.home() / "bin/geese"
 
-START_N      = 2    # first genome count to score (must be >= 2)
+START_N      = 582    # first genome count to score (must be >= 2)
 END_N        = 598
-STEP         = 20
+STEP         = 1
 
 OUTPUT_DIR   = _HERE.parent / "results_*" / f"results_genomes{START_N}_to{END_N}_step{STEP}"
 
