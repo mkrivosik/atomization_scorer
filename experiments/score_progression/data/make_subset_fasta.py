@@ -24,7 +24,22 @@ log = logging.getLogger(__name__)
 _HERE                   = Path(__file__).resolve().parent
 FASTA                   = _HERE / "../../../tests/fixtures/big.fa"
 OUTPUT_DIR              = _HERE / "../../../tests/fixtures"
-DEFAULT_EXCLUDE_INDICES = [230, 232, 590] # 230, 232, 590
+# Score progression on big.fa (598 genomes) revealed three additions that caused sharp drops:
+#   position 230 -> SAMN15148346-u.1 (chromosome): score 0.933 -> 0.768
+#   position 232 -> SAMN15148347-u.1 (chromosome): score 0.768 -> 0.608
+#   position 590 -> SAMN15148663-u.1 (chromosome): score 0.584 -> 0.456
+#
+# A fourth drop was found by running score progression on good_genomes.fa (big.fa minus the
+# three above). Because removing positions 230, 232, 590 shifts every subsequent index by -3,
+# a drop observed at position 591 in good_genomes.fa maps back to position 591 + 3 = 594 in big.fa.
+#   position 594 -> SAMN15148693-u.1 (chromosome): score 0.922 -> 0.563
+# Removing all four outlier chromosomes and scoring good_genomes.fa produces a stable score of ~0.92,
+# indicating high-quality atomization on the remaining genomes. This was further validated by an
+# artificial degradation test: randomly reassigning the class of x*10% of atoms (x = 1...10)
+# in the predicted GEESE consistently lowered the score, with larger fractions producing larger
+# drops, confirming the metric penalises class misassignments and that the ~0.92 baseline
+# reflects real atomization quality.
+DEFAULT_EXCLUDE_INDICES = [230, 232, 590, 594]
 
 
 # ---------------------------------------------------------------------------

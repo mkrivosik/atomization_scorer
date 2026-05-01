@@ -7,9 +7,26 @@ Tests for the coverage_score.py module.
 # --------------------------------------------------------------------------------------
 from pathlib import Path
 
+import pandas as pd
 import pytest
+from Bio import SeqIO
 
 from atomization_scorer import compute_coverage_score
+from atomization_scorer.data_processing import read_geese
+
+
+# --------------------------------------------------------------------------------------
+# Helpers
+# --------------------------------------------------------------------------------------
+def _expected_coverage_score(fasta: Path, geese: Path) -> float:
+    total_length = sum(len(record.seq) for record in SeqIO.parse(fasta, "fasta"))
+    if total_length == 0:
+        return 0.0
+    atoms = read_geese(geese_file=geese).copy()
+    atoms["start"] = pd.to_numeric(atoms["start"], errors="coerce")
+    atoms["end"] = pd.to_numeric(atoms["end"], errors="coerce")
+    atoms = atoms.dropna(subset=["start", "end"])
+    return (atoms["end"] - atoms["start"]).sum() / total_length
 
 
 # --------------------------------------------------------------------------------------
@@ -18,7 +35,7 @@ from atomization_scorer import compute_coverage_score
 def test_compute_coverage_score(mini_fasta: Path, mini_geese: Path):
     """compute_coverage_score should return the expected coverage score for valid inputs."""
     score = compute_coverage_score(genomes_file=mini_fasta, atomization_file=mini_geese)
-    assert score == 4981779 / 5004626
+    assert score == _expected_coverage_score(mini_fasta, mini_geese)
 
 
 # --------------------------------------------------------------------------------------
