@@ -27,13 +27,6 @@ WORKDIR /app
 RUN pip install --no-cache-dir uv
 
 # -------------------------
-# Create venv (recommended in containers)
-# -------------------------
-ENV VIRTUAL_ENV=/opt/venv
-RUN uv venv $VIRTUAL_ENV
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-
-# -------------------------
 # Copy dependency metadata first (better caching)
 # -------------------------
 COPY pyproject.toml uv.lock README.md ./
@@ -45,10 +38,14 @@ COPY src/ ./src/
 
 # -------------------------
 # Sync deps + install your project (from lock)
-# --frozen ensures uv.lock is respected exactly
-# --no-dev avoids installing dev extras into runtime image
+# uv creates .venv/ in the project root (/app/.venv).
+# --frozen ensures uv.lock is respected exactly.
+# --no-dev avoids installing dev extras into the runtime image.
 # -------------------------
 RUN uv sync --frozen --no-dev
+
+# Put the project venv on PATH so the console script is invokable directly.
+ENV PATH="/app/.venv/bin:$PATH"
 
 # -------------------------
 # Entry point
@@ -56,6 +53,6 @@ RUN uv sync --frozen --no-dev
 # Use your console script name from [project.scripts]
 # Example:
 # [project.scripts]
-# atomization-scorer = "atomization_scorer.cli:main"
-ENTRYPOINT ["atomization-scorer"]
+# atomization_scorer = "atomization_scorer.cli:main"
+ENTRYPOINT ["atomization_scorer"]
 

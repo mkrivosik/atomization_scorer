@@ -19,25 +19,49 @@ covered by predicted atoms.
 
 ## Installation
 
+This project uses [uv](https://docs.astral.sh/uv/) for environment and dependency
+management. Install uv first via the
+[official instructions](https://docs.astral.sh/uv/getting-started/installation/), then:
+
 ```bash
 git clone <repository-url>
 cd atomization_scorer
-pip install -e .
+uv sync
 ```
+
+Add `--extra dev` to also install development tooling (pytest, ruff, mypy).
+Activating the virtual environment with `source .venv/bin/activate` lets you drop
+the `uv run` prefix from the commands below.
 
 The following external tools must be available on `PATH`: `minimap2` [3] (always),
 `mash` [2] (for the default and recommended representative selection mode), and `docker` (optional; for Dotter [4]
 dot-plot visualization, which also requires an X11 display).
 
+### Docker
+
+A `Dockerfile` is provided to run the scorer in a self-contained image with Python,
+`uv`, `minimap2`, and `mash` preinstalled:
+
+```bash
+docker build -t atomization_scorer .
+docker run --rm -v "$PWD:/data" atomization_scorer /data/GENOMES.fa /data/ATOMS.geese /data/out
+```
+
+The image intentionally does **not** include Dotter, since Dotter is a GUI tool that
+requires an X11 display and is currently invoked via its own Docker image. When running
+the scorer inside the container, pass `--skip-dotter` (or simply omit
+`--overlap-diagnostics`) to avoid the Dotter launch. For interactive dot-plot inspection,
+run the scorer on the host instead.
+
 ## Usage
 
 ```
-atomization_scorer GENOMES_FASTA ATOMIZATION_GEESE OUTPUT_DIRECTORY [OPTIONS]
+uv run atomization_scorer GENOMES_FASTA ATOMIZATION_GEESE OUTPUT_DIRECTORY [OPTIONS]
 ```
 
 The three positional arguments are required. `GENOMES_FASTA` must have extension `.fa`
 or `.fasta`; `ATOMIZATION_GEESE` must have extension `.geese`. The output directory is
-created automatically if it does not exist. Run `atomization_scorer --help` for the full
+created automatically if it does not exist. Run `uv run atomization_scorer --help` for the full
 option reference.
 
 Key options are organized into four groups:
