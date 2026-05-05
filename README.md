@@ -143,7 +143,7 @@ atomization.
 
 **Coverage score.** Let $\mathcal{P}$ be the set of predicted atoms and $L = \sum_j |\mathcal{S}_j|$ the total length of all input sequences. The coverage score $C \in [0, 1]$ is:
 
-$$C = \frac{\sum_{p \in \mathcal{P}}\,(\text{end}_p - \text{start}_p)}{L}$$
+$$C = \frac{\sum_{p \in \mathcal{P}}(\text{end}_p - \text{start}_p)}{L}$$
 
 Atoms are non-overlapping by definition. For class $k$, let $\mathcal{P}_k = \{p \in \mathcal{P} \mid \text{class}(p) = k\}$ denote the predicted atoms of class $k$:
 
@@ -153,7 +153,7 @@ $$C_k = \frac{\sum_{p \in \mathcal{P}_k}(\text{end}_p - \text{start}_p)}{L}, \qq
 there exists an as-yet-unmatched $t \in \mathcal{T}$ on the same sequence with
 $\text{class}(t) = \text{class}(p)$ such that
 
-$$\frac{|\,[p_s,\,p_e) \cap [t_s,\,t_e)\,|}{|\,[p_s,\,p_e) \cup [t_s,\,t_e)\,|} \geq \theta$$
+$$\frac{|[p_s,p_e) \cap [t_s,t_e)|}{|[p_s,p_e) \cup [t_s,t_e)|} \geq \theta$$
 
 where $p_s, p_e$ and $t_s, t_e$ are the start and end coordinates of $p$ and $t$
 respectively, and $\theta \in [0,1]$ is the overlap threshold (`--min-overlap-ratio`,
