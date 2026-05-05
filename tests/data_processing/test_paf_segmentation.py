@@ -78,13 +78,13 @@ def test_resolve_paf_overlaps_allows_half_open_adjacency(tmp_path: Path):
 # Test: multi-overlap scenario trims all candidates, producing a non-overlapping covering
 # --------------------------------------------------------------------------------------
 def test_resolve_paf_overlaps_trims_all_candidates_in_multi_overlap_scenario(tmp_path: Path):
-    """resolve_paf_overlaps should trim every overlapping candidate to its surviving portion
-    when multiple candidates interact."""
+    """resolve_paf_overlaps should trim every overlapping primary candidate to its surviving
+    portion when multiple primary candidates interact."""
     paf_file = create_paf_file(
         tmp_path,
         "genome1\t5000\t100\t300\t+\trep|class_1\t200\t0\t200\t200\t200\t60\ttp:A:P\tdv:f:0.0\n"
         "genome1\t5000\t150\t350\t+\trep|class_2\t200\t0\t200\t180\t200\t50\ttp:A:P\tdv:f:0.1\n"
-        "genome1\t5000\t280\t420\t+\trep|class_3\t140\t0\t140\t100\t140\t40\ttp:A:S\tdv:f:0.2\n"
+        "genome1\t5000\t280\t420\t+\trep|class_3\t140\t0\t140\t100\t140\t40\ttp:A:P\tdv:f:0.2\n"
         "genome1\t5000\t420\t520\t+\trep|class_4\t100\t0\t100\t100\t100\t60\ttp:A:P\tdv:f:0.0\n",
         filename="multiple_overlap.paf",
     )
@@ -108,14 +108,14 @@ def test_resolve_paf_overlaps_trims_all_candidates_in_multi_overlap_scenario(tmp
 # Test: resolves overlaps independently per query genome including their trimmed tails
 # --------------------------------------------------------------------------------------
 def test_resolve_paf_overlaps_treats_queries_independently(tmp_path: Path):
-    """resolve_paf_overlaps should resolve overlaps and trim candidates independently for each
-    query genome."""
+    """resolve_paf_overlaps should resolve overlapping primary alignments independently per
+    query genome; accepted intervals from one genome do not affect another."""
     paf_file = create_paf_file(
         tmp_path,
         "genome1\t5000\t100\t300\t+\trep|class_1\t200\t0\t200\t200\t200\t60\ttp:A:P\tdv:f:0.0\n"
-        "genome1\t5000\t150\t320\t+\trep|class_2\t170\t0\t170\t150\t170\t50\ttp:A:S\tdv:f:0.1\n"
+        "genome1\t5000\t150\t320\t+\trep|class_2\t170\t0\t170\t150\t170\t50\ttp:A:P\tdv:f:0.1\n"
         "genome2\t5000\t100\t300\t+\trep|class_3\t200\t0\t200\t200\t200\t60\ttp:A:P\tdv:f:0.0\n"
-        "genome2\t5000\t150\t320\t+\trep|class_4\t170\t0\t170\t150\t170\t50\ttp:A:S\tdv:f:0.1\n",
+        "genome2\t5000\t150\t320\t+\trep|class_4\t170\t0\t170\t150\t170\t50\ttp:A:P\tdv:f:0.1\n",
         filename="independent_queries.paf",
     )
     output_file = tmp_path / "resolved_independent.paf"
@@ -205,11 +205,11 @@ def test_resolve_paf_overlaps_minimum_alignment_length_discards_short_surviving_
 
 
 # --------------------------------------------------------------------------------------
-# Test: primary alignment wins over secondary; secondary is trimmed
+# Test: secondary alignments are discarded entirely before overlap resolution
 # --------------------------------------------------------------------------------------
-def test_resolve_paf_overlaps_prefers_primary_over_secondary(tmp_path: Path):
-    """resolve_paf_overlaps should accept a primary alignment ahead of an overlapping secondary
-    and trim the secondary to its non-overlapping portion."""
+def test_resolve_paf_overlaps_discards_secondary_alignments(tmp_path: Path):
+    """resolve_paf_overlaps should discard secondary alignments before overlap resolution;
+    only the primary alignment should appear in the output."""
     paf_file = create_paf_file(
         tmp_path,
         "genome1\t5000\t100\t300\t+\trep|class_1\t200\t0\t200\t180\t200\t40\ttp:A:S\tdv:f:0.0\n"
@@ -221,11 +221,9 @@ def test_resolve_paf_overlaps_prefers_primary_over_secondary(tmp_path: Path):
     resolve_paf_overlaps(paf_file=paf_file, output_file=output_file)
 
     lines = output_file.read_text().splitlines()
-    assert len(lines) == 2
+    assert len(lines) == 1
     _, start0, end0, target0 = parse_paf_line(lines[0])
-    _, start1, end1, target1 = parse_paf_line(lines[1])
     assert target0 == "rep|class_2" and start0 == 120 and end0 == 320
-    assert target1 == "rep|class_1" and start1 == 100 and end1 == 120
 
 
 # --------------------------------------------------------------------------------------
@@ -298,30 +296,6 @@ def test_resolve_paf_overlaps_uses_deterministic_fallback_for_full_ties(tmp_path
     _, start1, end1, target1 = parse_paf_line(lines[1])
     assert target0 == "rep|class_a" and start0 == 100 and end0 == 300
     assert target1 == "rep|class_b" and start1 == 300 and end1 == 320
-
-
-# --------------------------------------------------------------------------------------
-# Test: unknown alignment type ranks after known types; lower-ranked is trimmed
-# --------------------------------------------------------------------------------------
-def test_resolve_paf_overlaps_prefers_known_alignment_type_over_unexpected_type(tmp_path: Path):
-    """resolve_paf_overlaps should rank an unexpected alignment type after all known types and
-    trim it to its surviving portion."""
-    paf_file = create_paf_file(
-        tmp_path,
-        "genome1\t5000\t100\t300\t+\trep|class_1\t190\t200\t200\t190\t200\t60\ttp:A:X\tdv:f:0.01\n"
-        "genome1\t5000\t120\t320\t+\trep|class_2\t190\t200\t200\t190\t200\t60\ttp:A:P\tdv:f:0.01\n",
-        filename="unexpected_type.paf",
-    )
-    output_file = tmp_path / "resolved_unexpected_type.paf"
-
-    resolve_paf_overlaps(paf_file=paf_file, output_file=output_file)
-
-    lines = output_file.read_text().splitlines()
-    assert len(lines) == 2
-    _, start0, end0, target0 = parse_paf_line(lines[0])
-    _, start1, end1, target1 = parse_paf_line(lines[1])
-    assert target0 == "rep|class_2" and start0 == 120 and end0 == 320
-    assert target1 == "rep|class_1" and start1 == 100 and end1 == 120
 
 
 # --------------------------------------------------------------------------------------

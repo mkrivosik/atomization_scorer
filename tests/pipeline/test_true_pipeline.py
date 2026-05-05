@@ -67,7 +67,10 @@ def test_compute_true_alignment_pipeline(
     mock_minimap2.assert_called_once_with(
         query=mini_fasta,
         target=representatives_fasta,
-        output_path=paf_file
+        output_path=paf_file,
+        preset="asm20",
+        secondary_ratio=0.1,
+        emit_cigar=True,
     )
 
     mock_filter_paf.assert_called_once_with(
@@ -424,8 +427,8 @@ def test_compute_true_alignment_optionally_runs_overlap_diagnostics(
         atomization_file=mini_geese,
         output_directory=output_dir,
         run_overlap_diagnostics=True,
-        overlap_report_min_len=200,
-        overlap_plot_min_len=900,
+        minimum_report_overlap_length=200,
+        minimum_plot_overlap_length=900,
     )
 
     mock_diagnose.assert_called_once_with(
@@ -434,5 +437,8 @@ def test_compute_true_alignment_optionally_runs_overlap_diagnostics(
         output_directory=output_dir / "overlap_diagnostics",
         minimum_report_overlap_length=200,
         minimum_plot_overlap_length=900,
+        include_reverse=False,
+        run_dotter=True,
+        dotter_extra_args=None,
     )
     mock_resolve_paf.assert_called_once()

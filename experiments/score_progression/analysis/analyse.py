@@ -124,16 +124,16 @@ def run_scorer(fasta: Path, geese: Path, output_dir: Path) -> dict[str, float | 
             output_directory=output_dir,
             level="interval",
             per_class=False,
-            min_overlap_ratio=0.8,
+            minimum_overlap_ratio=0.8,
         ))
     except Exception as alignment_exc:
         log.exception("  Alignment score failed: %s", alignment_exc)
 
     try:
-        coverage = compute_coverage_score(
+        coverage = cast(float, compute_coverage_score(
             genomes_file=fasta,
             atomization_file=geese,
-        )
+        ))
     except Exception as coverage_exc:
         log.exception("  Coverage score failed: %s", coverage_exc)
 

@@ -6,9 +6,9 @@ true-atomization overlaps before overlap resolution.
 
 Modules
 -------
-overlap_diagnostics : Generate overlap reports and dotplot FASTA inputs from filtered PAF files.
-dotplot_inputs      : Build per-anchor FASTA files for downstream dotplot rendering.
-dotter_runner       : Run Dotter on per-anchor FASTA inputs.
+overlap_diagnostics : Module for generating overlap reports and dotplot FASTA inputs.
+dotplot_inputs      : Module for building per-anchor FASTA files for dotplot rendering.
+dotter_runner       : Module for running Dotter on per-anchor FASTA inputs.
 """
 
 # --------------------------------------------------------------------------------------

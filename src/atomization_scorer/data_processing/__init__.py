@@ -6,14 +6,14 @@ used in genome atomization scoring.
 
 Modules
 -------
-fasta_reader     : Function for reading FASTA genome sequences.
-fasta_writer     : Function for writing FASTA sequence files.
-geese_reader     : Function for reading GEESE atomization tabular files.
-geese_writer     : Function for writing GEESE atomization tabular files.
-paf_processing   : Function for processing Minimap2 PAF files.
-paf_segmentation : Functions for resolving PAF overlaps and validating true atomization.
-paf_to_geese     : Function for converting PAF files to GEESE files.
-utils            : Shared utility functions (column checks, renaming, etc.)
+fasta_reader     : Module for reading FASTA genome sequences.
+fasta_writer     : Module for writing FASTA sequence files.
+geese_reader     : Module for reading GEESE atomization files.
+geese_writer     : Module for writing GEESE atomization files.
+paf_processing   : Module for filtering Minimap2 PAF files.
+paf_segmentation : Module for resolving PAF overlaps and validating true atomization.
+paf_to_geese     : Module for converting PAF files to GEESE format.
+utils            : Module providing shared utility functions.
 """
 
 # --------------------------------------------------------------------------------------

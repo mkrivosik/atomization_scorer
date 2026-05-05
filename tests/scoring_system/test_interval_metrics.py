@@ -79,9 +79,9 @@ def create_single_true_match_geese(tmp_path: Path):
 
 
 # --------------------------------------------------------------------------------------
-# Helper: create GEESE files for exact min_overlap_ratio testing
+# Helper: create GEESE files for exact minimum_overlap_ratio testing
 # --------------------------------------------------------------------------------------
-def create_min_overlap_ratio_geese(tmp_path: Path):
+def create_minimum_overlap_ratio_geese(tmp_path: Path):
     """Create predicted and true GEESE files where one match depends on the overlap threshold."""
     predicted_geese = tmp_path / "predicted_min_overlap.geese"
     predicted_geese.write_text(
@@ -110,7 +110,7 @@ def test_compute_interval_level_metrics_overall(tmp_path: Path, output_dir: Path
         true_geese=true_geese,
         output_directory=output_dir,
         per_class=False,
-        min_overlap_ratio=0.8
+        minimum_overlap_ratio=0.8
     )
 
     assert score == 1/3
@@ -136,7 +136,7 @@ def test_compute_interval_level_metrics_per_class(tmp_path: Path, output_dir: Pa
         true_geese=true_geese,
         output_directory=output_dir,
         per_class=True,
-        min_overlap_ratio=0.8
+        minimum_overlap_ratio=0.8
     )
 
     assert isinstance(metrics, list)
@@ -193,24 +193,24 @@ def test_interval_level_status_files_created(tmp_path: Path, output_dir: Path):
 
 
 # --------------------------------------------------------------------------------------
-# Test: min_overlap_ratio filters matches
+# Test: minimum_overlap_ratio filters matches
 # --------------------------------------------------------------------------------------
-def test_interval_level_min_overlap_ratio_effect(tmp_path: Path, output_dir: Path):
+def test_interval_level_minimum_overlap_ratio_effect(tmp_path: Path, output_dir: Path):
     """compute_interval_level_metrics should change the outcome when overlap falls below the threshold."""
-    predicted_geese, true_geese = create_min_overlap_ratio_geese(tmp_path)
+    predicted_geese, true_geese = create_minimum_overlap_ratio_geese(tmp_path)
 
     score_low = compute_interval_level_metrics(
         predicted_geese=predicted_geese,
         true_geese=true_geese,
         output_directory=output_dir,
-        min_overlap_ratio=0.8
+        minimum_overlap_ratio=0.8
     )
 
     score_high = compute_interval_level_metrics(
         predicted_geese=predicted_geese,
         true_geese=true_geese,
         output_directory=output_dir,
-        min_overlap_ratio=0.9
+        minimum_overlap_ratio=0.9
     )
 
     assert score_low == 1.0
@@ -228,7 +228,7 @@ def test_interval_level_class_mismatch(tmp_path: Path, output_dir: Path):
         predicted_geese=predicted_geese,
         true_geese=true_geese,
         output_directory=output_dir,
-        min_overlap_ratio=0.8
+        minimum_overlap_ratio=0.8
     )
 
     predicted_status = pd.read_csv(output_dir / "interval_predicted_statuses.tsv", sep="\t")
@@ -250,7 +250,7 @@ def test_interval_level_true_interval_matched_only_once(tmp_path: Path, output_d
         predicted_geese=predicted_geese,
         true_geese=true_geese,
         output_directory=output_dir,
-        min_overlap_ratio=0.8
+        minimum_overlap_ratio=0.8
     )
 
     predicted_status = pd.read_csv(output_dir / "interval_predicted_statuses.tsv", sep="\t")

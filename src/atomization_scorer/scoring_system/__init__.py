@@ -5,12 +5,12 @@ This package provides functions for score calculations.
 
 Modules
 -------
-compute_base_level_metrics      : Function for computing base level metrics.
-compute_interval_level_metrics  : Function for computing interval level metrics.
-compute_alignment_score         : Function for computing alignment scores.
-compute_coverage_score          : Function for computing genomes coverage score.
-artificial_degradation          : Function for creating artificially degraded atomization.
-overall_score                   : Function for computing overall atomization score.
+alignment_score        : Module for computing alignment scores.
+base_metrics           : Module for computing base-level metrics.
+coverage_score         : Module for computing genome coverage score.
+interval_metrics       : Module for computing interval-level metrics.
+overall_score          : Module for computing overall atomization score.
+artificial_degradation : Module for creating artificially degraded atomization.
 """
 
 # --------------------------------------------------------------------------------------

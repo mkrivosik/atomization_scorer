@@ -5,9 +5,9 @@ This subpackage provides the alignment pipelines for genome atomization scoring.
 
 Modules
 -------
-true_pipeline               : Computes gold-standard (true) genome atomization alignment.
-minimap2_aligner            : Computes minimap2 alignment.
-representatives_selector    : Extracts representative sequences.
+true_pipeline             : Module for computing gold-standard true atomization.
+minimap2_aligner          : Module for aligning genomes with minimap2.
+representatives_selector  : Module for extracting representative sequences.
 """
 
 # --------------------------------------------------------------------------------------

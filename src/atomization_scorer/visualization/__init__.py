@@ -5,7 +5,7 @@ This package provides an interactive HTML visualization for genome atomization r
 
 Modules
 -------
-atomization_visualization   : Function for rendering interactive genome atomization views.
+atomization_visualization : Module for rendering genome atomization plots.
 """
 
 # --------------------------------------------------------------------------------------

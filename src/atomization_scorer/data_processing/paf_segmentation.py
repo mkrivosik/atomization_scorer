@@ -23,6 +23,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import logging
 from pathlib import Path
+from typing import cast
 
 from .geese_reader import read_geese
 
@@ -233,6 +234,9 @@ def resolve_paf_overlaps(
     """
     Resolve overlapping filtered PAF alignments into non-overlapping query segmentation.
 
+    Non-primary alignments (any alignment_type other than "P") are discarded before
+    overlap resolution begins. Only primary alignments compete for query-sequence space.
+
     Parameters
     ----------
     paf_file : Path
@@ -269,14 +273,21 @@ def resolve_paf_overlaps(
     grouped_alignments = {}
     total_alignments = 0
     discarded_alignments = 0
+    non_primary_count = 0
 
     with paf_file.open() as file:
         for line_number, line in enumerate(file, start=1):
             if not line.strip():
                 continue
             alignment = _parse_paf_alignment(line, line_number)
+            if alignment.alignment_type != "P":
+                non_primary_count += 1
+                continue
             grouped_alignments.setdefault(alignment.query_name, []).append(alignment)
             total_alignments += 1
+
+    if non_primary_count > 0:
+        log.info("Discarded %s non-primary alignments before overlap resolution", non_primary_count)
 
     accepted_lines = []
     kept_alignments = 0
@@ -377,7 +388,8 @@ def validate_non_overlapping_geese(geese_file: Path) -> None:
         raise FileNotFoundError(f"GEESE file not found: {geese_file}")
 
     df = read_geese(geese_file)
-    for genome_name, group in df.groupby("name", sort=False):
+    for genome_name_key, group in df.groupby("name", sort=False):
+        genome_name = cast(str, genome_name_key)
         sorted_group = group.sort_values(["start", "end"]).reset_index(drop=True)
         starts = [int(value) for value in sorted_group["start"]]
         ends = [int(value) for value in sorted_group["end"]]

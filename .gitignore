@@ -105,6 +105,8 @@ Thumbs.db
 # =========================
 # Ignore all analysis results
 # =========================
+experiments/paf_overlap_analysis/input
+experiments/paf_overlap_analysis/reports
 experiments/score_progression/outputs/
 experiments/score_progression/results_*/
 

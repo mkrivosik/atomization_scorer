@@ -32,7 +32,7 @@ def compute_interval_level_metrics(
     true_geese: Path,
     output_directory: Path,
     per_class: bool = False,
-    min_overlap_ratio: float = 0.8
+    minimum_overlap_ratio: float = 0.8
 ) -> float | list[dict[str, int | float]]:
     """
     Compute interval-level True Positives, False Positives, False Negatives,
@@ -48,7 +48,7 @@ def compute_interval_level_metrics(
        Path to the output directory where results are stored.
     per_class : bool, optional, default=False
         If True, compute metrics per atomization class; otherwise overall.
-    min_overlap_ratio : float, optional, default=0.8
+    minimum_overlap_ratio : float, optional, default=0.8
         Minimum overlap ratio for interval-level scoring.
 
     Raises
@@ -85,7 +85,7 @@ def compute_interval_level_metrics(
         predicted_df=predicted_df,
         true_df=true_df,
         output_directory=output_directory,
-        min_overlap_ratio=min_overlap_ratio
+        minimum_overlap_ratio=minimum_overlap_ratio
     )
 
     return _compute_and_write_metrics(
@@ -99,7 +99,7 @@ def _scan_intervals_interval_level(
     predicted_df: pd.DataFrame,
     true_df: pd.DataFrame,
     output_directory: Path,
-    min_overlap_ratio: float = 0.8
+    minimum_overlap_ratio: float = 0.8
 ) -> tuple[
     dict[int, int],
     dict[int, int],
@@ -117,7 +117,7 @@ def _scan_intervals_interval_level(
         table containing true intervals.
     output_directory : Path
         Path to the output directory where results are stored.
-    min_overlap_ratio : float, optional, default=0.8
+    minimum_overlap_ratio : float, optional, default=0.8
         Minimum overlap ratio for counting a predicted interval as True Positive.
 
     Returns
@@ -167,7 +167,7 @@ def _scan_intervals_interval_level(
                         predicted["start"], predicted["end"],
                         true_start, true_end
                     )
-                    if overlap_ratio >= min_overlap_ratio:
+                    if overlap_ratio >= minimum_overlap_ratio:
                         atom_class = int(predicted["class"])
                         tp[atom_class] = tp.get(atom_class, 0) + 1
                         true_used[true_index] = True

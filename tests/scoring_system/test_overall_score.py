@@ -40,8 +40,8 @@ def test_compute_overall_score(
         atomization_file=mini_geese,
         output_directory=output_dir,
         level="base",
-        per_class=True,
-        min_overlap_ratio=0.65,
+        per_class=False,
+        minimum_overlap_ratio=0.65,
         alignment_weight=0.6,
         coverage_weight=0.4
     )
@@ -51,14 +51,115 @@ def test_compute_overall_score(
         atomization_file=mini_geese,
         output_directory=output_dir,
         level="base",
-        per_class=True,
-        min_overlap_ratio=0.65
+        per_class=False,
+        minimum_overlap_ratio=0.65,
+        representative_mode="mash",
+        minimum_similarity=0.95,
+        minimum_alignment_length=500,
+        minimap2_preset="asm20",
+        minimap2_secondary_ratio=0.1,
+        minimap2_emit_cigar=True,
+        run_overlap_diagnostics=False,
+        minimum_report_overlap_length=0,
+        minimum_plot_overlap_length=0,
+        overlap_include_reverse=False,
+        run_dotter=True,
     )
     mock_compute_coverage_score.assert_called_once_with(
         genomes_file=mini_fasta,
-        atomization_file=mini_geese
+        atomization_file=mini_geese,
+        per_class=False,
     )
     assert overall_score == (0.8 ** 0.6) * (0.9 ** 0.4)
+
+
+# --------------------------------------------------------------------------------------
+# Test: per-class overall score combines per-class alignment and coverage
+# --------------------------------------------------------------------------------------
+def test_compute_overall_score_per_class(
+    mini_fasta: Path,
+    mini_geese: Path,
+    output_dir: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """compute_overall_score with per_class=True should return per-class weighted geometric means."""
+    alignment_results = [
+        {"Class": 1, "F1-score": 0.8},
+        {"Class": 2, "F1-score": 0.6},
+    ]
+    coverage_results = [
+        {"Class": 1, "Coverage": 0.5},
+        {"Class": 2, "Coverage": 0.3},
+    ]
+
+    monkeypatch.setattr(
+        "atomization_scorer.scoring_system.overall_score.compute_alignment_score",
+        lambda **_: alignment_results,
+    )
+    monkeypatch.setattr(
+        "atomization_scorer.scoring_system.overall_score.compute_coverage_score",
+        lambda **_: coverage_results,
+    )
+
+    result = compute_overall_score(
+        genomes_file=mini_fasta,
+        atomization_file=mini_geese,
+        output_directory=output_dir,
+        per_class=True,
+        alignment_weight=0.7,
+        coverage_weight=0.3,
+    )
+
+    assert isinstance(result, list)
+    assert len(result) == 2
+
+    class1 = next(r for r in result if r["Class"] == 1)
+    class2 = next(r for r in result if r["Class"] == 2)
+
+    assert class1["Alignment_score"] == 0.8
+    assert class1["Coverage_score"] == 0.5
+    assert class1["Overall"] == pytest.approx((0.8 ** 0.7) * (0.5 ** 0.3))
+
+    assert class2["Alignment_score"] == 0.6
+    assert class2["Coverage_score"] == 0.3
+    assert class2["Overall"] == pytest.approx((0.6 ** 0.7) * (0.3 ** 0.3))
+
+
+# --------------------------------------------------------------------------------------
+# Test: per-class fills missing classes with 0.0
+# --------------------------------------------------------------------------------------
+def test_compute_overall_score_per_class_missing_class(
+    mini_fasta: Path,
+    mini_geese: Path,
+    output_dir: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """compute_overall_score per-class should default to 0.0 for classes missing from one side."""
+    monkeypatch.setattr(
+        "atomization_scorer.scoring_system.overall_score.compute_alignment_score",
+        lambda **_: [{"Class": 1, "F1-score": 0.8}, {"Class": 3, "F1-score": 0.5}],
+    )
+    monkeypatch.setattr(
+        "atomization_scorer.scoring_system.overall_score.compute_coverage_score",
+        lambda **_: [{"Class": 1, "Coverage": 0.4}, {"Class": 2, "Coverage": 0.2}],
+    )
+
+    result = compute_overall_score(
+        genomes_file=mini_fasta,
+        atomization_file=mini_geese,
+        output_directory=output_dir,
+        per_class=True,
+    )
+
+    assert isinstance(result, list)
+    classes = {r["Class"] for r in result}
+    assert classes == {1, 2, 3}
+
+    class2 = next(r for r in result if r["Class"] == 2)
+    assert class2["Alignment_score"] == 0.0
+
+    class3 = next(r for r in result if r["Class"] == 3)
+    assert class3["Coverage_score"] == 0.0
 
 
 # --------------------------------------------------------------------------------------

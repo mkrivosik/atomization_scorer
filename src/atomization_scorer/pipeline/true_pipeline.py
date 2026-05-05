@@ -40,11 +40,18 @@ def compute_true_alignment(
     atomization_file: Path,
     output_directory: Path,
     mode: str = "mash",
+    minimap2_preset: str = "asm20",
+    minimap2_secondary_ratio: float = 0.1,
+    minimap2_emit_cigar: bool = True,
     minimum_similarity: float = 0.95,
     minimum_alignment_length: int = 500,
     run_overlap_diagnostics: bool = False,
-    overlap_report_min_len: int = 0,
-    overlap_plot_min_len: int = 0,
+    diagnostics_directory: Path | None = None,
+    minimum_report_overlap_length: int = 0,
+    minimum_plot_overlap_length: int = 0,
+    overlap_include_reverse: bool = False,
+    run_dotter: bool = True,
+    dotter_extra_args: list[str] | None = None,
 ) -> Path:
     """
     Run a full true (gold standard) genome atomization pipeline: extract representatives, align
@@ -61,6 +68,12 @@ def compute_true_alignment(
         Path to the output directory where results are stored.
     mode : str, optional, default="mash"
         Representative selection mode ("mash" or "first").
+    minimap2_preset : str, optional, default="asm20"
+        Minimap2 preset passed to -x.
+    minimap2_secondary_ratio : float, optional, default=0.1
+        Minimap2 secondary-to-primary score ratio passed to -p.
+    minimap2_emit_cigar : bool, optional, default=True
+        Whether to include CIGAR strings in PAF output (-c flag).
     minimum_similarity : float, optional, default=0.95
         Minimum similarity for PAF filtering.
     minimum_alignment_length : int, optional, default=500
@@ -68,10 +81,19 @@ def compute_true_alignment(
     run_overlap_diagnostics : bool, optional, default=False
         Whether to generate overlap-diagnostic reports from the filtered PAF before
         overlap resolution.
-    overlap_report_min_len : int, optional, default=0
+    diagnostics_directory : Path or None, optional, default=None
+        Directory where overlap diagnostics should be written. Defaults to
+        output_directory / "overlap_diagnostics" when not provided.
+    minimum_report_overlap_length : int, optional, default=0
         Minimum overlap length required for overlap-level reporting.
-    overlap_plot_min_len : int, optional, default=0
+    minimum_plot_overlap_length : int, optional, default=0
         Minimum overlap length required for dotplot FASTA generation.
+    overlap_include_reverse : bool, optional, default=False
+        Whether to duplicate anchor-partner diagnostics from both perspectives.
+    run_dotter : bool, optional, default=True
+        Whether to run Dotter immediately after generating anchor FASTA inputs.
+    dotter_extra_args : list[str] or None, optional, default=None
+        Additional command-line arguments passed to Dotter when run_dotter is enabled.
 
     Raises
     ------
@@ -116,7 +138,10 @@ def compute_true_alignment(
     align_with_minimap2(
         query=genomes_file,
         target=representatives_fasta,
-        output_path=paf_file
+        output_path=paf_file,
+        preset=minimap2_preset,
+        secondary_ratio=minimap2_secondary_ratio,
+        emit_cigar=minimap2_emit_cigar,
     )
 
     # Filter PAF
@@ -138,19 +163,26 @@ def compute_true_alignment(
     # Run Diagnostics
     if run_overlap_diagnostics:
         log.info("=" * 60)
-        overlap_diagnostics_directory = output_directory / "overlap_diagnostics"
+        resolved_diagnostics_directory = (
+            diagnostics_directory
+            if diagnostics_directory is not None
+            else output_directory / "overlap_diagnostics"
+        )
         log.info(
-            "Generating overlap diagnostics into %s with report_min_len=%s and plot_min_len=%s",
-            overlap_diagnostics_directory,
-            overlap_report_min_len,
-            overlap_plot_min_len,
+            "Generating overlap diagnostics into %s with minimum_report_overlap_length=%s and minimum_plot_overlap_length=%s",
+            resolved_diagnostics_directory,
+            minimum_report_overlap_length,
+            minimum_plot_overlap_length,
         )
         diagnose_paf_overlaps(
             paf_file=filtered_paf,
             representatives_fasta=representatives_fasta,
-            output_directory=overlap_diagnostics_directory,
-            minimum_report_overlap_length=overlap_report_min_len,
-            minimum_plot_overlap_length=overlap_plot_min_len,
+            output_directory=resolved_diagnostics_directory,
+            minimum_report_overlap_length=minimum_report_overlap_length,
+            minimum_plot_overlap_length=minimum_plot_overlap_length,
+            include_reverse=overlap_include_reverse,
+            run_dotter=run_dotter,
+            dotter_extra_args=dotter_extra_args,
         )
 
     # Resolve PAF overlaps

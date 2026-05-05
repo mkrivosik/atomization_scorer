@@ -4,13 +4,13 @@ atomization_scorer
 This package provides the main scoring functions, alignment pipelines,
 and data processing utilities for evaluating genome atomization.
 
-Modules
--------
-data_processing : Subpackage providing data readers and writers for PSL and GEESE files.
+Subpackages
+-----------
+data_processing : Subpackage providing data readers and writers for FASTA and GEESE files.
 diagnostics     : Subpackage providing diagnostic functions for PAF overlaps.
 pipeline        : Subpackage providing predicted and true alignment pipelines.
 scoring_system  : Subpackage providing scoring functions.
-visualization   : Subpackage providing an interactive genome atomization plotting function.
+visualization   : Subpackage providing genome atomization plotting.
 """
 
 # --------------------------------------------------------------------------------------
