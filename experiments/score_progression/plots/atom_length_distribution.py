@@ -152,10 +152,10 @@ def _plot_overlay(ax: plt.Axes, df: pd.DataFrame, bins: np.ndarray) -> None:
 
     ax.hist(multiton, bins=bins, alpha=ALPHA_OVERLAY, color=COLOR_MULTITON,
             edgecolor="white", linewidth=0.25, rwidth=BAR_RWIDTH,
-            label=f"Multiton  ($n$={len(multiton):,},  {100 * len(multiton) / total:.1f}%)")
+            label=f"Multiton  ($n$ = {len(multiton):,},  {100 * len(multiton) / total:.1f}%)")
     ax.hist(singleton, bins=bins, alpha=ALPHA_OVERLAY, color=COLOR_SINGLETON,
             edgecolor="white", linewidth=0.25, rwidth=BAR_RWIDTH,
-            label=f"Singleton  ($n$={len(singleton):,},  {100 * len(singleton) / total:.1f}%)")
+            label=f"Singleton  ($n$ = {len(singleton):,},  {100 * len(singleton) / total:.1f}%)")
 
     _apply_log_x(ax)
     _apply_count_y(ax)
@@ -174,10 +174,10 @@ def _plot_tail_zoom(ax: plt.Axes, df: pd.DataFrame) -> None:
 
     ax.hist(multiton, bins=bins, alpha=ALPHA_OVERLAY, color=COLOR_MULTITON,
             edgecolor="white", linewidth=0.25, rwidth=BAR_RWIDTH,
-            label=f"Multiton  ($n$={len(multiton):,})")
+            label=f"Multiton  ($n$ = {len(multiton):,})")
     ax.hist(singleton, bins=bins, alpha=ALPHA_OVERLAY, color=COLOR_SINGLETON,
             edgecolor="white", linewidth=0.25, rwidth=BAR_RWIDTH,
-            label=f"Singleton  ($n$={len(singleton):,})")
+            label=f"Singleton  ($n$ = {len(singleton):,})")
 
     ax.set_xscale("log")
     ax.set_xticks([20_000, 50_000, 100_000])
