@@ -39,7 +39,7 @@ SUMMARY_FIELDS = [
     "strand_pattern",
     "length_bin",
     "n_events",
-    "n_genomes",
+    "n_sequences",
     "median_overlap",
     "sd_overlap",
     "min_overlap",
@@ -182,7 +182,7 @@ def build_signatures(records: list[dict[str, Any]]) -> dict[tuple, list[dict[str
 
 
 def summarize_signatures(signatures: dict[tuple, list[dict[str, Any]]]) -> list[dict[str, Any]]:
-    """Compute per-signature statistics, sorted by n_genomes then median_overlap descending."""
+    """Compute per-signature statistics, sorted by n_sequences then median_overlap descending."""
     rows = []
     for signature_key, records in signatures.items():
         class_pair, overlap_type, strand_pattern, length_bin = signature_key
@@ -195,13 +195,13 @@ def summarize_signatures(signatures: dict[tuple, list[dict[str, Any]]]) -> list[
             "strand_pattern": strand_pattern,
             "length_bin": length_bin,
             "n_events": len(records),
-            "n_genomes": len({r["genome_id"] for r in records}),
+            "n_sequences": len({r["genome_id"] for r in records}),
             "median_overlap": round(statistics.median(overlap_lengths)),
             "sd_overlap": round(statistics.stdev(overlap_lengths), 1) if len(records) > 1 else 0.0,
             "min_overlap": min(overlap_lengths),
             "max_overlap": max(overlap_lengths),
         })
-    return sorted(rows, key=lambda row: (-row["n_genomes"], -row["median_overlap"]))
+    return sorted(rows, key=lambda row: (-row["n_sequences"], -row["median_overlap"]))
 
 
 # ---------------------------------------------------------------------------
@@ -234,13 +234,13 @@ def run(paf_path: Path, output_dir: Path) -> None:
     print(f"\nTotal large P-P records: {len(records)}")
     print(f"Distinct signatures:     {len(signatures)}")
     if summaries:
-        print("Top signatures by n_genomes:")
+        print("Top signatures by n_sequences:")
         for summary in summaries[:5]:
             print(
                 f"  ({summary['class_a']}, {summary['class_b']}) "
                 f"{summary['overlap_type']} {summary['strand_pattern']} "
                 f"{summary['length_bin']}bp "
-                f"-> {summary['n_events']} events in {summary['n_genomes']} genomes"
+                f"-> {summary['n_events']} events in {summary['n_sequences']} sequences"
             )
 
 
